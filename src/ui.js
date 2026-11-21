@@ -2,7 +2,7 @@
 // Todo el texto dinámico se inserta con textContent / nodos de texto (nunca innerHTML).
 
 import {
-  SPECIES, ORDER, FOODS, PRODUCTS, QUESTS, CHAPTERS, BALANCE, CORRAL_TYPES,
+  SPECIES, ORDER, FOODS, PRODUCTS, QUESTS, CHAPTERS, BALANCE, CORRAL_TYPES, corralTypeOf,
 } from './data.js';
 import * as sim from './sim.js';
 import { activeQuest, progress, rewardText } from './quests.js';
@@ -122,8 +122,16 @@ export function createUI(app) {
     const ready = w.animals.reduce((n, a) => n + a.ready, 0);
     $('collectAll').hidden = ready === 0;
     $('readyCount').textContent = String(ready);
-    const { used, capacity } = totals(w);
-    $('spaceInfo').textContent = `${used}/${capacity}`;
+    const here = app.scene === 'mapa' ? null : sim.corralInfo(w).find((c) => c.built && c.id === app.scene);
+    if (here) $('spaceInfo').textContent = `${here.nombre} ${here.used}/${here.capacity}`;
+    else {
+      const { used } = totals(w);
+      $('spaceInfo').textContent = `${used} ${plural(used, 'animal', 'animales')}`;
+    }
+    const label = here
+      ? `Corral ${here.nombre}. Toca un animal para cuidarlo o usa el menú de abajo.`
+      : 'Mapa de la granja. Toca un lugar para visitarlo o construirlo.';
+    if ($('game').getAttribute('aria-label') !== label) $('game').setAttribute('aria-label', label);
   }
 
   // ----------------------------------------------------- tarjeta del animal
@@ -218,19 +226,27 @@ export function createUI(app) {
   const row = (...kids) => h('div', { class: 'row' }, ...kids);
   const price = (n) => h('span', { class: 'price' }, icon('coin', 1), String(n));
 
-  // ---- panel: animales
+  // ---- panel: animales (agrupados por corral)
   function panelAnimals() {
     const w = W();
-    const list = [...w.animals].sort((a, b) => a.species.localeCompare(b.species) || a.id - b.id);
+    const groups = sim.corralInfo(w).filter((c) => c.built).map((c) => {
+      const list = w.animals.filter((a) => a.corral === c.id).sort((a, b) => a.species.localeCompare(b.species) || a.id - b.id);
+      return h('section', { class: 'group' },
+        row(h('h3', { class: 'grow', text: `${c.nombre} ${c.used}/${c.capacity}` }),
+          btn('Ir al corral', () => { closeSheet(); app.goTo(c.id); }, { key: `go-${c.tipo}` })),
+        list.length ? list.map((a) => row(
+          portrait(a.species, a.variant, a.stage, 2),
+          h('div', { class: 'grow' },
+            h('strong', { text: a.name + (a.shiny ? ' ✦' : '') }),
+            h('div', { class: 'muted small', text: `${SPECIES[a.species].nombre} · ${a.stage === 'baby' ? 'bebé' : 'adulto'}${a.ready ? ` · ${a.ready} listo${a.ready > 1 ? 's' : ''}` : ''}` }),
+            h('div', { class: 'meters tight' }, bar('fed', a), bar('happy', a))),
+          btn('Ver', () => { closeSheet(); app.goTo(a.corral); app.selectedId = a.id; refresh(); }, { key: `ver-${a.id}` })))
+          : h('p', { class: 'muted small', text: 'Aún no hay animales aquí.' }));
+    });
+    const { used, capacity } = totals(w);
     return h('div', null,
-      h('p', { class: 'muted', text: `En la granja: ${totals(w).used} de ${totals(w).capacity}${w.eggs.length ? ` (incluye ${w.eggs.length} ${plural(w.eggs.length, 'huevo', 'huevos')})` : ''}` }),
-      list.map((a) => row(
-        portrait(a.species, a.variant, a.stage, 2),
-        h('div', { class: 'grow' },
-          h('strong', { text: a.name + (a.shiny ? ' ✦' : '') }),
-          h('div', { class: 'muted small', text: `${SPECIES[a.species].nombre} · ${a.stage === 'baby' ? 'bebé' : 'adulto'}${a.ready ? ` · ${a.ready} listo${a.ready > 1 ? 's' : ''}` : ''}` }),
-          h('div', { class: 'meters tight' }, bar('fed', a), bar('happy', a))),
-        btn('Ver', () => { app.selectedId = a.id; closeSheet(); refresh(); }, { key: `ver-${a.id}` }))));
+      h('p', { class: 'muted', text: `En la granja: ${used} de ${capacity}${w.eggs.length ? ` (incluye ${w.eggs.length} ${plural(w.eggs.length, 'huevo', 'huevos')})` : ''}` }),
+      groups);
   }
 
   // ---- panel: tienda
@@ -252,7 +268,7 @@ export function createUI(app) {
           h('span', { class: locked ? 'locked' : '' }, portrait(s, 0, 'baby', 2)),
           h('div', { class: 'grow' },
             h('strong', { text: locked ? '???' : sp.nombre }),
-            h('div', { class: 'muted small', text: locked ? 'Avanza en la historia para conocerlo.' : `Le gusta ${FOODS[sp.food].nombre.toLowerCase()} · produce ${PRODUCTS[sp.product].nombre.toLowerCase()}` }),
+            h('div', { class: 'muted small', text: locked ? 'Avanza en la historia para conocerlo.' : `Vive en ${CORRAL_TYPES[corralTypeOf(s)].nombre} · le gusta ${FOODS[sp.food].nombre.toLowerCase()} · produce ${PRODUCTS[sp.product].nombre.toLowerCase()}` }),
             !c.ok && !locked && h('div', { class: 'warn small', text: c.msg })),
           price(sp.price),
           btn('Comprar', () => app.buyAnimal(s), { cls: 'primary', disabled: !c.ok, key: `buy-${s}` }));
@@ -271,7 +287,7 @@ export function createUI(app) {
       });
     } else {
       content = sim.corralInfo(w).map((c) => row(
-        icon(c.tipo === 'estanque' ? 'burbuja' : 'heart', 3),
+        icon(c.built ? 'mapa' : 'candado', 3),
         h('div', { class: 'grow' },
           h('strong', { text: c.nombre }),
           h('div', { class: 'muted small', text: c.built
@@ -281,6 +297,7 @@ export function createUI(app) {
         c.built
           ? (c.upgradeCost == null ? h('span', { class: 'muted', text: 'Al máximo' }) : price(c.upgradeCost))
           : (c.buildCost != null && price(c.buildCost)),
+        c.built && btn('Visitar', () => { closeSheet(); app.goTo(c.id); }, { key: `visit-${c.tipo}` }),
         c.built
           ? c.upgradeCost != null && btn('Ampliar', () => app.upgradeCorral(c.id), { cls: 'primary', disabled: w.coins < c.upgradeCost, key: `up-${c.tipo}` })
           : c.buildCost != null && btn('Construir', () => app.buildCorral(c.tipo), { cls: 'primary', disabled: w.coins < c.buildCost, key: `build-${c.tipo}` })));
@@ -413,6 +430,7 @@ export function createUI(app) {
   function init() {
     fillSlots();
     document.querySelectorAll('[data-panel]').forEach((b) => b.addEventListener('click', () => openPanel(b.dataset.panel)));
+    document.querySelectorAll('[data-goto]').forEach((b) => b.addEventListener('click', () => app.goTo(b.dataset.goto)));
     $('questChip').addEventListener('click', () => openPanel('quests'));
     $('collectAll').addEventListener('click', () => app.collectAll());
     $('sheetClose').addEventListener('click', closeSheet);

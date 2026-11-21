@@ -41,7 +41,7 @@ app.collect = (id) => {
 app.collectAll = () => report(sim.collectAll(app.w));
 app.buyAnimal = (s) => {
   const r = sim.buyAnimal(app.w, s);
-  if (r.ok) app.selectedId = r.animal.id;
+  if (r.ok) { app.goTo(r.animal.corral); app.selectedId = r.animal.id; }
   report(r);
 };
 app.buyFood = (f, n) => report(sim.buyFood(app.w, f, n));
@@ -55,7 +55,7 @@ app.sellAll = () => {
 };
 app.claimQuest = () => {
   const r = claim(app.w);
-  if (r.ok && r.animal) app.selectedId = r.animal.id;
+  if (r.ok && r.animal) { app.goTo(r.animal.corral); app.selectedId = r.animal.id; }
   report(r);
 };
 /** Cambia de escena ('mapa' o el id de un corral); una escena inválida vuelve a la Pradera. */

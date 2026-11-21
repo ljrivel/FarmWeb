@@ -167,8 +167,8 @@ p { margin: 0 0 6px; }
 /* ---------- dock ---------- */
 #dock {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
   padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
   background: var(--paper);
   border-top: 2px solid var(--line);
@@ -179,9 +179,9 @@ p { margin: 0 0 6px; }
   align-items: center;
   gap: 2px;
   min-height: 60px;
-  padding: 6px 2px;
+  padding: 6px 0;
   font: inherit;
-  font-size: .8rem;
+  font-size: .74rem;
   font-weight: 700;
   color: var(--ink);
   background: transparent;
@@ -308,10 +308,21 @@ input.text {
 }
 .confirm { display: grid; gap: 8px; }
 
+@media (max-width: 480px) {
+  /* el chip de espacio ahora lleva el nombre del corral: la misión pasa a su propia fila */
+  #hud { flex-wrap: wrap; }
+  #hud .small-chip { flex: 1; min-width: 0; }
+  #hud .chip-btn { order: 3; flex: 1 1 100%; min-height: 44px; }
+}
 @media (max-width: 380px) {
   .meters { grid-template-columns: 1fr; }
-  #dock button { font-size: .72rem; }
+  #dock { gap: 2px; padding-left: 4px; padding-right: 4px; }
+  #dock button { font-size: .64rem; letter-spacing: -.01em; }
 }
 @media (prefers-reduced-motion: reduce) {
   .sheet, .toast, .bar > i { animation: none; transition: none; }
 }
+
+/* ---------- animales agrupados por corral ---------- */
+.group + .group { margin-top: 12px; }
+.group h3 { margin: 0; }
