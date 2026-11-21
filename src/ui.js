@@ -68,6 +68,7 @@ export function createUI(app) {
     const el = $('toast');
     el.textContent = msg;
     el.className = `toast show ${kind}${onTap ? ' tap' : ''}`;
+    if (kind === 'warn') app.audio?.play('warn');
     el.onclick = onTap ? () => { el.className = 'toast'; onTap(); } : null;
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => { el.className = 'toast'; el.onclick = null; }, onTap ? 5000 : 2800);
@@ -201,7 +202,7 @@ export function createUI(app) {
     current = { name, title, render, keep: !!opts.keep };
     $('sheetTitle').textContent = title;
     body().replaceChildren(render());
-    if (backdrop().hidden) lastFocus = document.activeElement;
+    if (backdrop().hidden) { lastFocus = document.activeElement; app.audio?.play('open'); }
     backdrop().hidden = false;
     document.body.classList.add('sheet-open');
     (opts.focus ? opts.focus() : $('sheetClose').focus());
@@ -209,6 +210,7 @@ export function createUI(app) {
   function closeSheet() {
     if (!current) return;
     current = null;
+    app.audio?.play('close');
     backdrop().hidden = true;
     document.body.classList.remove('sheet-open');
     if (lastFocus && lastFocus.focus) lastFocus.focus();
@@ -385,6 +387,33 @@ export function createUI(app) {
       h('ul', { class: 'done-list' }, done.map((x) => h('li', null, h('span', { class: 'ok', 'aria-hidden': 'true', text: '✓ ' }), x.title))));
   }
 
+  // ---- sección de sonido del panel Mundo (se guarda en este dispositivo, no en el archivo del mundo)
+  function soundSection() {
+    const { muted, volume } = app.audio.prefs;
+    const pct = Math.round(volume * 100 / 5) * 5;
+    const out = h('output', { class: 'muted small', for: 'volume', id: 'volumeOut', text: `${pct} %` });
+    const slider = h('input', { type: 'range', id: 'volume', class: 'range', min: '0', max: '100', step: '5', value: String(pct), 'aria-valuetext': `${pct} por ciento` });
+    // sin redibujar la hoja mientras se arrastra: se perdería el control
+    slider.addEventListener('input', () => {
+      const v = Number(slider.value);
+      app.audio.setVolume(v / 100);
+      out.textContent = `${v} %`;
+      slider.setAttribute('aria-valuetext', `${v} por ciento`);
+    });
+    slider.addEventListener('change', () => app.audio.play('tap'));
+    return h('section', { class: 'group', 'aria-labelledby': 'soundTitle' },
+      h('h3', { id: 'soundTitle', text: 'Sonido' }),
+      row(
+        h('div', { class: 'grow' }, h('strong', { text: muted ? 'Sonido: silenciado' : 'Sonido: activado' }),
+          h('div', { class: 'muted small', text: 'Efectos y voces de los animales.' })),
+        h('button', {
+          class: `btn${muted ? '' : ' mint'}`, type: 'button', 'aria-pressed': String(!muted), 'data-key': 'sound-toggle',
+          onclick: () => { app.audio.setMuted(!muted); refreshSheet(); if (muted) app.audio.play('tap'); },
+        }, muted ? 'Activar' : 'Silenciar')),
+      h('div', { class: 'volume-row' },
+        h('label', { class: 'meter-label', for: 'volume', text: 'Volumen' }), slider, out));
+  }
+
   // ---- panel: mundo
   let worldView = 'main'; // main | confirmNew | { import: world }
   function panelWorld() {
@@ -424,6 +453,7 @@ export function createUI(app) {
     nameInput.addEventListener('change', () => { app.rename(nameInput.value); });
     return h('div', null,
       h('label', { class: 'meter-label', for: 'worldName', text: 'Nombre de la granja' }), nameInput,
+      soundSection(),
       row(h('div', { class: 'grow' }, h('strong', { text: 'Jugadores' }),
         h('div', { class: 'muted small', text: `${w.players.length} de ${w.maxPlayers} · modo local en este dispositivo` })),
         h('span', { class: 'muted small', text: 'La nube con cuentas llega pronto' })),

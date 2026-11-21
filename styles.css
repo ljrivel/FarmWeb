@@ -324,6 +324,10 @@ input.text {
 .rarity.raro { background: #ecdfff; border-color: #a58ae0; }
 .rarity.brillante { background: var(--butter); border-color: var(--butter-d); }
 .rarity.brillante::before { content: "✦ "; }
+#soundTitle { margin-bottom: 8px; }
+.volume-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; margin: 0 0 12px; }
+.volume-row .meter-label { margin: 0; }
+.range { width: 100%; min-height: 44px; margin: 0; accent-color: var(--pink-d); }
 .name-dialog { display: grid; gap: 4px; }
 .name-head { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
 .name-head p { margin: 0; }

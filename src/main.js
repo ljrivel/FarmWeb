@@ -7,17 +7,23 @@ import { claim } from './quests.js';
 import { newWorld, getCorral, resolveScene } from './state.js';
 import { store, downloadWorld, readWorldFile } from './storage.js';
 import { MAX_OFFLINE_MS, SPECIES, rarityOf } from './data.js';
+import { createAudio } from './audio.js';
 
-const app = { w: null, sprites: null, scene: 'pradera', selectedId: null, fx: [], lastSaved: 0, k: 1 };
+const app = { w: null, sprites: null, scene: 'pradera', selectedId: null, fx: [], lastSaved: 0, k: 1, audio: null };
+// El sonido es opcional: sin localStorage o sin AudioContext el juego sigue igual, en silencio.
+const safeStorage = () => { try { return window.localStorage; } catch { return null; } };
+app.audio = createAudio({ storage: safeStorage(), AudioContextClass: window.AudioContext || window.webkitAudioContext });
 const ui = createUI(app);
 const $ = (id) => document.getElementById(id);
 
 const addFx = (x, y, icon) => app.fx.push({ x, y, t0: performance.now(), icon });
 
-function report(r, fxSpec) {
+/** Avisa del resultado; si salió bien dibuja el efecto y suena `snd` (si falló, el aviso ya suena «warn»). */
+function report(r, fxSpec, snd) {
   ui.toast(r.msg, r.ok ? 'ok' : 'warn');
   if (r.ok) {
     if (fxSpec) addFx(...fxSpec);
+    if (snd) app.audio.play(snd);
     ui.refresh();
   }
 }
@@ -26,48 +32,51 @@ function report(r, fxSpec) {
 app.feed = (id, food) => {
   const r = sim.feed(app.w, id, food);
   const a = sim.find(app.w, id);
-  report(r, a && [a.x, a.y, r.fav ? 'heart' : food]);
+  report(r, a && [a.x, a.y, r.fav ? 'heart' : food], r.fav ? 'feedFav' : 'feed');
 };
 app.pet = (id) => {
   const r = sim.pet(app.w, id);
   const a = sim.find(app.w, id);
-  report(r, a && [a.x, a.y, 'heart']);
+  report(r, a && [a.x, a.y, 'heart'], 'pet');
+  if (r.ok && a) app.audio.voice(a.species);
 };
 app.collect = (id) => {
   const r = sim.collect(app.w, id);
   const a = sim.find(app.w, id);
-  report(r, a && r.ok && [a.x, a.y, r.product]);
+  report(r, a && r.ok && [a.x, a.y, r.product], 'collect');
 };
-app.collectAll = () => report(sim.collectAll(app.w));
+app.collectAll = () => report(sim.collectAll(app.w), undefined, 'collect');
 app.buyAnimal = (s) => {
   const r = sim.buyAnimal(app.w, s);
-  if (r.ok) { app.goTo(r.animal.corral); app.selectedId = r.animal.id; }
-  report(r);
+  if (r.ok) { app.goTo(r.animal.corral, true); app.selectedId = r.animal.id; }
+  report(r, undefined, 'buy');
   if (r.ok) ui.askName(r.animal.id, true);
 };
 app.renameAnimal = (id, raw) => {
   const r = sim.renameAnimal(app.w, id, raw);
   if (r.ok) ui.closeSheet();
-  report(r);
+  report(r, undefined, 'named');
 };
-app.buyFood = (f, n) => report(sim.buyFood(app.w, f, n));
-app.buildCorral = (tipo) => report(sim.buildCorral(app.w, tipo));
-app.upgradeCorral = (id) => report(sim.upgradeCorral(app.w, id));
-app.sell = (p) => report(sim.sell(app.w, p));
+app.buyFood = (f, n) => report(sim.buyFood(app.w, f, n), undefined, 'buy');
+app.buildCorral = (tipo) => report(sim.buildCorral(app.w, tipo), undefined, 'build');
+app.upgradeCorral = (id) => report(sim.upgradeCorral(app.w, id), undefined, 'upgrade');
+app.sell = (p) => report(sim.sell(app.w, p), undefined, 'sell');
 app.sellAll = () => {
   let gain = 0;
   for (const p of Object.keys(app.w.products)) gain += sim.sell(app.w, p).gain || 0;
-  report(gain ? { ok: true, msg: `Vendiste todo por ${gain} monedas.` } : { ok: false, msg: 'No tienes nada que vender.' });
+  report(gain ? { ok: true, msg: `Vendiste todo por ${gain} monedas.` } : { ok: false, msg: 'No tienes nada que vender.' }, undefined, 'sell');
 };
 app.claimQuest = () => {
   const r = claim(app.w);
-  if (r.ok && r.animal) { app.goTo(r.animal.corral); app.selectedId = r.animal.id; }
-  report(r);
+  if (r.ok && r.animal) { app.goTo(r.animal.corral, true); app.selectedId = r.animal.id; }
+  report(r, undefined, 'quest');
   if (r.ok && r.animal) ui.askName(r.animal.id, true);
 };
 /** Cambia de escena ('mapa' o el id de un corral); una escena inválida vuelve a la Pradera. */
-app.goTo = (scene) => {
+app.goTo = (scene, quiet = false) => {
+  const before = app.scene;
   app.scene = resolveScene(app.w, scene);
+  if (!quiet && app.scene !== before) app.audio.play('map');
   const sel = app.selectedId ? sim.find(app.w, app.selectedId) : null;
   if (!sel || sel.corral !== app.scene) app.selectedId = null;
   ui.refresh();
@@ -134,9 +143,13 @@ function advance(now) {
         const kind = { poco: 'poco común', raro: 'rara', brillante: 'brillante' }[rar];
         const goName = () => { app.goTo(a.corral); app.selectedId = a.id; ui.refresh(); ui.askName(a.id, true); };
         ui.toast(kind ? `¡Nació ${a.name}, una cría ${kind}!` : `¡Nació ${a.name}! Toca para ponerle nombre.`, 'ok', goName);
+        app.audio.play('hatch');
+        // la fanfarria de rareza llega cuando el crujido del huevo ya casi terminó (si no, el tope de notas la cortaría)
+        if (rar === 'brillante') setTimeout(() => app.audio.play('shiny'), 500);
+        else if (rar !== 'comun') setTimeout(() => app.audio.play('rare'), 500);
       }
-      else if (e.type === 'egg') ui.toast(`${SPECIES[e.species].nombre} puso un huevo.`);
-      else if (e.type === 'grown') ui.toast(`¡${e.animal.name} creció!`);
+      else if (e.type === 'egg') { ui.toast(`${SPECIES[e.species].nombre} puso un huevo.`); app.audio.play('egg'); }
+      else if (e.type === 'grown') { ui.toast(`¡${e.animal.name} creció!`); app.audio.play('grown'); }
     }
   }
   w.lastTick = now;
@@ -159,7 +172,12 @@ function setupCanvas(canvas) {
     if (!hit) { app.selectedId = null; ui.refresh(); return; }
     if (hit.bubble) { app.collect(hit.animal.id); return; }
     if (app.selectedId === hit.animal.id) app.pet(hit.animal.id);
-    else { app.selectedId = hit.animal.id; ui.refresh(); }
+    else {
+      app.selectedId = hit.animal.id;
+      ui.refresh();
+      app.audio.play('tap');
+      app.audio.voice(hit.animal.species);
+    }
   });
 }
 
@@ -216,11 +234,18 @@ async function boot() {
 
   setInterval(() => saveNow(false), 10_000);
   document.addEventListener('visibilitychange', () => {
+    app.audio.setHidden(document.hidden);
     if (document.hidden) saveNow(false);
     else { advance(Date.now()); ui.refresh(); }
   });
   addEventListener('pagehide', () => saveNow(false));
-  if (location.search.includes('debug')) window.farmweb = { app, sim };
+  // Los navegadores solo dejan sonar tras un gesto: en móvil cuenta el soltar el dedo, no el tocar, así que se prueban todos
+  // (unlock es barato y no hace nada si ya está sonando; si el sistema lo interrumpe, el siguiente toque lo despierta).
+  for (const type of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) {
+    document.addEventListener(type, () => app.audio.unlock(), { capture: true, passive: true });
+  }
+  app.audio.setHidden(document.hidden);
+  if (location.search.includes('debug')) window.farmweb = { app, sim, audio: app.audio };
 }
 
 boot();
