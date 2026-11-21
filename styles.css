@@ -478,3 +478,7 @@ body.tuto-sheet .sheet { max-height: calc(100dvh - 275px); border-radius: 22px 2
 .stage { display: inline-block; padding: 1px 8px; border-radius: 999px; border: 2px solid var(--line); font-size: .75rem; font-weight: 800; line-height: 1.3; vertical-align: middle; color: var(--ink); }
 .stage.baby { background: #ffe9f0; border-color: #f2a6bd; }
 .stage.adult { background: #e4f1ff; border-color: #8fbfe8; }
+
+/* listas de nombres que bajan de renglón en vez de obligar a deslizar a la derecha */
+.tabs.wrap { flex-wrap: wrap; }
+.tabs.wrap .tab { flex: 1 1 auto; padding: 0 12px; }

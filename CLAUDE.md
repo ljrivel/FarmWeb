@@ -24,7 +24,7 @@ El dueño es Luis Josué; **responde siempre en español**.
 | Jugar en local (PC y celular en la misma Wi-Fi) | doble clic a `iniciar.bat` o `npm start` |
 | Pruebas unitarias | `npm test` (deben pasar todas; hoy 185) |
 | Regenerar sprites | `npm run sprites` (Python + Pillow; escribe `assets/sprites/*`) |
-| Recorrido en navegador | `python tools/e2e_smoke.py <carpeta_capturas>` (Playwright + Chrome; hoy 358 comprobaciones) |
+| Recorrido en navegador | `python tools/e2e_smoke.py <carpeta_capturas>` (Playwright + Chrome; hoy 364 comprobaciones) |
 
 Tras un cambio visible, recarga con Ctrl+F5. El servidor local envía `Cache-Control: no-store`.
 Con `?debug` en la URL queda disponible `window.farmweb = { app, sim, audio }`. `?sinescenas` y `?sintutorial` apagan las

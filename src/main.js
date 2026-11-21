@@ -93,6 +93,7 @@ app.pair = (a, b) => {
   const r = sim.pairAnimals(app.w, a, b);
   if (r.ok && [a, b].includes(app.selectedId)) app.selectedId = null; // un animal en el nido ya no está en el corral
   report(r, undefined, 'heart');
+  return r;
 };
 app.heat = (id) => report(sim.heatEgg(app.w, id), undefined, 'pet');
 app.setBreed = (corralId, mode) => report(sim.setCorralBreed(app.w, corralId, mode), undefined, 'tap');

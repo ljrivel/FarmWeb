@@ -1206,6 +1206,55 @@ def venta_lecciones(browser):
     ctx.close()
 
 
+def arreglos_criadero_vet(browser):
+    print("\n== Criadero que no se cierra, espacio para la cría y nombres en la Veterinaria")
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    page = ctx.new_page()
+    errors = []
+    page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(URL)
+    page.wait_for_function("document.getElementById('loading').hidden === true", timeout=15000)
+    page.evaluate("""(async () => {
+      const { QUESTS } = await import('/src/data.js');
+      const { addAnimal } = await import('/src/state.js');
+      const w = farmweb.app.w;
+      for (const q of QUESTS) { if (q.id === 'c2-mapache') break; w.quests.claimed[q.id] = true; }
+      w.coins = 5000;
+      farmweb.sim.buildCriadero(w);
+      while (farmweb.sim.hasSpace(w, 'pradera')) addAnimal(w, 'gallina', 0, 'adult');
+      for (const a of w.animals) { a.fed = 90; a.happy = 90; a.cool = 0; }
+    })()""")
+    page.click('[data-goto="mapa"]')
+    page.wait_for_timeout(300)
+    gbox = page.locator("#game").bounding_box()
+    page.touchscreen.tap(gbox["x"] + 36 * gbox["width"] / 320, gbox["y"] + 34 * gbox["height"] / 224)
+    page.wait_for_timeout(1500)
+    check(not page.evaluate("document.getElementById('backdrop').hidden"), "con un toque de verdad el Criadero se queda abierto")
+    page.locator('[data-key="pair-sp-gallina"]').click()
+    picks = page.locator('[data-key^="pick-"]')
+    picks.nth(0).click(); picks.nth(1).click()
+    check("No hay espacio en Pradera" in page.locator("#sheetBody").inner_text(), "sin lugar para la cría avisa antes de emparejar")
+    check(page.locator('[data-key="pair-go"]').is_disabled(), "y no deja emparejar")
+    check(page.locator('[data-key^="pick-"].mint').count() == 2, "sin perder los dos animales que elegiste")
+    page.keyboard.press("Escape")
+    page.evaluate("""(() => {
+      const w = farmweb.app.w;
+      w.animals.forEach((a, i) => { if (i % 2 === 0) a.sick = 'resfriado'; });
+    })()""")
+    page.click('[data-goto="mapa"]')
+    page.wait_for_timeout(300)
+    page.mouse.click(gbox["x"] + 164 * gbox["width"] / 320, gbox["y"] + 48 * gbox["height"] / 224)
+    page.wait_for_selector('[data-key^="chk-"]', timeout=3000)
+    tabs = page.locator('[data-key^="chk-"]')
+    ancho = page.evaluate("document.querySelector('#sheetBody').clientWidth")
+    check(page.evaluate("[...document.querySelectorAll('[data-key^=chk-]')].every((e) => e.getBoundingClientRect().right <= document.getElementById('sheetBody').getBoundingClientRect().right + 1)"), f"todos los nombres del Chequeo caben sin deslizar a la derecha ({tabs.count()} animales)")
+    page.locator('[data-key^="chk-"]').first.scroll_into_view_if_needed()
+    page.screenshot(path=f"{SHOTS}/movil-94-chequeo-nombres.png")
+    check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
+    ctx.close()
+
+
 def auto_update(browser):
     print("\n== actualización automática")
     ctx = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
@@ -1351,6 +1400,7 @@ def main():
             criadero_flow(browser)
             lab_flow(browser)
             venta_lecciones(browser)
+            arreglos_criadero_vet(browser)
             auto_update(browser)
             vet_interactiva(browser)
             tutorial_flow(browser, "movil", {"width": 390, "height": 844}, 3, True)

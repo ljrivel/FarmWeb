@@ -10,6 +10,7 @@ import {
   rarityOf, rarityLabel, MAX_HEARTS, DISEASES,
 } from './data.js';
 import { spriteRow } from './render.js';
+import { corralOfSpecies } from './state.js';
 import * as sim from './sim.js';
 import { activeQuest, progress, rewardText, activeSide, doneSide, sideProgress } from './quests.js';
 
@@ -226,7 +227,9 @@ export function createUI(app) {
   const backdrop = () => $('backdrop');
   const body = () => $('sheetBody');
 
+  let openedAt = 0;
   function openSheet(name, title, render, opts = {}) {
+    if (backdrop().hidden) openedAt = performance.now();
     current = { name, title, render, keep: !!opts.keep };
     $('sheetTitle').textContent = title;
     body().replaceChildren(render());
@@ -463,12 +466,13 @@ export function createUI(app) {
     const candidates = ORDER.filter((s) => sim.eligibleParents(w, s).length >= 2);
     if (pairSp && !candidates.includes(pairSp)) { pairSp = null; pairIds = []; }
     pairIds = pairIds.filter((id) => sim.find(w, id) && sim.canNest(sim.find(w, id)));
+    const room = (s) => { const c = corralOfSpecies(w, s); return !!c && sim.hasSpace(w, c.id); };
     let pairing;
     if (!info.free) pairing = h('p', { class: 'muted small', text: 'No quedan cupos libres: espera a que nazca alguna cría o mejora el Criadero.' });
     else if (!candidates.length) pairing = h('p', { class: 'muted small', text: 'Ahora no hay dos adultos de la misma especie, sanos, comidos y contentos para emparejar.' });
     else {
       pairing = h('div', null,
-        h('div', { class: 'tabs', role: 'group', 'aria-label': 'Especie' }, candidates.map((s) => h('button', {
+        h('div', { class: 'tabs wrap', role: 'group', 'aria-label': 'Especie' }, candidates.map((s) => h('button', {
           class: 'tab', type: 'button', 'aria-pressed': String(pairSp === s), 'data-key': `pair-sp-${s}`,
           onclick: () => { pairSp = pairSp === s ? null : s; pairIds = []; refreshSheet(); },
         }, SPECIES[s].nombre))),
@@ -479,7 +483,8 @@ export function createUI(app) {
             class: `btn${pairIds.includes(a.id) ? ' mint' : ''}`, type: 'button', 'aria-pressed': String(pairIds.includes(a.id)), 'data-key': `pick-${a.id}`,
             onclick: () => { pairIds = pairIds.includes(a.id) ? pairIds.filter((x) => x !== a.id) : [...pairIds, a.id].slice(-2); refreshSheet(); },
           }, pairIds.includes(a.id) ? 'Elegido' : 'Elegir'))),
-        pairSp && btn('Emparejar', () => { const [x, y] = pairIds; pairIds = []; pairSp = null; app.pair(x, y); }, { cls: 'primary', disabled: pairIds.length !== 2, key: 'pair-go' }));
+        pairSp && !room(pairSp) && h('p', { class: 'warn small', text: `No hay espacio en ${CORRAL_TYPES[corralTypeOf(pairSp)].nombre} para la cría: amplía el corral o vende un animal antes de emparejar.` }),
+        pairSp && btn('Emparejar', () => { const [x, y] = pairIds; if (app.pair(x, y).ok) { pairIds = []; pairSp = null; } else refreshSheet(); }, { cls: 'primary', disabled: pairIds.length !== 2 || !room(pairSp), key: 'pair-go' }));
     }
     return h('div', null,
       h('p', { class: 'muted', text: `Nivel ${info.level + 1} de ${info.maxLevel + 1} · cupos ${info.used}/${info.slots}${perk}` }),
@@ -647,7 +652,7 @@ export function createUI(app) {
       }) : h('div', { class: 'empty' }, icon('vet', 3), h('p', { text: 'Todos tus animales están sanos. ¡Buen trabajo!' })),
       h('h3', { text: 'Chequeo' }),
       h('p', { class: 'muted small', text: `${sim.vetCheckupPrice(w)} monedas: ${doc.nombre} te cuenta cómo está un animal y qué riesgo tiene de enfermar.` }),
-      h('div', { class: 'tabs', role: 'group', 'aria-label': 'Animal a revisar' }, checkups.slice(0, 24).map((a) => h('button', {
+      h('div', { class: 'tabs wrap', role: 'group', 'aria-label': 'Animal a revisar' }, checkups.map((a) => h('button', {
         class: 'tab', type: 'button', 'data-key': `chk-${a.id}`, 'aria-pressed': String(vetReport?.id === a.id),
         onclick: () => { const r = app.vetCheckup(a.id); vetReport = r.ok ? r.report : null; refreshSheet(); },
       }, a.name))),
@@ -1113,7 +1118,8 @@ export function createUI(app) {
     $('collectAll').addEventListener('click', () => app.collectAll());
     $('giftChip').addEventListener('click', () => app.claimGift());
     $('sheetClose').addEventListener('click', closeSheet);
-    backdrop().addEventListener('click', (e) => { if (e.target === backdrop()) closeSheet(); });
+    // el «click» que sigue al toque que abrió la hoja cae sobre el fondo: sin este margen se cerraba sola (pasaba al abrir el Criadero desde el mapa en el celular)
+    backdrop().addEventListener('click', (e) => { if (e.target === backdrop() && performance.now() - openedAt > 450) closeSheet(); });
     document.addEventListener('keydown', trapTab);
   }
 
