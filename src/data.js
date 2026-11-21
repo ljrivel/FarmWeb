@@ -19,7 +19,9 @@ export const BALANCE = {
   petCooldown: 20000,
   minFedToBreed: 40,
   minHappyToBreed: 60,
-  mutationChance: 0.04,
+  // Cría: 85 % hereda el color de un padre; 15 % muta (10,5 % poco común y 4,5 % raro del total).
+  mutationChance: 0.15,
+  mutantTierOdds: { poco: 0.7, raro: 0.3 },
   shinyChance: 0.02,
   shinyChanceParent: 0.15,
   maxReady: 3,
@@ -46,53 +48,64 @@ export const SPECIES = {
   gallina: {
     nombre: 'Gallina', food: 'grano', product: 'huevo', price: 40,
     grow: 3 * MIN, prod: 90 * 1000, breed: 2 * MIN, aquatic: false,
-    variants: ['Blanca', 'Marrón'],
+    variants: ['Blanca', 'Marrón', 'Dorada', 'Lavanda'],
     names: ['Pepita', 'Cocó', 'Plumita', 'Huevito', 'Pollita'],
   },
   gato: {
     nombre: 'Gato', food: 'pescadito', product: 'pelusa', price: 80,
     grow: 4 * MIN, prod: 150 * 1000, breed: 3 * MIN, aquatic: false,
-    variants: ['Naranja', 'Gris'],
+    variants: ['Naranja', 'Gris', 'Siamés', 'Medianoche'],
     names: ['Misi', 'Bigotes', 'Mochi', 'Nube', 'Canela'],
   },
   vaca: {
     nombre: 'Vaca', food: 'heno', product: 'leche', price: 150,
     grow: 6 * MIN, prod: 180 * 1000, breed: 4 * MIN, aquatic: false,
-    variants: ['Blanquinegra', 'Marrón'],
+    variants: ['Blanquinegra', 'Marrón', 'Fresa', 'Galaxia'],
     names: ['Manchita', 'Lola', 'Violeta', 'Flor', 'Lechuga'],
   },
   mapache: {
     nombre: 'Mapache', food: 'bayas', product: 'brillito', price: 180,
     grow: 5 * MIN, prod: 200 * 1000, breed: 4 * MIN, aquatic: false,
-    variants: ['Gris', 'Canela'],
+    variants: ['Gris', 'Canela', 'Rojizo', 'Nieve'],
     names: ['Antifaz', 'Rocío', 'Pipo', 'Nuez', 'Tizón'],
   },
   chanchito: {
     nombre: 'Chanchito', food: 'bayas', product: 'trufa', price: 200,
     grow: 5 * MIN, prod: 240 * 1000, breed: 4 * MIN, aquatic: false,
-    variants: ['Rosa', 'Lunares'],
+    variants: ['Rosa', 'Lunares', 'Chocolate', 'Algodón'],
     names: ['Bolita', 'Rosita', 'Pimpón', 'Fresita', 'Cerdi'],
   },
   ajolote: {
     nombre: 'Ajolote', food: 'gusanito', product: 'burbuja', price: 260,
     grow: 6 * MIN, prod: 240 * 1000, breed: 5 * MIN, aquatic: true,
-    variants: ['Rosa', 'Dorado'],
+    variants: ['Rosa', 'Dorado', 'Menta', 'Medianoche'],
     names: ['Axi', 'Burbuja', 'Coral', 'Luna', 'Gominola'],
   },
   carnotauro: {
     nombre: 'Carnotauro', food: 'carnita', product: 'escama_fuego', price: null,
     grow: 10 * MIN, prod: 360 * 1000, breed: 8 * MIN, aquatic: false,
-    variants: ['Coral', 'Menta'],
+    variants: ['Coral', 'Menta', 'Lavanda', 'Medianoche'],
     names: ['Rawr', 'Cuernitos', 'Brasa', 'Dino', 'Pelusa'],
   },
   spinosaurus: {
     nombre: 'Spinosaurus', food: 'pescadito', product: 'escama_rio', price: null,
     grow: 10 * MIN, prod: 360 * 1000, breed: 8 * MIN, aquatic: true,
-    variants: ['Azul', 'Verde'],
+    variants: ['Azul', 'Verde', 'Naranja', 'Violeta'],
     names: ['Vela', 'Río', 'Gigi', 'Splash', 'Nessie'],
   },
 };
 export const ORDER = Object.keys(SPECIES);
+
+// Colores: el índice de `variants` fija la rareza. Los 2 primeros son los comunes (tienda y regalos
+// solo dan estos); el 2 es poco común y el 3 raro (solo nacen por mutación). El brillante es aparte.
+export const COMMON_VARIANTS = 2;
+export const VARIANT_TIERS = ['comun', 'comun', 'poco', 'raro'];
+export const TIER_LABEL = { comun: 'Común', poco: 'Poco común', raro: 'Raro', brillante: 'Brillante' };
+/** Rareza de un animal o huevo: el brillante gana sobre el color. */
+export const rarityOf = (a) => (a.shiny ? 'brillante' : VARIANT_TIERS[a.variant] || 'comun');
+export const rarityLabel = (a) => TIER_LABEL[rarityOf(a)];
+/** Clave de fila del atlas de sprites: el brillante tiene su propia fila en vez del número de color. */
+export const spriteKey = (species, variant, shiny, stage) => `${species}:${shiny ? 'shiny' : variant}:${stage}`;
 
 export const FOODS = {
   grano: { nombre: 'Grano', price: 10 },

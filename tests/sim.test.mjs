@@ -283,7 +283,7 @@ test('simulación de 8 h con 4 corrales: sin NaN y dentro de los topes', () => {
   assert.ok(w.eggs.length <= 30);
 });
 
-test('la cría hereda color de un padre (sin mutar, 2 variantes)', () => {
+test('la cría hereda color de un padre: con distintas semillas salen ambos colores comunes', () => {
   let seen = new Set();
   for (let seed = 1; seed < 60; seed++) {
     const w = fresh(seed);
@@ -291,7 +291,8 @@ test('la cría hereda color de un padre (sin mutar, 2 variantes)', () => {
     sim.tick(w, 1000);
     seen.add(w.eggs[0].variant);
   }
-  assert.deepEqual([...seen].sort(), [0, 1], 'salen ambos colores con distintas semillas');
+  assert.ok(seen.has(0) && seen.has(1), 'salen ambos colores comunes con distintas semillas');
+  assert.ok([...seen].every((v) => v >= 0 && v <= 3), 'siempre un color válido');
 });
 
 test('la simulación es determinista con la misma semilla', () => {
