@@ -49,6 +49,9 @@ export const VOICES = {
   ajolote: [n('sine', 0, 0.07, 500, 0.14, { f1: 900 }), n('sine', 0.1, 0.07, 650, 0.14, { f1: 1100 }), n('sine', 0.2, 0.08, 420, 0.14, { f1: 800 })],
   carnotauro: [n('sawtooth', 0, 0.6, 90, 0.22, { f1: 70, lp: 400 }), n('noise', 0, 0.5, 200, 0.1, { lp: 300 })],
   spinosaurus: [n('sine', 0, 0.45, 1600, 0.12, { f1: 700 }), n('triangle', 0.04, 0.4, 1200, 0.08, { f1: 500 })],
+  // conejo: dos golpecitos de nariz muy suaves; pato: un «cuac» nasal corto
+  conejo: [n('sine', 0, 0.04, 1800, 0.08, { f1: 2200 }), n('sine', 0.07, 0.04, 1900, 0.08, { f1: 2300 })],
+  pato: [n('square', 0, 0.12, 520, 0.07, { f1: 420, lp: 1400 }), n('square', 0.16, 0.12, 500, 0.07, { f1: 400, lp: 1400 })],
 };
 
 // ------------------------------------------------------------- programación

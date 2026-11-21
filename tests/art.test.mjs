@@ -14,16 +14,17 @@ test('el atlas tiene una fila para cada especie x color x etapa y para cada bril
       esperadas.push(spriteKey(s, 0, true, stage));
     }
   }
-  assert.equal(esperadas.length, 80);
-  assert.equal(new Set(esperadas).size, 80, 'sin claves repetidas');
+  assert.equal(esperadas.length, Object.keys(SPECIES).length * 10);
+  assert.equal(esperadas.length, 100);
+  assert.equal(new Set(esperadas).size, 100, 'sin claves repetidas');
   for (const k of esperadas) assert.ok(k in json.rows, `falta la fila ${k}`);
-  assert.equal(Object.keys(json.rows).length, 80, 'ninguna fila de más');
+  assert.equal(Object.keys(json.rows).length, 100, 'ninguna fila de más');
   const idx = Object.values(json.rows).sort((a, b) => a - b);
   assert.deepEqual(idx, idx.map((_, i) => i), 'filas consecutivas desde 0');
 });
 
-test('el PNG mide 4 cuadros de ancho y 80 filas de alto', () => {
+test('el PNG mide 4 cuadros de ancho y 100 filas de alto', () => {
   assert.equal(png.readUInt32BE(16), 4 * 32);
-  assert.equal(png.readUInt32BE(20), 80 * 32);
+  assert.equal(png.readUInt32BE(20), 100 * 32);
   for (const [s, n] of Object.entries(json.species)) assert.equal(n, SPECIES[s].variants.length, s);
 });

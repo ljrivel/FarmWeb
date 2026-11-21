@@ -91,7 +91,27 @@
   "spinosaurus:3:baby": 76,
   "spinosaurus:3:adult": 77,
   "spinosaurus:shiny:baby": 78,
-  "spinosaurus:shiny:adult": 79
+  "spinosaurus:shiny:adult": 79,
+  "conejo:0:baby": 80,
+  "conejo:0:adult": 81,
+  "conejo:1:baby": 82,
+  "conejo:1:adult": 83,
+  "conejo:2:baby": 84,
+  "conejo:2:adult": 85,
+  "conejo:3:baby": 86,
+  "conejo:3:adult": 87,
+  "conejo:shiny:baby": 88,
+  "conejo:shiny:adult": 89,
+  "pato:0:baby": 90,
+  "pato:0:adult": 91,
+  "pato:1:baby": 92,
+  "pato:1:adult": 93,
+  "pato:2:baby": 94,
+  "pato:2:adult": 95,
+  "pato:3:baby": 96,
+  "pato:3:adult": 97,
+  "pato:shiny:baby": 98,
+  "pato:shiny:adult": 99
  },
  "species": {
   "gallina": 4,
@@ -101,7 +121,9 @@
   "chanchito": 4,
   "ajolote": 4,
   "carnotauro": 4,
-  "spinosaurus": 4
+  "spinosaurus": 4,
+  "conejo": 4,
+  "pato": 4
  },
- "version": "65dd9d4a55"
+ "version": "c75bd16a25"
 }

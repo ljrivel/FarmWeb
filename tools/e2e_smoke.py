@@ -496,6 +496,38 @@ def secrets(browser):
     ctx.close()
 
 
+def new_content(browser):
+    """Etapa d: conejo y pato se compran, se dibujan, enferman y se curan."""
+    print("\n== especies nuevas (conejo y pato)")
+    ctx, page, errors = new_page(browser, {"width": 390, "height": 844}, 2, True)
+    page.evaluate("const w = farmweb.app.w; w.coins = 5000; w.unlocked.push('conejo', 'pato')")
+    page.click('[data-panel="shop"]')
+    page.locator('[data-key="tab-corrales"]').click()
+    page.locator('[data-key="build-bosque"]').click()
+    page.locator('[data-key="build-estanque"]').click()
+    page.locator('[data-key="tab-animals"]').click()
+    for sp in ("conejo", "pato"):
+        page.locator(f'[data-key="buy-{sp}"]').click()
+        page.wait_for_timeout(250)
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(150)
+        if sp == "conejo":
+            page.click('[data-panel="shop"]')
+    check(page.evaluate("farmweb.app.w.animals.some(a => a.species === 'conejo' && a.corral === 'bosque')"), "el conejo vive en el Bosque")
+    check(page.evaluate("farmweb.app.w.animals.some(a => a.species === 'pato' && a.corral === 'estanque')"), "el pato vive en el Estanque")
+    page.screenshot(path=f"{SHOTS}/movil-16-pato.png")
+    pid = page.evaluate("farmweb.app.w.animals.find(a => a.species === 'pato').id")
+    page.evaluate(f"farmweb.sim.makeSick(farmweb.app.w, {pid}, 'pulgas'); farmweb.app.selectedId = {pid}; farmweb.app.goTo('estanque')")
+    page.wait_for_timeout(1200)
+    check("Enfermo: Pulgas" in page.locator("#selected").inner_text(), "el pato puede enfermar")
+    page.locator(f'[data-key="vet-{pid}"]').click()
+    page.locator(f'[data-key="cure-{pid}"]').click()
+    page.wait_for_timeout(250)
+    check(page.evaluate(f"farmweb.app.w.animals.find(a => a.id === {pid}).sick") is None, "y curarse en la Veterinaria")
+    check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
+    ctx.close()
+
+
 def main():
     server = subprocess.Popen([sys.executable, "-m", "http.server", str(PORT), "--bind", "127.0.0.1"],
                               cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -514,6 +546,7 @@ def main():
             care_flow(browser, "pc", {"width": 1280, "height": 800}, 1, False)
             side_quests(browser)
             secrets(browser)
+            new_content(browser)
             browser.close()
     finally:
         server.terminate()

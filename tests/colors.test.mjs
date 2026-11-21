@@ -8,6 +8,7 @@ const ACTUALES = {
   gallina: ['Blanca', 'Marrón'], gato: ['Naranja', 'Gris'], vaca: ['Blanquinegra', 'Marrón'],
   mapache: ['Gris', 'Canela'], chanchito: ['Rosa', 'Lunares'], ajolote: ['Rosa', 'Dorado'],
   carnotauro: ['Coral', 'Menta'], spinosaurus: ['Azul', 'Verde'],
+  conejo: ['Blanco', 'Gris'], pato: ['Amarillo', 'Blanco'], // especies nuevas de la etapa d
 };
 
 test('cada especie tiene 4 colores con nombres distintos y los 2 primeros son los actuales', () => {

@@ -323,6 +323,44 @@ def spino_face(c, p, blink):
     pxs(c, [(-4, -4), (-3, -3), (-2, -3), (-1, -3), (0, -3), (1, -3), (2, -3), (3, -3), (4, -4)], EYE)
 
 
+# -------------------------------------------------------------------- conejo
+def conejo_body(c, p):
+    c.ell(11, -3, 3, 3, p["belly"])               # colita de algodón
+    c.ell(-5, -20, 3, 7, p["body"])               # orejas largas
+    c.ell(5, -20, 3, 7, p["body"])
+    c.ell(-5, -20, 1, 5, p["ear"])
+    c.ell(5, -20, 1, 5, p["ear"])
+    c.ell(0, -8, 10, 8, p["body"])
+    c.ell(0, -5, 6, 4, p["belly"])
+    c.ell(-5, -1, 3, 2, p["belly"])
+    c.ell(5, -1, 3, 2, p["belly"])
+
+
+def conejo_face(c, p, blink):
+    eyes(c, -10, 5, blink)
+    blush(c, -7, 8)
+    c.rect(-1, -8, 1, -8, p["nose"])
+    pxs(c, [(0, -7), (-1, -6), (1, -6)], EYE)
+
+
+# ---------------------------------------------------------------------- pato
+def pato_body(c, p):
+    c.ell(0, -20, 2, 2, p["body"])                # copete
+    c.ell(1, -22, 1, 1, p["body"])
+    c.ell(0, -9, 11, 9, p["body"])
+    c.ell(-10, -7, 3, 4, p["wing"])
+    c.ell(10, -7, 3, 4, p["wing"])
+    c.rect(-5, -1, -2, 1, p["feet"])
+    c.rect(2, -1, 5, 1, p["feet"])
+
+
+def pato_face(c, p, blink):
+    eyes(c, -12, 5, blink)
+    blush(c, -8, 8)
+    c.ell(0, -7, 4, 2, p["beak"])
+    c.rect(-3, -7, 3, -7, shade(p["beak"], 0.85))
+
+
 SPECIES = {
     "gallina": (gallina_body, gallina_face, [
         dict(body="#fffaf0", wing="#f1e0cc", comb="#ff7b8e", beak="#ffb347", feet="#ffb347"),
@@ -372,6 +410,18 @@ SPECIES = {
         dict(body="#ffae7a", belly="#fff1e4", sail="#74c7da", ribs="#4aa2ba", dark="#e8844a", snout="#ffc9a3"),  # Naranja
         dict(body="#b79af0", belly="#f4eeff", sail="#ffc66e", ribs="#e39b3f", dark="#9378d6", snout="#d2c0f7"),  # Violeta
     ]),
+    "conejo": (conejo_body, conejo_face, [
+        dict(body="#fffaf4", ear="#ffc4cf", belly="#ffffff", nose="#ff8fa3"),
+        dict(body="#c3c6d4", ear="#ffc4cf", belly="#f4f4fb", nose="#ff8fa3"),
+        dict(body="#e2b48a", ear="#ffc9b0", belly="#fff1e0", nose="#d97a6a"),  # Canela
+        dict(body="#bfe1ff", ear="#ffc4e6", belly="#f2f9ff", nose="#ff8fb8"),  # Cielo
+    ]),
+    "pato": (pato_body, pato_face, [
+        dict(body="#ffe27a", wing="#f5c94a", beak="#ffa64d", feet="#ff9a3c"),
+        dict(body="#fffdf8", wing="#e9e2d6", beak="#ffb04d", feet="#ffa040"),
+        dict(body="#b9ecd6", wing="#8fd8bc", beak="#ffb36b", feet="#ff9f5a"),  # Menta
+        dict(body="#ffc9dc", wing="#ffa8c4", beak="#ffb36b", feet="#ff9f5a"),  # Rosado
+    ]),
 }
 STAGES = {"baby": 0.74, "adult": 1.0}
 
@@ -385,6 +435,8 @@ SHINY = {
     "ajolote": dict(body="#fff0b0", belly="#fffbe6", gill="#7fe3d6"),
     "carnotauro": dict(body="#ffe39a", belly="#fffbe6", horn="#9fe8e0", dark="#f0b84a", foot="#f5c562", snout="#ffeebb"),
     "spinosaurus": dict(body="#fff0b0", belly="#fffbe6", sail="#7fe3d6", ribs="#3fbfae", dark="#f0c85a", snout="#fff3c8"),
+    "conejo": dict(body="#fff3c4", ear="#9fe8e0", belly="#fffbea", nose="#ffb04d"),
+    "pato": dict(body="#fff6d0", wing="#ffd77a", beak="#7fe0d4", feet="#7fe0d4"),
 }
 
 
@@ -545,6 +597,27 @@ def ic_candado(c):
     c.px(8, 11, EYE)
 
 
+# ---- especies nuevas: comida y productos
+def ic_zanahoria(c):
+    c.poly([(5, 5), (11, 5), (8, 14)], hx("#ff9a4d"))
+    for x in (6, 8, 10):
+        c.rect(x, 2, x, 4, hx("#6fbf6a"))
+    c.px(7, 7, hx("#e07a3a"))
+    c.px(9, 9, hx("#e07a3a"))
+
+
+def ic_lana(c):
+    for x, y in ((6, 7), (10, 7), (8, 10), (5, 10), (11, 10)):
+        c.ell(x, y, 3, 3, hx("#f4ecff"))
+    c.px(6, 6, WHITE)
+
+
+def ic_pluma(c):
+    c.poly([(11, 2), (13, 4), (5, 13), (3, 11)], hx("#ffe9a8"))
+    c.poly([(11, 2), (12, 3), (4, 12), (3, 11)], hx("#fff6d6"))
+    c.rect(3, 12, 4, 13, hx("#d9a24a"))
+
+
 # ---- fase 2B: enfermedades y veterinaria
 def ic_gota(c):  # resfriado
     c.poly([(8, 2), (4, 9), (12, 9)], hx("#8fd0ff"))
@@ -595,6 +668,7 @@ ICONS = [
     ("mapa", "#fff1cf", ic_mapa), ("candado", "#d9c7e6", ic_candado),
     ("gota", "#8fd0ff", ic_gota), ("pancita", "#ffc9a8", ic_pancita), ("pulga", "#b08968", ic_pulga),
     ("nube", "#c9cbe0", ic_nube), ("vet", "#ff6f91", ic_vet),
+    ("zanahoria", "#ff9a4d", ic_zanahoria), ("lana", "#e6dcf5", ic_lana), ("pluma", "#ffe9a8", ic_pluma),
 ]
 
 

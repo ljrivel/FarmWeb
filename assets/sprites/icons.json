@@ -25,7 +25,10 @@
   "pancita": 21,
   "pulga": 22,
   "nube": 23,
-  "vet": 24
+  "vet": 24,
+  "zanahoria": 25,
+  "lana": 26,
+  "pluma": 27
  },
- "version": "7010f32062"
+ "version": "b22243e975"
 }

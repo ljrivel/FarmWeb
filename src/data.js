@@ -58,8 +58,8 @@ export const DISEASE_ORDER = Object.keys(DISEASES);
 const LAND = { x0: 28, x1: 292, y0: 66, y1: 204 };
 export const CORRAL_TYPES = {
   pradera: { nombre: 'Pradera', species: ['gallina', 'gato', 'vaca', 'chanchito'], cap: 8, cost: 0, area: LAND, aquatic: false },
-  bosque: { nombre: 'Bosque', species: ['mapache'], cap: 6, cost: 300, area: LAND, aquatic: false },
-  estanque: { nombre: 'Estanque', species: ['ajolote', 'spinosaurus'], cap: 6, cost: 250, area: { x0: 52, x1: 268, y0: 104, y1: 196 }, aquatic: true },
+  bosque: { nombre: 'Bosque', species: ['mapache', 'conejo'], cap: 6, cost: 300, area: LAND, aquatic: false },
+  estanque: { nombre: 'Estanque', species: ['ajolote', 'spinosaurus', 'pato'], cap: 6, cost: 250, area: { x0: 52, x1: 268, y0: 104, y1: 196 }, aquatic: true },
   jurasico: { nombre: 'Jurásico', species: ['carnotauro'], cap: 4, cost: null, area: LAND, aquatic: false },
 };
 export const CORRAL_TYPE_ORDER = ['pradera', 'bosque', 'estanque', 'jurasico'];
@@ -119,7 +119,20 @@ export const SPECIES = {
     nombre: 'Spinosaurus', food: 'pescadito', product: 'escama_rio', price: null,
     grow: 10 * MIN, prod: 360 * 1000, breed: 8 * MIN, aquatic: true,
     variants: ['Azul', 'Verde', 'Naranja', 'Violeta'],
-    names: ['Vela', 'Río', 'Gigi', 'Splash', 'Nessie'],
+    names: ['Vela', 'Río', 'Gigi', 'Splash', 'Gota'],
+  },
+  // Especies nuevas (se conocen con misiones secundarias del capítulo 2 y 3)
+  conejo: {
+    nombre: 'Conejo', food: 'zanahoria', product: 'lana', price: 160,
+    grow: 4 * MIN, prod: 170 * 1000, breed: 3 * MIN, aquatic: false,
+    variants: ['Blanco', 'Gris', 'Canela', 'Cielo'],
+    names: ['Saltarín', 'Copito', 'Orejitas', 'Bombón', 'Algodón'],
+  },
+  pato: {
+    nombre: 'Pato', food: 'grano', product: 'pluma', price: 220,
+    grow: 5 * MIN, prod: 210 * 1000, breed: 4 * MIN, aquatic: true,
+    variants: ['Amarillo', 'Blanco', 'Menta', 'Rosado'],
+    names: ['Cuac', 'Patito', 'Plumón', 'Charco', 'Lulú'],
   },
 };
 export const ORDER = Object.keys(SPECIES);
@@ -142,6 +155,7 @@ export const FOODS = {
   bayas: { nombre: 'Bayas', price: 12 },
   carnita: { nombre: 'Carnita', price: 18 },
   gusanito: { nombre: 'Gusanitos', price: 14 },
+  zanahoria: { nombre: 'Zanahoria', price: 12 },
 };
 
 export const PRODUCTS = {
@@ -153,6 +167,8 @@ export const PRODUCTS = {
   burbuja: { nombre: 'Burbuja', price: 24 },
   escama_fuego: { nombre: 'Escama de fuego', price: 45 },
   escama_rio: { nombre: 'Escama de río', price: 45 },
+  lana: { nombre: 'Lanita', price: 18 },
+  pluma: { nombre: 'Pluma', price: 22 },
 };
 
 // Personajes: hablan en las misiones (campo `who`). `rol` explica su lugar en la historia.
@@ -162,6 +178,8 @@ export const CHARACTERS = {
   pita: { nombre: 'Dra. Pita', rol: 'La veterinaria del pueblo', color: '#bfe4ff' },
   ramon: { nombre: 'Don Ramón', rol: 'El comerciante que compra tus productos', color: '#ffe08a' },
   lia: { nombre: 'Lía', rol: 'Guía del río perdido, amiga de la abuela de joven', color: '#c9b6f2' },
+  mia: { nombre: 'Mía', rol: 'La hermanita de Tomás, coleccionista de cosas suaves', color: '#ffc9dc' },
+  bruno: { nombre: 'Bruno', rol: 'El cartero del pueblo, que trae las cartas de la abuela', color: '#ffd3a8' },
 };
 
 // Misiones de historia, en orden. Meta: { type, ... } (ver quests.js).
@@ -299,6 +317,21 @@ export const SIDE_QUESTS = [
   { id: 's-rio', minCh: 4, needs: 'spinosaurus', who: 'lia', title: 'Escamas del río',
     text: 'Quiero hacerle un collar a Cosi para cuando vuelva. Recoge 2 escamas de río.',
     goal: { type: 'collect', product: 'escama_rio', n: 2 }, reward: { coins: 150 } },
+  { id: 's-conejo', minCh: 2, who: 'mia', title: 'Huellitas en el bosque',
+    text: '¡Vi huellitas redondas cerca de los arbustos! Creo que es un conejo tímido. Si acaricias a tus animales 15 veces, se animará a venir.',
+    goal: { type: 'petted', n: 15 }, reward: { unlock: ['conejo'], foods: { zanahoria: 5 } } },
+  { id: 's-lana', minCh: 2, needs: 'conejo', who: 'mia', title: 'Una bufanda suavecita',
+    text: 'Quiero tejerle una bufanda a la abuela con lanita de conejo. Recoge 4 lanitas.',
+    goal: { type: 'collect', product: 'lana', n: 4 }, reward: { coins: 70 } },
+  { id: 's-cartas', minCh: 2, who: 'bruno', title: 'Cartas atrasadas',
+    text: 'Traigo un montón de cartas de la abuela que se mojaron en la tormenta. Mientras las seco, cuídame la granja: da de comer 20 veces.',
+    goal: { type: 'fed', n: 20 }, reward: { coins: 60, foods: { zanahoria: 3, grano: 3 } } },
+  { id: 's-pato', minCh: 3, needs: 'ajolote', who: 'mia', title: 'Un pato perdido',
+    text: '¡Un patito siguió a los ajolotes hasta el estanque! Para que se quede, recoge 2 burbujas: le encanta jugar con ellas.',
+    goal: { type: 'collect', product: 'burbuja', n: 2 }, reward: { unlock: ['pato'], foods: { grano: 6 } } },
+  { id: 's-plumas', minCh: 3, needs: 'pato', who: 'bruno', title: 'Plumas para escribir',
+    text: 'Con plumas de pato escribo las direcciones más bonitas del pueblo. Recoge 3 plumas.',
+    goal: { type: 'collect', product: 'pluma', n: 3 }, reward: { coins: 90 } },
   { id: 's-zoologico', minCh: 4, who: 'tomas', title: '¡Parece un zoológico!',
     text: 'Mis amigos no me creen cuántos animales tienes. Cuida a 15 animales a la vez.',
     goal: { type: 'owncount', n: 15 }, reward: { coins: 200 } },
