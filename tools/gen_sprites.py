@@ -1593,32 +1593,36 @@ def pt_noa(c, p):
 
 
 def _maomao_cuerpo(c, p, gato):
-    c.ell(0, 12, 10.8, 10, p["hair"])                        # pelo detrás de la cabeza: ajustado, sin efecto casco
+    hy = 15 if gato else 14                                  # la versión chibi tiene la cara más baja y ancha
+    rx, ry = (11, 8.5) if gato else (10, 9.5)
+    c.ell(0, hy - 2, rx + 0.8, ry + 1.5, p["hair"])          # pelo detrás de la cabeza, ajustado
     if gato:
         for sg in (-1, 1):
-            c.poly([(sg * 10, 7), (sg * 9, 0), (sg * 3, 5)], p["hair"])          # orejas de gato
-            c.poly([(sg * 8, 6), (sg * 8, 2), (sg * 5, 5)], p["ear"])
+            c.poly([(sg * 10, 8), (sg * 9, 0), (sg * 3, 6)], p["hair"])          # orejas de gato
+            c.poly([(sg * 8, 7), (sg * 8, 2), (sg * 5, 6)], p["ear"])
     _shoulders(c, p)
     c.poly([(-3, 24), (3, 24), (0, 29)], p["collar"])        # cuello interior blanco
-    c.poly([(-8, 24), (-3, 24), (4, 32), (0, 32)], p["lapel"])           # solapas cruzadas
-    c.poly([(8, 24), (3, 24), (-4, 32), (0, 32)], shade(p["lapel"], 0.92))
-    c.rect(-6, 31, 6, 31, p["belt"])
-    _head(c, p)
-    c.ell(0, 8, 10.5, 5, p["hair"])
-    c.rect(-9, 8, 9, 10, p["hair"])                          # flequillo recto
-    c.rect(-10, 9, -9, 18, p["hair"])                        # mechones a los lados de la cara
-    c.rect(9, 9, 10, 18, p["hair"])
+    c.poly([(-9, 24), (-3, 24), (5, 32), (0, 32)], p["lapel"])           # solapas cruzadas
+    c.poly([(9, 24), (3, 24), (-5, 32), (0, 32)], shade(p["lapel"], 0.88))
+    c.d.line([c.P(-8, 24), c.P(4, 31)], fill=p["linea"])
+    c.d.line([c.P(8, 24), c.P(-4, 31)], fill=p["linea"])
+    c.rect(-3, 28, 3, 31, p["belt"])                         # faja lima del centro
+    c.rect(0, 28, 0, 31, shade(p["belt"], 0.8))
+    c.ell(0, hy, rx, ry, p["skin"])                          # cara
+    c.ell(0, hy - 6, rx + 0.5, 5, p["hair"])                 # copete
+    c.rect(-(rx - 1), hy - 6, rx - 1, hy - 5 if gato else hy - 4, p["hair"])  # flequillo recto
     for sg in (-1, 1):
-        c.ell(sg * 11, 24, 1.8, 6.5, p["hair"])              # trenzas que cuelgan por delante de los hombros
-        c.px(sg * 11, 29, p["bead1"])                        # cuentas roja y turquesa
-        c.px(sg * 11, 31, p["bead2"])
-    c.ell(-7, 4, 1.6, 1.6, p["ribbon"])                      # listón azul, pequeño
-    c.ell(-4, 3, 1.6, 1.6, p["ribbon"])
-    c.px(-6, 4, shade(p["ribbon"], 0.8))
-    if gato:                                                 # las orejas se repintan encima para que el listón no tape la izquierda
-        for sg in (-1, 1):
-            c.poly([(sg * 10, 7), (sg * 9, 0), (sg * 3, 5)], p["hair"])
-            c.poly([(sg * 8, 6), (sg * 8, 2), (sg * 5, 5)], p["ear"])
+        c.ell(sg * (rx + 0.4), 20, 2.2, 10.5, p["hair"])     # mechones largos que siguen en trenzas
+        for y in (17, 20, 23):
+            c.px(sg * (rx + 0.4), y, shade(p["hair"], 1.5))  # trenzado
+        c.px(sg * (rx), 25, p["bead1"])                      # cuentas roja y turquesa
+        c.px(sg * (rx), 28, p["bead2"])
+    c.ell(-1, hy - 9, 2.5, 0.8, p["gloss"])                    # brillo verde azulado sobre el pelo
+    ribs = (-1,) if gato else (-1, 1)                        # moño(s) azul(es)
+    for sg in ribs:
+        c.ell(sg * 8 - 1.5, hy - 8, 1.3, 1.1, p["ribbon"])   # moño en la esquina de la cabeza, separado del brillo
+        c.ell(sg * 8 + 1.5, hy - 8, 1.3, 1.1, p["ribbon"])
+        c.px(sg * 8, hy - 8, shade(p["ribbon"], 0.7))
 
 
 def pt_maomao(c, p):
@@ -1631,34 +1635,40 @@ def pt_maomao_gato(c, p):
 
 def _maomao_cara(c, expr, opts):
     gato = opts.get("gato")
-    azul, oscuro, pestana = hx("#4a5ad8"), hx("#2b3a9a"), hx("#16363a")
-    boca = hx("#c0746a")
+    o = 1 if gato else 0                                     # la cara chibi va un píxel más abajo
+    pestana, boca = hx("#16302c"), hx("#b85a52")
     for sg in (-1, 1):
-        lo, hi = sorted((sg * 3, sg * 5))
-        if expr == 1:                                        # contento: ojos cerrados en arco
-            for x, y in ((sg * 3, 15), (sg * 4, 14), (sg * 5, 15)):
+        lo, hi = sorted((sg * 2, sg * 6))                    # 5 de ancho, separados 3 píxeles en el centro
+        y0 = 12 + o
+        if expr == 1:                                        # contento: ojos cerrados en arco grueso
+            for x, y in ((lo, y0 + 3), (lo + 1, y0 + 2), (lo + 2, y0 + 1), (lo + 3, y0 + 2), (hi, y0 + 3)):
                 c.px(x, y, pestana)
-        else:                                                # ojos grandes azules con dos brillos
-            c.rect(lo, 13, hi, 16, azul)
-            c.rect(lo, 13, hi, 13, oscuro)
-            c.px(sg * 4, 15, oscuro)
-            c.px(lo, 14, WHITE)
-            c.px(hi, 16, hx("#c8d4ff"))
-            c.rect(lo - 1, 12, hi + 1, 12, pestana)
-        if expr == 2 or (gato and expr == 0):                # cejas preocupadas o ceñudas
-            a, b = (sg * 5, sg * 3) if expr == 2 else (sg * 3, sg * 5)
-            c.px(a, 11, pestana)
-            c.px(sg * 4, 11, pestana)
-            c.px(b, 12 if expr == 0 else 10, pestana)
-        for x, y in ((sg * 6, 18), (sg * 4, 18), (sg * 7, 17), (sg * 1, 17)):
-            c.px(x, y, hx("#d6a384"))                        # pecas
-        for x in (sg * 5, sg * 6, sg * 7):
-            c.px(x, 19, hx("#ffb8c0"))                       # coloretes
-    if gato:                                                 # boquita de gato «ω»
-        for x, y in ((-2, 19), (-1, 20), (0, 19), (1, 20), (2, 19)):
-            c.px(x, y, boca)
-    elif expr == 1:
-        for x, y in ((-2, 19), (-1, 20), (0, 20), (1, 20), (2, 19)):
+                c.px(x, y + 1, pestana)
+        else:                                                # ojos grandes: párpado grueso, iris degradado y 2 brillos
+            c.rect(lo - 1, y0 - 1, hi + 1, y0 - 1, pestana)
+            c.rect(lo, y0, hi, y0, hx("#2b3a9a"))
+            c.rect(lo, y0 + 1, hi, y0 + 2, hx("#5b6ae6"))
+            c.rect(lo, y0 + 3, hi, y0 + 3, hx("#7a8cf6"))
+            c.rect(lo, y0 + 4, hi, y0 + 4, hx("#a8b8ff"))
+            c.px(sg * 4, y0 + 2, hx("#2a2a80"))
+            c.px(sg * 4, y0 + 3, hx("#2a2a80"))
+            c.rect(lo, y0 + 1, lo + 1, y0 + 2, WHITE)        # brillo grande arriba a la izquierda
+            c.px(hi, y0 + 4, hx("#eef2ff"))                  # brillo chico abajo a la derecha
+        if gato and expr != 1:                               # cejas ceñudas de la versión chibi
+            for x in (sg * 6, sg * 5, sg * 4):
+                c.px(x, 10 + o, pestana)                     # las cejas se unen al párpado y dan el gesto ceñudo
+        if expr == 2:                                        # triste: lagrimita y ojitos caídos
+            c.px(sg * 6, y0 + 5, hx("#bfe0ff"))
+            c.px(sg * 6, y0 + 6, hx("#bfe0ff"))
+        for x, y in ((sg * 3, 18 + o), (sg * 5, 18 + o), (sg * 4, 19 + o), (sg * 8, 17 + o), (sg * 1, 17 + o)):
+            c.px(x, y, hx("#c98f72"))                        # pecas marcadas
+        for x in (sg * 6, sg * 7, sg * 8):
+            c.px(x, 19 + o, hx("#ff9fb0"))                   # coloretes
+    if expr == 1:                                            # contento: boca abierta
+        c.rect(-2, 19 + o, 2, 20 + o, boca)
+        c.px(0, 20 + o, hx("#ff8a9a"))
+    elif gato:                                               # boquita de gato «ω»
+        for x, y in ((-2, 19 + o), (-1, 20 + o), (0, 19 + o), (1, 20 + o), (2, 19 + o)):
             c.px(x, y, boca)
     elif expr == 2:
         for x, y in ((-1, 20), (0, 20), (1, 20), (-2, 21), (2, 21)):
@@ -1666,6 +1676,14 @@ def _maomao_cara(c, expr, opts):
     else:
         c.rect(-1, 20, 1, 20, boca)                          # boca seria, de «cara de póker»
 
+
+# Maomao: candidatos sin registrar. Se previsualizan con render_portrait y reemplazan a Pita cuando se aprueben.
+MAOMAO_LOOK = dict(skin="#ffe3d0", hair="#17332f", gloss="#3d8277", cloth="#86d192", lapel="#b9ecc0", collar="#eef6f3",
+                   belt="#c9e266", linea="#4f9a64", ribbon="#9fc0ee", ear="#2d6e66", bead1="#d94a4a", bead2="#2fb0a8", trim="#9fc0ee")
+MAOMAO_CANDIDATOS = {
+    "maomao": (pt_maomao, MAOMAO_LOOK, dict(face=_maomao_cara)),
+    "maomao_gato": (pt_maomao_gato, MAOMAO_LOOK, dict(face=_maomao_cara, gato=True)),
+}
 
 PORTRAITS = [
     ("abuela", pt_abuela, dict(skin="#ffe0c8", hair="#e8e2f2", cloth="#ff8fb0", trim="#ffc4d6"), dict(glasses=True)),
@@ -1712,15 +1730,6 @@ def _portrait_face(c, expr, opts):
             a, b = c.P(x0, 13), c.P(x1, 17)
             c.d.rectangle([a[0], a[1], b[0], b[1]], outline=hx("#8a6a9a"))
         c.rect(-1, 14, 1, 14, hx("#8a6a9a"))
-
-
-# Maomao: candidatos sin registrar. Se previsualizan con render_portrait y reemplazan a Pita cuando se aprueben.
-MAOMAO_LOOK = dict(skin="#fde3cf", hair="#1f4a46", cloth="#8fd49b", lapel="#b5e8bf", collar="#f4f6fb", belt="#c8d860",
-                   ribbon="#a8c8f0", ear="#3aa8a0", bead1="#d94a4a", bead2="#3aa8a0", trim="#a8c8f0")
-MAOMAO_CANDIDATOS = {
-    "maomao": (pt_maomao, MAOMAO_LOOK, dict(face=_maomao_cara)),
-    "maomao_gato": (pt_maomao_gato, MAOMAO_LOOK, dict(face=_maomao_cara, gato=True)),
-}
 
 
 def render_portrait(fn, look, opts, expr):
