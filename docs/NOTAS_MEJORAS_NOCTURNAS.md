@@ -148,3 +148,10 @@ arreglo: la tarjeta de un animal sano mostraba «null» desde el sub-paso 2 de l
 - Decisiones: los dinosaurios nuevos llegan como regalo de misión (uno de cada); Noa es la voz científica y nunca antagonista;
   la oveja y el zorro llegan por secundarias para no alargar la historia principal.
 - Sin hacer: «Álbum» de personajes, secretos nuevos, sonido de los animales nuevos escuchado por el dueño.
+
+## Tutorial guiado
+- Tomás guía 12 pasos (3 con acción: tocar, comer, acariciar). Ilumina el elemento con un recuadro que lo sigue cada cuadro
+  y deja pasar los toques. No cambia el mundo. Se salta el paso de comer si no hay comida y los de la tarjeta si no hay animales.
+- Marca `tutorial: true` en `farmweb:ui:v1` (por dispositivo, no dentro del mundo): quien ya tenía partida lo ve una vez.
+  Sin localStorage sale una vez por sesión. En una partida nueva empieza después de la escena de Bruno; las visitas esperan.
+- Las preferencias del dispositivo ahora se fusionan (antes guardar etiquetas pisaba todo el objeto).

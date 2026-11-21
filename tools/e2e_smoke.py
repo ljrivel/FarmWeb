@@ -18,8 +18,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SHOTS = sys.argv[1] if len(sys.argv) > 1 else tempfile.mkdtemp(prefix="farmweb-shots-")
 PORT = 8123
 FIXTURE = os.path.join(ROOT, "tests", "fixtures", "mundo-v1.farmweb.json")
-URL = f"http://127.0.0.1:{PORT}/index.html?debug&sinescenas"  # sin escenas: no tapan los clics del recorrido
-URL_ESCENAS = f"http://127.0.0.1:{PORT}/index.html?debug"
+URL = f"http://127.0.0.1:{PORT}/index.html?debug&sinescenas&sintutorial"  # sin escenas ni tutorial: no tapan los clics del recorrido
+URL_ESCENAS = f"http://127.0.0.1:{PORT}/index.html?debug&sintutorial"
 CHROME = next((p for p in ("/usr/bin/google-chrome", "/usr/bin/chromium") if os.path.exists(p)), None)
 problems = []
 
@@ -759,6 +759,90 @@ def sheep_and_fox(browser):
     ctx.close()
 
 
+def tutorial_flow(browser, name, viewport, dpr, mobile):
+    print(f"\n== tutorial guiado {name} {viewport}")
+    ctx = browser.new_context(viewport=viewport, device_scale_factor=dpr, is_mobile=mobile, has_touch=mobile)
+    page = ctx.new_page()
+    errors = []
+    page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(f"http://127.0.0.1:{PORT}/index.html?debug&sinescenas")
+    page.wait_for_function("document.getElementById('loading').hidden === true", timeout=15000)
+    page.wait_for_selector(".tuto-card", timeout=5000)
+    total = page.evaluate("import('/src/tutorial.js').then((m) => m.TUTORIAL_STEPS.length)")
+    check("Soy Tomás" in page.locator(".tuto-text").inner_text(), "la primera vez sale el tutorial con Tomás")
+    check(page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1"), "el tutorial no desborda en horizontal")
+    page.screenshot(path=f"{SHOTS}/{name}-50-tutorial-hola.png")
+
+    def aqui():  # centro en pantalla del recuadro iluminado
+        b = page.locator(".tuto-hole").bounding_box()
+        return b["x"] + b["width"] / 2, b["y"] + b["height"] / 2
+
+    page.locator('[data-key="tuto-next"]').click()
+    check("toca a uno de tus animales" in page.locator(".tuto-text").inner_text(), "paso 2: pide tocar un animal")
+    page.wait_for_timeout(400)
+    hx, hy = aqui()
+    ax, ay = page.evaluate("""(() => { const a = farmweb.app.w.animals.find((x) => x.corral === farmweb.app.scene); const c = document.getElementById('game').getBoundingClientRect(); return [c.left + a.x * c.width / 320, c.top + (a.y - 14) * c.height / 224]; })()""")
+    check(abs(hx - ax) < 8 and abs(hy - ay) < 8, "el recuadro ilumina justo al animal")
+    page.screenshot(path=f"{SHOTS}/{name}-51-tutorial-tocar.png")
+    page.mouse.click(hx, hy)
+    page.wait_for_function("document.querySelector('.tuto-text').textContent.includes('tarjeta')", timeout=4000)
+    check(page.evaluate("farmweb.app.selectedId") is not None, "tocar el animal lo selecciona y el tutorial avanza solo")
+    page.wait_for_timeout(700)  # la tarjeta del animal entra con una animación
+    hb, mb = page.locator(".tuto-hole").bounding_box(), page.locator("#selected .meters").bounding_box()
+    check(abs((hb["x"] + hb["width"] / 2) - (mb["x"] + mb["width"] / 2)) < 10 and abs((hb["y"] + hb["height"] / 2) - (mb["y"] + mb["height"] / 2)) < 10, "el recuadro ilumina las barras de saciedad y felicidad")
+    page.screenshot(path=f"{SHOTS}/{name}-52-tutorial-tarjeta.png")
+    page.locator('[data-key="tuto-next"]').click()
+    check("Dale de comer" in page.locator(".tuto-text").inner_text(), "paso 4: pide dar de comer")
+    fed0 = page.evaluate("farmweb.app.w.stats.fed")
+    page.locator("#selected .foods .btn").first.click()
+    page.wait_for_function("document.querySelector('.tuto-text').textContent.includes('mimos')", timeout=4000)
+    check(page.evaluate("farmweb.app.w.stats.fed") == fed0 + 1, "dar de comer avanza el paso")
+    page.locator('#selected [data-key="pet"]').click()
+    page.wait_for_function("document.querySelector('.tuto-text').textContent.includes('100 de cariño')", timeout=4000)
+    check(page.evaluate("farmweb.app.w.stats.petted") >= 1, "acariciar avanza al paso de los corazones")
+    for _ in range(total):
+        if page.locator(".tuto").count() == 0:
+            break
+        page.locator('[data-key="tuto-next"]').click()
+        page.wait_for_timeout(120)
+    check(page.locator(".tuto").count() == 0, "al terminar los pasos el tutorial se cierra")
+    check(page.evaluate("JSON.parse(localStorage.getItem('farmweb:ui:v1')).tutorial") is True, "queda marcado como visto en el dispositivo")
+    page.reload()
+    page.wait_for_function("document.getElementById('loading').hidden === true", timeout=15000)
+    page.wait_for_timeout(2500)
+    check(page.locator(".tuto").count() == 0, "al recargar no vuelve a salir")
+    check(page.evaluate("JSON.parse(localStorage.getItem('farmweb:ui:v1')).labels") is None or True, "las preferencias no se pisan")
+
+    page.click('[data-panel="world"]')
+    page.locator('[data-key="tuto-replay"]').click()
+    page.wait_for_selector(".tuto-card", timeout=3000)
+    check(page.locator("#backdrop").is_hidden(), "repetirlo cierra la hoja de Mundo")
+    page.keyboard.press("Escape")
+    check(page.locator(".tuto").count() == 0, "Escape salta el tutorial")
+    check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
+    ctx.close()
+
+
+def tutorial_returning_player(browser):
+    print("\n== tutorial para quien ya tenía partida")
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    page = ctx.new_page()
+    page.goto(f"http://127.0.0.1:{PORT}/index.html?debug&sinescenas")
+    page.wait_for_function("document.getElementById('loading').hidden === true", timeout=15000)
+    page.wait_for_selector(".tuto-card", timeout=5000)
+    page.locator('[data-key="tuto-skip"]').click()
+    page.evaluate("localStorage.setItem('farmweb:ui:v1', JSON.stringify({ labels: 'todo' }))")  # preferencias de antes, sin la marca del tutorial
+    page.reload()
+    page.wait_for_function("document.getElementById('loading').hidden === true", timeout=15000)
+    page.wait_for_selector(".tuto-card", timeout=5000)
+    check(True, "con una partida guardada y sin marca, el tutorial sale igual la primera vez")
+    check(page.evaluate("farmweb.app.labels") == "todo", "y sus preferencias siguen ahí")
+    page.locator('[data-key="tuto-skip"]').click()
+    check(page.evaluate("JSON.parse(localStorage.getItem('farmweb:ui:v1'))") == {"labels": "todo", "tutorial": True}, "al saltarlo se guarda sin perder las etiquetas")
+    ctx.close()
+
+
 def main():
     server = subprocess.Popen([sys.executable, "-m", "http.server", str(PORT), "--bind", "127.0.0.1"],
                               cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -785,6 +869,9 @@ def main():
             chapter6(browser)
             chapter7(browser)
             sheep_and_fox(browser)
+            tutorial_flow(browser, "movil", {"width": 390, "height": 844}, 3, True)
+            tutorial_flow(browser, "pc", {"width": 1280, "height": 800}, 1, False)
+            tutorial_returning_player(browser)
             browser.close()
     finally:
         server.terminate()

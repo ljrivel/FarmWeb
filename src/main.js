@@ -17,13 +17,18 @@ app.audio = createAudio({ storage: safeStorage(), AudioContextClass: window.Audi
 // Preferencia de etiquetas en el corral: se guarda en este dispositivo, no dentro del mundo.
 const UI_KEY = 'farmweb:ui:v1';
 const LABEL_MODES = ['ninguna', 'nombre', 'todo'];
-try { const m = JSON.parse(safeStorage()?.getItem(UI_KEY) || '{}').labels; if (LABEL_MODES.includes(m)) app.labels = m; } catch { /* sin guardado: se queda en «ninguna» */ }
+const readUi = () => { try { const o = JSON.parse(safeStorage()?.getItem(UI_KEY) || '{}'); return o && typeof o === 'object' ? o : {}; } catch { return {}; } };
+const writeUi = (patch) => { try { safeStorage()?.setItem(UI_KEY, JSON.stringify({ ...readUi(), ...patch })); } catch { /* sin guardado: dura la sesión */ } };
+if (LABEL_MODES.includes(readUi().labels)) app.labels = readUi().labels;
 app.setLabels = (mode) => {
   if (!LABEL_MODES.includes(mode)) return;
   app.labels = mode;
-  try { safeStorage()?.setItem(UI_KEY, JSON.stringify({ labels: mode })); } catch { /* sin guardado: dura la sesión */ }
+  writeUi({ labels: mode });
   ui.refresh();
 };
+// Tutorial: se muestra la primera vez en cada dispositivo (también a quien ya tenía partida); sin guardado, una vez por sesión.
+app.tutorialSeen = readUi().tutorial === true;
+app.startTutorial = () => ui.startTutorial(() => { app.tutorialSeen = true; writeUi({ tutorial: true }); });
 const ui = createUI(app);
 const $ = (id) => document.getElementById(id);
 
@@ -266,6 +271,13 @@ function konamiKey(e) {
 }
 /** Cuenta la siguiente escena pendiente cuando no hay otra hoja abierta. `?sinescenas` las apaga (para las pruebas). */
 const STORY_ON = !location.search.includes('sinescenas');
+const TUTORIAL_ON = !location.search.includes('sintutorial');
+/** El tutorial empieza cuando no hay nada abierto (en una partida nueva, tras la escena de Bruno). */
+function checkTutorial() {
+  if (!TUTORIAL_ON || app.tutorialSeen || document.hidden || ui.busy()) return;
+  app.tutorialSeen = true; // dentro de esta sesión no vuelve a empezar; lo guardado se escribe al terminar
+  ui.startTutorial(() => writeUi({ tutorial: true }));
+}
 function checkStory() {
   if (!STORY_ON || document.hidden || ui.busy()) return;
   const s = nextScene(app.w);
@@ -338,7 +350,7 @@ async function boot() {
   ui.refresh();
   loading.hidden = true;
   if (!Object.keys(app.w.quests.claimed).length && app.w.stats.fed === 0) ui.toast('¡Bienvenido! Toca un animal para cuidarlo.');
-  else if (STORY_ON && sim.giftReady(app.w)) ui.toast('¡Bruno dejó una cesta para ti! Tócala para recogerla.', 'ok', () => app.claimGift());
+  else if (STORY_ON && !(TUTORIAL_ON && !app.tutorialSeen) && sim.giftReady(app.w)) ui.toast('¡Bruno dejó una cesta para ti! Tócala para recogerla.', 'ok', () => app.claimGift());
 
   let last = performance.now();
   const frame = (t) => {
@@ -346,7 +358,7 @@ async function boot() {
     last = t;
     sim.wander(app.w, dt);
     const now = Date.now();
-    if (now - app.w.lastTick >= 1000) { advance(now); checkSecrets(); checkStory(); checkVisit(); ui.tickLight(); }
+    if (now - app.w.lastTick >= 1000) { advance(now); checkSecrets(); checkStory(); checkTutorial(); checkVisit(); ui.tickLight(); }
     ctx.setTransform(app.k, 0, 0, app.k, 0, 0);
     draw(ctx, app.sprites, app.w, app, t);
     requestAnimationFrame(frame);

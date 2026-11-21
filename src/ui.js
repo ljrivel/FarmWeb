@@ -1,6 +1,7 @@
 // Interfaz en DOM: barra superior, tarjeta del animal, paneles y avisos.
 // Todo el texto dinámico se inserta con textContent / nodos de texto (nunca innerHTML).
 
+import { TUTORIAL_STEPS, stepSkipped, nextIndex, stepDone } from './tutorial.js';
 import {
   SPECIES, ORDER, FOODS, PRODUCTS, QUESTS, SCENES, LETTERS, CHAPTERS, CHARACTERS, EPILOGUE, SECRETS, SECRET_ORDER, BALANCE, CORRAL_TYPES, corralTypeOf,
   rarityOf, rarityLabel, MAX_HEARTS, DISEASES,
@@ -196,7 +197,7 @@ export function createUI(app) {
       h('div', { class: 'actions' },
         a.ready > 0 && h('button', { class: 'btn primary', type: 'button', onclick: () => app.collect(a.id) },
           icon(sp.product, 1), `Recoger ${PRODUCTS[sp.product].nombre.toLowerCase()}`),
-        h('button', { class: 'btn', type: 'button', disabled: a.petCd > 0, onclick: () => app.pet(a.id) },
+        h('button', { class: 'btn', type: 'button', 'data-key': 'pet', disabled: a.petCd > 0, onclick: () => app.pet(a.id) },
           icon('heart', 1), a.petCd > 0 ? 'Mimado' : 'Acariciar'),
         h('button', { class: `btn${a.named === false ? ' highlight' : ''}`, type: 'button', onclick: () => askName(a.id, false) },
           a.named === false ? 'Ponle nombre' : 'Cambiar nombre')),
@@ -509,8 +510,101 @@ export function createUI(app) {
     line();
     next.focus();
   }
-  /** Hay una hoja o una escena abiertas: no conviene empezar otra escena. */
-  const busy = () => !!current || !!storyEl;
+  // ------------------------------------------------------------ tutorial
+  let tutoEl = null;
+  // El lienzo lógico mide 320×224 (igual que W y H de render.js).
+  const LOGIC_W = 320, LOGIC_H = 224;
+  /** Rectángulo en pantalla de lo que explica un paso, o null si no hay (o no se ve). */
+  function tutorialRect(step) {
+    if (!step.target) return null;
+    if (step.target === 'animal') {
+      const a = app.scene === 'mapa' ? null : W().animals.find((x) => x.corral === app.scene);
+      if (!a) return null;
+      const r = $('game').getBoundingClientRect();
+      const k = r.width / LOGIC_W, size = 38 * k;
+      return { left: r.left + a.x * k - size / 2, top: r.top + (a.y - 14) * (r.height / LOGIC_H) - size / 2, width: size, height: size };
+    }
+    const el = document.querySelector(step.target);
+    if (!el || el.closest('[hidden]')) return null;
+    const r = el.getBoundingClientRect();
+    return r.width && r.height ? r : null;
+  }
+  /** Guía de Tomás paso a paso: ilumina lo que explica y deja pasar los toques para hacerlo de verdad. */
+  function startTutorial(onDone) {
+    if (tutoEl) return;
+    let i = 0, base = {}, timer = 0, celebrating = 0, raf = 0;
+    const faceBox = h('div', { class: 'tuto-face' });
+    const textEl = h('p', { class: 'tuto-text' });
+    const stepEl = h('span', { class: 'muted small' });
+    const next = btn('Siguiente', () => go(), { cls: 'primary', key: 'tuto-next' });
+    const skip = btn('Saltar tutorial', () => end(), { cls: 'small', key: 'tuto-skip' });
+    const hole = h('div', { class: 'tuto-hole' });
+    const card = h('section', { class: 'tuto-card', role: 'region', 'aria-label': 'Tutorial' },
+      h('div', { class: 'tuto-head' }, faceBox, h('div', null, h('strong', { text: CHARACTERS.tomas.nombre }), h('div', null, stepEl))),
+      textEl, h('div', { class: 'story-actions' }, skip, next));
+    tutoEl = h('div', { class: 'tuto' }, hole, card);
+    const step = () => TUTORIAL_STEPS[i];
+    function place() {
+      const r = tutorialRect(step());
+      tutoEl.classList.toggle('dim', !r);
+      hole.hidden = !r;
+      if (r) {
+        const pad = 6;
+        Object.assign(hole.style, { left: `${r.left - pad}px`, top: `${r.top - pad}px`, width: `${r.width + pad * 2}px`, height: `${r.height + pad * 2}px` });
+      }
+      // la tarjeta se va al lado contrario del elemento para no taparlo
+      card.classList.toggle('top', !!r && r.top + r.height / 2 > innerHeight / 2);
+    }
+    function begin() {
+      const st = step();
+      base = { fed: W().stats.fed, petted: W().stats.petted };
+      celebrating = 0;
+      if (current) closeSheet();
+      if (st.act === 'select') { app.selectedId = null; refresh(); }
+      faceBox.replaceChildren(face('tomas', 2, st.mood || 0));
+      textEl.textContent = st.text;
+      stepEl.textContent = `Paso ${i + 1} de ${TUTORIAL_STEPS.length}`;
+      next.disabled = false;
+      next.textContent = st.act ? 'Saltar paso' : (nextIndex(i, W()) >= TUTORIAL_STEPS.length ? 'Terminar' : 'Siguiente');
+      place();
+    }
+    function go() {
+      i = nextIndex(i, W());
+      if (i >= TUTORIAL_STEPS.length) end(); else begin();
+    }
+    function tick() {
+      if (!tutoEl) return;
+      const st = step();
+      if (st.needsCard && !app.selectedId) { // el jugador cerró la tarjeta: se vuelve a abrir la de un animal
+        const a = W().animals.find((x) => x.corral === app.scene) || W().animals[0];
+        if (a) { if (a.corral !== app.scene) app.goTo(a.corral, true); app.selectedId = a.id; refresh(); }
+      }
+      if (!celebrating && stepDone(st, { w: W(), selectedId: app.selectedId, base })) {
+        next.disabled = true;
+        textEl.textContent = '¡Muy bien!';
+        celebrating = setTimeout(() => { if (tutoEl) go(); }, 900);
+      }
+    }
+    function end() {
+      clearInterval(timer);
+      clearTimeout(celebrating);
+      cancelAnimationFrame(raf);
+      document.removeEventListener('keydown', onKey);
+      tutoEl?.remove();
+      tutoEl = null;
+      onDone?.();
+    }
+    const onKey = (e) => { if (e.key === 'Escape' && !e.defaultPrevented) end(); }; // la hoja abierta se cierra primero
+    document.body.append(tutoEl);
+    document.addEventListener('keydown', onKey);
+    i = TUTORIAL_STEPS.findIndex((st) => !stepSkipped(st, W()));
+    begin();
+    timer = setInterval(tick, 250);
+    const follow = () => { if (!tutoEl) return; place(); raf = requestAnimationFrame(follow); }; // el recuadro sigue al elemento aunque se mueva o cambie de tamaño
+    follow();
+  }
+  /** Hay una hoja, una escena o el tutorial abiertos: no conviene empezar otra escena ni visita. */
+  const busy = () => !!current || !!storyEl || !!tutoEl;
 
   // ---- panel: misiones
   let historyOpen = false;
@@ -618,6 +712,13 @@ export function createUI(app) {
       h('p', { class: 'muted small', text: 'Se guarda en este dispositivo.' }));
   }
 
+  function tutorialSection() {
+    return h('section', { class: 'group', 'aria-labelledby': 'tutoTitle' },
+      h('h3', { id: 'tutoTitle', text: 'Tutorial' }),
+      row(h('div', { class: 'grow muted small', text: 'Tomás te enseña otra vez lo básico de la granja.' }),
+        btn('Ver otra vez', () => { closeSheet(); app.startTutorial(); }, { key: 'tuto-replay' })));
+  }
+
   // ---- sección de sonido del panel Mundo (se guarda en este dispositivo, no en el archivo del mundo)
   function soundSection() {
     const { muted, volume } = app.audio.prefs;
@@ -686,6 +787,7 @@ export function createUI(app) {
       h('label', { class: 'meter-label', for: 'worldName', text: 'Nombre de la granja' }), nameInput,
       soundSection(),
       labelsSection(),
+      tutorialSection(),
       row(h('div', { class: 'grow' }, h('strong', { text: 'Jugadores' }),
         h('div', { class: 'muted small', text: `${w.players.length} de ${w.maxPlayers} · modo local en este dispositivo` })),
         h('span', { class: 'muted small', text: 'La nube con cuentas llega pronto' })),
@@ -738,5 +840,5 @@ export function createUI(app) {
     document.addEventListener('keydown', trapTab);
   }
 
-  return { init, refresh, tickLight, toast, openPanel, closeSheet, icon, askName, playStory, busy };
+  return { init, refresh, tickLight, toast, openPanel, closeSheet, icon, askName, playStory, startTutorial, busy };
 }
