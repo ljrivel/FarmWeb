@@ -172,7 +172,7 @@ export function createUI(app) {
     const root = $('selected');
     const w = W();
     const a = app.selectedId ? sim.find(w, app.selectedId) : null;
-    if (!a) {
+    if (!a || a.away) {
       if (app.selectedId) app.selectedId = null;
       root.hidden = true;
       selectedSig = '';
@@ -318,15 +318,18 @@ export function createUI(app) {
       const list = w.animals.filter((a) => a.corral === c.id).sort((a, b) => a.species.localeCompare(b.species) || a.id - b.id);
       return h('section', { class: 'group' },
         row(h('h3', { class: 'grow', text: `${c.nombre} ${c.used}/${c.capacity}` }),
+          btn(`Cría: ${w.corrales.find((x) => x.id === c.id)?.breed === 'manual' ? 'manual' : 'automática'}`,
+            () => app.setBreed(c.id, w.corrales.find((x) => x.id === c.id)?.breed === 'manual' ? 'auto' : 'manual'),
+            { key: `breed-${c.tipo}`, cls: 'small' }),
           btn('Ir al corral', () => { closeSheet(); app.goTo(c.id); }, { key: `go-${c.tipo}` })),
         list.length ? list.map((a) => row(
           portrait(a.species, a.variant, a.stage, 2, a.shiny),
           h('div', { class: 'grow' },
             h('strong', { text: a.name }), ' ', hearts(a),
-            h('div', { class: 'muted small', text: `${kindName(a)} · ${stageName(a)}${rarityOf(a) === 'comun' ? '' : ` · ${rarityLabel(a)}`}${a.ready ? ` · ${a.ready} listo${a.ready > 1 ? 's' : ''}` : ''}${a.named === false ? ' · sin bautizar' : ''}` }),
+            h('div', { class: 'muted small', text: `${kindName(a)} · ${stageName(a)}${rarityOf(a) === 'comun' ? '' : ` · ${rarityLabel(a)}`}${a.ready ? ` · ${a.ready} listo${a.ready > 1 ? 's' : ''}` : ''}${a.named === false ? ' · sin bautizar' : ''}${a.away ? ' · en el Criadero' : ''}` }),
             sickNote(a, false),
             h('div', { class: 'meters tight' }, bar('fed', a), bar('happy', a))),
-          btn('Ver', () => { closeSheet(); app.goTo(a.corral); app.selectedId = a.id; refresh(); }, { key: `ver-${a.id}` })))
+          btn(a.away ? 'En el nido' : 'Ver', () => { closeSheet(); app.goTo(a.corral); app.selectedId = a.id; refresh(); }, { key: `ver-${a.id}`, disabled: !!a.away })))
           : h('p', { class: 'muted small', text: 'Aún no hay animales aquí.' }));
     });
     const { used, capacity } = totals(w);
@@ -392,6 +395,70 @@ export function createUI(app) {
   }
 
   // ---- panel: veterinaria (lista de enfermos y curar por monedas)
+  // ---- panel: Criadero (nidos, huevos en incubadora, mejoras)
+  let pairSp = null, pairIds = [];
+  function laneBar(l) {
+    const fill = h('i');
+    fill.style.width = `${Math.max(0, Math.min(100, (1 - l.left / l.total) * 100))}%`;
+    return h('div', { class: 'bar quest', role: 'progressbar', 'aria-label': 'Progreso', 'aria-valuemin': '0', 'aria-valuemax': '100',
+      'aria-valuenow': String(Math.round((1 - l.left / l.total) * 100)) }, fill);
+  }
+  function panelCriadero() {
+    const w = W();
+    const info = sim.criaderoInfo(w);
+    if (!info.built) {
+      return h('div', { class: 'empty' }, icon('huevo', 3),
+        h('p', { text: 'El Criadero es un lugar tranquilo donde tú eliges las parejas y cuidas cada huevo hasta que nace. Mientras los padres están en el nido no están en su corral.' }),
+        info.open
+          ? row(price(BALANCE.criaderoCost), btn('Construir el Criadero', () => app.buildCriadero(), { cls: 'primary', disabled: w.coins < BALANCE.criaderoCost, key: 'cr-build' }))
+          : h('p', { class: 'muted', text: 'Se abre cuando la historia llegue al capítulo 2.' }));
+    }
+    const perk = info.level ? ` · tiempos −${Math.round(BALANCE.criaderoTimeCut * info.level * 100)} % y +${(BALANCE.criaderoMutationBonus * info.level * 100).toFixed(1)} % de colores raros` : '';
+    const lanes = w.criadero.lanes.map((l) => {
+      const sp = SPECIES[l.species];
+      if (l.phase === 'nest') {
+        const A = sim.find(w, l.a), Bb = sim.find(w, l.b);
+        return row(portrait(l.species, A?.variant ?? 0, 'adult', 2, !!A?.shiny),
+          h('div', { class: 'grow' }, h('strong', { text: `${A?.name ?? '?'} y ${Bb?.name ?? '?'}` }),
+            h('div', { class: 'muted small', text: `${sp.nombre} · en el nido · sale el huevo en ${fmtTime(l.left)}` }), laneBar(l)));
+      }
+      return row(icon('huevo', 3),
+        h('div', { class: 'grow' }, h('strong', { text: `Huevo de ${sp.nombre.toLowerCase()}` }),
+          h('div', { class: 'muted small', text: `En la incubadora · nace en ${fmtTime(l.left)}` }), laneBar(l)),
+        btn(`Calor ${l.heat}/${BALANCE.heatMax}`, () => app.heat(l.id), { disabled: l.heat >= BALANCE.heatMax || l.heatCd > 0, key: `heat-${l.id}` }));
+    });
+    const candidates = ORDER.filter((s) => sim.eligibleParents(w, s).length >= 2);
+    if (pairSp && !candidates.includes(pairSp)) { pairSp = null; pairIds = []; }
+    pairIds = pairIds.filter((id) => sim.find(w, id) && sim.canNest(sim.find(w, id)));
+    let pairing;
+    if (!info.free) pairing = h('p', { class: 'muted small', text: 'No quedan cupos libres: espera a que nazca alguna cría o mejora el Criadero.' });
+    else if (!candidates.length) pairing = h('p', { class: 'muted small', text: 'Ahora no hay dos adultos de la misma especie, sanos, comidos y contentos para emparejar.' });
+    else {
+      pairing = h('div', null,
+        h('div', { class: 'tabs', role: 'group', 'aria-label': 'Especie' }, candidates.map((s) => h('button', {
+          class: 'tab', type: 'button', 'aria-pressed': String(pairSp === s), 'data-key': `pair-sp-${s}`,
+          onclick: () => { pairSp = pairSp === s ? null : s; pairIds = []; refreshSheet(); },
+        }, SPECIES[s].nombre))),
+        pairSp && sim.eligibleParents(w, pairSp).map((a) => row(
+          portrait(a.species, a.variant, a.stage, 2, a.shiny),
+          h('div', { class: 'grow' }, h('strong', { text: a.name }), ' ', hearts(a), h('div', { class: 'muted small', text: `${kindName(a)}${rarityOf(a) === 'comun' ? '' : ` · ${rarityLabel(a)}`}` })),
+          h('button', {
+            class: `btn${pairIds.includes(a.id) ? ' mint' : ''}`, type: 'button', 'aria-pressed': String(pairIds.includes(a.id)), 'data-key': `pick-${a.id}`,
+            onclick: () => { pairIds = pairIds.includes(a.id) ? pairIds.filter((x) => x !== a.id) : [...pairIds, a.id].slice(-2); refreshSheet(); },
+          }, pairIds.includes(a.id) ? 'Elegido' : 'Elegir'))),
+        pairSp && btn('Emparejar', () => { const [x, y] = pairIds; pairIds = []; pairSp = null; app.pair(x, y); }, { cls: 'primary', disabled: pairIds.length !== 2, key: 'pair-go' }));
+    }
+    return h('div', null,
+      h('p', { class: 'muted', text: `Nivel ${info.level + 1} de ${info.maxLevel + 1} · cupos ${info.used}/${info.slots}${perk}` }),
+      info.upgradeCost != null && row(h('div', { class: 'grow small muted', text: 'Más cupos, menos espera y más probabilidad de colores raros.' }), price(info.upgradeCost),
+        btn('Mejorar', () => app.upgradeCriadero(), { cls: 'primary', disabled: w.coins < info.upgradeCost, key: 'cr-upgrade' })),
+      h('h3', { text: 'Nidos y huevos' }),
+      lanes.length ? lanes : h('p', { class: 'muted small', text: 'Todavía no hay nada en el Criadero.' }),
+      h('h3', { text: 'Nueva pareja' }),
+      pairing,
+      h('p', { class: 'muted small', text: 'En «Animales» puedes poner un corral en cría manual para que solo críe aquí.' }));
+  }
+
   function panelVet() {
     const w = W();
     const sick = w.animals.filter((a) => a.sick).sort((a, b) => a.id - b.id);
@@ -823,6 +890,7 @@ export function createUI(app) {
     pack: ['Mochila', panelPack],
     quests: ['Misiones', panelQuests],
     vet: ['Veterinaria', panelVet],
+    criadero: ['Criadero', panelCriadero],
     world: ['Mundo', panelWorld],
   };
   function openPanel(name, tab) {
@@ -840,6 +908,7 @@ export function createUI(app) {
     updateLive();
   }
   function tickLight() {
+    if (current?.name === 'criadero') refreshSheet(); // los temporizadores del Criadero avanzan a la vista
     refreshHud();
     refreshSelected();
     updateLive();

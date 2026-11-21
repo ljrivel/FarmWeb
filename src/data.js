@@ -48,6 +48,18 @@ export const BALANCE = {
   giftCoins: [30, 40, 50, 60, 70, 80, 150], // el día 7 es el premio grande
   giftFoodEach: 3,   // raciones de la comida favorita de cada especie que tengas…
   giftMaxFoods: 3,   // …hasta este número de comidas distintas
+  // ---- Criadero (lugar único del mapa): cría manual en cupos (nido → huevo en incubadora → eclosión).
+  criaderoCost: 300,
+  criaderoMinCh: 2,                                // se abre cuando la historia llega a este capítulo
+  criaderoUpgradeCosts: [400, 800, 1500, 2500],    // costo de pasar al nivel 1, 2, 3 y 4
+  criaderoSlots: [1, 2, 3, 4, 5],                  // parejas a la vez según el nivel (0 a 4)
+  criaderoTimeCut: 0.1,                            // −10 % de tiempo por nivel
+  criaderoMutationBonus: 0.015,                    // +1,5 % de mutación de color por nivel
+  criaderoNestMul: 0.5,                            // el nido dura medio tiempo de cría de la especie
+  criaderoEggMul: 1,                               // la incubación dura un tiempo de cría
+  heatCut: 0.2,                                    // «Darle calor» adelanta un 20 % del tiempo total…
+  heatMax: 3,                                      // …hasta 3 veces por huevo…
+  heatCooldown: 30 * 1000,                         // …con este enfriamiento entre una y otra
 };
 
 export const MAX_HEARTS = 5;
@@ -80,6 +92,8 @@ export const MAP_SPOTS = {
 };
 // La Veterinaria no es un corral: siempre está abierta y no cuenta para las metas de corrales.
 export const VET_SPOT = { x: 164, y: 48 };
+// El Criadero tampoco es un corral: lugar único del mapa que se construye con monedas y se mejora.
+export const CRIADERO_SPOT = { x: 36, y: 34 };
 export const corralTypeOf = (species) => CORRAL_TYPE_ORDER.find((t) => CORRAL_TYPES[t].species.includes(species));
 
 export const SPECIES = {
@@ -126,14 +140,14 @@ export const SPECIES = {
     names: ['Axi', 'Burbuja', 'Coral', 'Luna', 'Gominola'],
   },
   carnotauro: {
-    nombre: 'Carnotauro', food: 'carnita', product: 'escama_fuego', price: null,
+    nombre: 'Carnotauro', food: 'carnita', product: 'escama_fuego', price: 700,
     dato: 'Tiene cuernitos y es muy tierno con quien lo cuida.',
     grow: 10 * MIN, prod: 360 * 1000, breed: 8 * MIN, aquatic: false,
     variants: ['Coral', 'Menta', 'Lavanda', 'Medianoche'],
     names: ['Rawr', 'Cuernitos', 'Brasa', 'Dino', 'Pelusa'],
   },
   spinosaurus: {
-    nombre: 'Spinosaurus', food: 'pescadito', product: 'escama_rio', price: null,
+    nombre: 'Spinosaurus', food: 'pescadito', product: 'escama_rio', price: 750,
     dato: 'Nada como un pez y le gusta el pescadito.',
     grow: 10 * MIN, prod: 360 * 1000, breed: 8 * MIN, aquatic: true,
     variants: ['Azul', 'Verde', 'Naranja', 'Violeta'],
@@ -155,28 +169,28 @@ export const SPECIES = {
     names: ['Cuac', 'Patito', 'Plumón', 'Charco', 'Lulú'],
   },
   triceratops: {
-    nombre: 'Triceratops', food: 'helecho', product: 'cuerno_cristal', price: null,
+    nombre: 'Triceratops', food: 'helecho', product: 'cuerno_cristal', price: 800,
     dato: 'Sus cuernos brillan como cristal cuando está contento.',
     grow: 10 * MIN, prod: 360 * 1000, breed: 8 * MIN, aquatic: false,
     variants: ['Verde', 'Arena', 'Cielo', 'Atardecer'],
     names: ['Tri', 'Cuernito', 'Frill', 'Rocky', 'Bambú'],
   },
   estegosaurio: {
-    nombre: 'Estegosaurio', food: 'helecho', product: 'placa_dorada', price: null,
+    nombre: 'Estegosaurio', food: 'helecho', product: 'placa_dorada', price: 800,
     dato: 'Deja placas doradas cuando duerme bien.',
     grow: 10 * MIN, prod: 360 * 1000, breed: 8 * MIN, aquatic: false,
     variants: ['Oliva', 'Lila', 'Coral', 'Turquesa'],
     names: ['Placas', 'Estego', 'Lomito', 'Rocío', 'Púas'],
   },
   pterodactilo: {
-    nombre: 'Pterodáctilo', food: 'pescadito', product: 'pluma_celeste', price: null,
+    nombre: 'Pterodáctilo', food: 'pescadito', product: 'pluma_celeste', price: 850,
     dato: 'Planea sobre el valle y deja plumas celestes al volar.',
     grow: 10 * MIN, prod: 360 * 1000, breed: 8 * MIN, aquatic: false,
     variants: ['Cielo', 'Menta', 'Rosado', 'Medianoche'],
     names: ['Alita', 'Nube', 'Vuelo', 'Pío', 'Brisa'],
   },
   plesiosaurio: {
-    nombre: 'Plesiosaurio', food: 'gusanito', product: 'perla_marina', price: null,
+    nombre: 'Plesiosaurio', food: 'gusanito', product: 'perla_marina', price: 900,
     dato: 'Con su cuello largo saluda a los patos desde el estanque.',
     grow: 10 * MIN, prod: 360 * 1000, breed: 8 * MIN, aquatic: true,
     variants: ['Marino', 'Coral', 'Violeta', 'Dorado'],

@@ -2,9 +2,9 @@
 // a un múltiplo entero de píxeles de pantalla para que el pixel art quede nítido.
 // Hay dos tipos de escena: el mapa de la granja y cada corral (según su tipo).
 
-import { BALANCE, SPECIES, CORRAL_TYPES, CORRAL_TYPE_ORDER, MAP_SPOTS, VET_SPOT, DISEASES, spriteKey } from './data.js';
+import { BALANCE, SPECIES, CORRAL_TYPES, CORRAL_TYPE_ORDER, MAP_SPOTS, VET_SPOT, CRIADERO_SPOT, DISEASES, spriteKey } from './data.js';
 import { getCorral } from './state.js';
-import { corralStatus } from './sim.js';
+import { corralStatus, criaderoInfo } from './sim.js';
 
 export const W = 320;
 export const H = 224;
@@ -204,6 +204,20 @@ function drawMap(ctx, S, w, t) {
     if (sick > 0) badge(ctx, String(sick), x + 24, y - 4, '#ffe3ea');
   }
 
+  {
+    const { x, y } = CRIADERO_SPOT;
+    const info = criaderoInfo(w);
+    const col = S.places.index[info.built ? 'criadero' : 'criadero_bloq'];
+    if (col != null) ctx.drawImage(S.placesImg, col * PLACE, 0, PLACE, PLACE, Math.round(x - PLACE / 2), Math.round(y - PLACE / 2), PLACE, PLACE);
+    if (info.built) pill(ctx, `Criadero ${info.used}/${info.slots}`, x, y + 26);
+    else {
+      icon(ctx, S, 'candado', x + 8, y - 28, 16);
+      pill(ctx, 'Criadero', x, y + 26);
+      if (!info.open) pill(ctx, 'Capítulo 2', x, y + 39, '#fff0d4');
+      else icon(ctx, S, 'coin', pill(ctx, String(BALANCE.criaderoCost), x, y + 39, '#fff0d4', 10) + 2, y + 39, 12);
+    }
+  }
+
   CORRAL_TYPE_ORDER.forEach((tipo, i) => {
     const { x, y } = MAP_SPOTS[tipo];
     const type = CORRAL_TYPES[tipo];
@@ -255,7 +269,7 @@ export function draw(ctx, S, w, view, t) {
     icon(ctx, S, SPECIES[e.species].product.startsWith('escama') ? 'huevo_dino' : 'huevo', e.x - 8 + wob, e.y - 14);
   }
 
-  const sorted = w.animals.filter(here).sort((a, b) => a.y - b.y);
+  const sorted = w.animals.filter((a) => here(a) && !a.away).sort((a, b) => a.y - b.y);
   const idle = S.animals.idle;
   for (const a of sorted) {
     const x = Math.round(a.x), y = Math.round(a.y);
@@ -307,7 +321,7 @@ export function hitVisit(view, lx, ly, corralId) {
 }
 
 export function hitTest(w, lx, ly, corralId) {
-  const front = w.animals.filter((a) => a.corral === corralId).sort((a, b) => b.y - a.y);
+  const front = w.animals.filter((a) => a.corral === corralId && !a.away).sort((a, b) => b.y - a.y);
   for (const a of front) {
     if (a.ready > 0 && lx >= a.x - 11 && lx <= a.x + 11 && ly >= a.y - 60 && ly <= a.y - 35) return { animal: a, bubble: true };
   }
@@ -321,6 +335,7 @@ export function hitTest(w, lx, ly, corralId) {
 export function hitMap(w, lx, ly) {
   const half = MAP_HIT / 2;
   if (Math.abs(lx - VET_SPOT.x) <= half && Math.abs(ly - VET_SPOT.y) <= half) return 'vet';
+  if (Math.abs(lx - CRIADERO_SPOT.x) <= half && Math.abs(ly - CRIADERO_SPOT.y) <= half) return 'criadero';
   return CORRAL_TYPE_ORDER.find((tipo) => {
     const { x, y } = MAP_SPOTS[tipo];
     return Math.abs(lx - x) <= half && Math.abs(ly - y) <= half;

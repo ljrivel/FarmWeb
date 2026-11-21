@@ -183,3 +183,18 @@ arreglo: la tarjeta de un animal sano mostraba «null» desde el sub-paso 2 de l
   y deja la Veterinaria a Mao Mao. Desde el capítulo 6 solo hablan y visitan Mao Mao; Pita sigue en los capítulos 1 a 5
   (sus visitas llevan `maxCh: 5`) y deja «notas» en sus secundarias. El panel de la Veterinaria lo dice según el capítulo.
 - Descartado a propósito: la versión humana y la versión ilustrada suave de Maomao (pruebas fuera del proyecto).
+
+## Criadero y dinosaurios a la venta
+- Criadero: lugar único del mapa (arriba a la izquierda), se abre al llegar al capítulo 2 y cuesta 300. Cupos = parejas a la vez
+  (1 a 5 según el nivel 0 a 4; mejorar cuesta 400, 800, 1500 y 2500). Cada cupo pasa de nido (la mitad del tiempo de cría de la
+  especie) a huevo en incubadora (un tiempo de cría); cada nivel quita un 10 % de tiempo y suma un 1,5 % de mutación.
+  «Darle calor»: −20 % del tiempo total, hasta 3 veces por huevo y con 30 s de enfriamiento.
+- Los padres en el nido están ausentes: no se dibujan, no se tocan, no crían solos y su hambre y ánimo quedan en pausa. Cada cupo
+  reserva el lugar de su cría en el corral. Sin conexión, el tiempo sobrante pasa de una fase a la siguiente.
+- Cría automática por defecto (nada cambia para partidas existentes); un corral puede ponerse en «manual» (Animales).
+- Decisiones tomadas sin preguntar: se abre en el capítulo 2 con monedas; valen todas las especies (dinosaurios y Estación);
+  el hambre se pausa en el nido. Guardado: sin subir `VERSION`; campos nuevos con valor por defecto y validación que libera a
+  los ausentes si su cupo no cuadra.
+- Dinosaurios: tenían `price: null` y la Tienda solo lista especies con precio, por eso no aparecían. Ahora cuestan 700
+  (carnotauro), 750 (spinosaurus), 800 (triceratops y estegosaurio), 850 (pterodáctilo) y 900 (plesiosaurio).
+- Pendiente de la lista original: cuidados nuevos (cepillar, jugar, bañar), remedios de Mao Mao y ficha de cría con el álbum de colores.

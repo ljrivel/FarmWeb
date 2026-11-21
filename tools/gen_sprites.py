@@ -1459,6 +1459,19 @@ def pl_estacion(c):
     c.px(42, 8, hx("#fff3a8"))
 
 
+def pl_criadero(c):
+    c.ell(24, 43, 21, 4, hx("#a9d98a"))
+    c.rect(8, 24, 40, 41, hx("#fff3d6"))                     # casita crema
+    c.poly([(4, 25), (24, 9), (44, 25)], hx("#ffc07a"))      # techo de paja
+    c.rect(11, 28, 15, 32, hx("#ffe3a8"))                    # ventanitas
+    c.rect(33, 28, 37, 32, hx("#ffe3a8"))
+    c.rect(17, 36, 31, 41, hx("#e0b070"))                    # nido de paja en la puerta
+    c.ell(24, 33, 6, 8, hx("#fffaf0"))                       # huevo grande
+    c.ell(22, 30, 2, 3, hx("#ffffff"))
+    c.px(26, 35, hx("#ffd0dc"))
+    c.px(23, 36, hx("#ffd0dc"))
+
+
 def pl_vet(c):
     """Veterinaria: casita blanca con techo rosa, cruz y un huellita en la puerta."""
     c.ell(24, 43, 21, 4, hx("#a9d98a"))
@@ -1487,7 +1500,7 @@ def desaturate(img):
     return out
 
 
-PLACES = [("pradera", pl_pradera), ("bosque", pl_bosque), ("estanque", pl_estanque), ("jurasico", pl_jurasico), ("valle", pl_valle), ("estacion", pl_estacion)]
+PLACES = [("pradera", pl_pradera), ("bosque", pl_bosque), ("estanque", pl_estanque), ("jurasico", pl_jurasico), ("valle", pl_valle), ("estacion", pl_estacion), ("criadero", pl_criadero)]
 EXTRA_PLACES = [("vet", pl_vet)]  # lugares que no son corrales (sin versión bloqueada)
 
 

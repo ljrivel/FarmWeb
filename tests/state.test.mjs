@@ -15,7 +15,7 @@ test('mundo nuevo: 2 gallinas adultas, 100 monedas y 3 especies desbloqueadas', 
   assert.equal(w.coins, 100);
   assert.deepEqual(w.unlocked, ['gallina', 'gato', 'vaca']);
   assert.equal(w.maxPlayers, 4);
-  assert.deepEqual(w.corrales, [{ id: 'pradera', tipo: 'pradera', nombre: 'Pradera', nivel: 0 }]);
+  assert.deepEqual(w.corrales, [{ id: 'pradera', tipo: 'pradera', nombre: 'Pradera', nivel: 0, breed: 'auto' }]);
   assert.equal(capacityOf(w, 'pradera'), 8);
   assert.ok(w.animals.every((a) => a.corral === 'pradera'));
   assert.equal('capacity' in w, false);
@@ -27,7 +27,7 @@ test('corrales: capacidad por nivel, búsqueda por especie y animales sin corral
   assert.equal(corralOfSpecies(w, 'mapache'), undefined);
   assert.throws(() => addAnimal(w, 'mapache', 0), /corral/);
   const b = addCorral(w, 'bosque', 2);
-  assert.deepEqual(b, { id: 'bosque', tipo: 'bosque', nombre: 'Bosque', nivel: 2 });
+  assert.deepEqual(b, { id: 'bosque', tipo: 'bosque', nombre: 'Bosque', nivel: 2, breed: 'auto' });
   assert.equal(capacityOf(w, 'bosque'), CORRAL_TYPES.bosque.cap + 8);
   assert.equal(corralOfSpecies(w, 'mapache').id, 'bosque');
   assert.equal(getCorral(w, 'bosque'), b);

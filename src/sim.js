@@ -4,17 +4,18 @@
 
 import {
   SPECIES, FOODS, PRODUCTS, BALANCE, CORRAL_COSTS, CORRAL_TYPES, CORRAL_TYPE_ORDER, MAX_CORRAL_LEVEL, corralTypeOf,
-  COMMON_VARIANTS, VARIANT_TIERS, rarityOf, MAX_HEARTS, DISEASES, SECRETS,
+  COMMON_VARIANTS, VARIANT_TIERS, rarityOf, MAX_HEARTS, DISEASES, SECRETS, QUESTS,
 } from './data.js';
 import { rand, randInt, chance } from './rng.js';
-import { addAnimal, addCorral, capacityOf, getCorral, corralOfSpecies, cleanName } from './state.js';
+import { addAnimal, addCorral, capacityOf, getCorral, corralOfSpecies, cleanName, randomSpot } from './state.js';
 
 const ok = (msg, extra = {}) => ({ ok: true, msg, ...extra });
 const no = (msg) => ({ ok: false, msg });
 
-/** Animales y huevos que ocupan lugar en un corral. */
+/** Animales, huevos y cupos del Criadero (cada uno reserva el lugar de su futura cría) que ocupan lugar en un corral. */
 export const spaceUsed = (w, corralId) =>
-  w.animals.filter((a) => a.corral === corralId).length + w.eggs.filter((e) => e.corral === corralId).length;
+  w.animals.filter((a) => a.corral === corralId).length + w.eggs.filter((e) => e.corral === corralId).length
+  + (w.criadero?.lanes || []).filter((l) => l.corral === corralId).length;
 export const hasSpace = (w, corralId) => spaceUsed(w, corralId) < capacityOf(w, corralId);
 export const find = (w, id) => w.animals.find((a) => a.id === id);
 /** El animal sigue siendo este mismo objeto del mundo (si se cargó otro mundo, ya no). */
@@ -50,6 +51,7 @@ export function tick(w, dt, opts = {}) {
   const crowded = new Set(w.corrales.filter((c) => spaceUsed(w, c.id) > capacityOf(w, c.id)).map((c) => c.id));
 
   for (const a of w.animals) {
+    if (a.away) continue; // en el nido del Criadero: su hambre y su ánimo quedan en pausa
     const sp = SPECIES[a.species];
     a.fed = Math.max(0, a.fed - B.fedDecayPerSec * s);
     if (a.fed >= 50) a.happy = Math.min(100, a.happy + B.happyUpPerSec * s);
@@ -91,12 +93,42 @@ export function tick(w, dt, opts = {}) {
     }
   }
 
+  // Criadero: nido → huevo en incubadora → eclosión (el tiempo que sobra pasa a la fase siguiente)
+  const lanes = w.criadero?.lanes || [];
+  for (let i = lanes.length - 1; i >= 0; i--) {
+    const l = lanes[i];
+    if (l.heatCd > 0) l.heatCd = Math.max(0, l.heatCd - dt);
+    l.left -= dt;
+    while (l.left <= 0 && lanes.includes(l)) {
+      const sp = SPECIES[l.species];
+      if (l.phase === 'nest') {
+        const A = find(w, l.a), Bb = find(w, l.b);
+        if (A) A.away = false;
+        if (Bb) Bb.away = false;
+        if (!A || !Bb) { lanes.splice(lanes.indexOf(l), 1); break; }
+        l.variant = pickBabyVariant(w, A, Bb, B.criaderoMutationBonus * w.criadero.level);
+        l.shiny = chance(w, A.shiny || Bb.shiny ? B.shinyChanceParent : B.shinyChance);
+        for (const x of [A, Bb]) { x.cool = sp.breed * 2; Object.assign(x, randomSpot(w, l.species)); x.tx = x.x; x.ty = x.y; }
+        const total = Math.max(15000, sp.breed * B.criaderoEggMul * cutOf(w));
+        Object.assign(l, { phase: 'egg', a: 0, b: 0, total, left: total + l.left, heat: 0, heatCd: 0 });
+        w.stats.breedStarted++;
+        events.push({ type: 'egg', species: l.species });
+      } else {
+        lanes.splice(lanes.indexOf(l), 1);
+        const baby = addAnimal(w, l.species, l.variant, 'baby', { shiny: l.shiny });
+        w.stats.born[l.species] = (w.stats.born[l.species] || 0) + 1;
+        w.stats.bornTotal++;
+        events.push({ type: 'hatch', animal: baby });
+      }
+    }
+  }
+
   // cría: parejas de la misma especie, felices y comidas
   for (const species of Object.keys(SPECIES)) {
     const corral = corralOfSpecies(w, species);
-    if (!corral) continue;
+    if (!corral || corral.breed === 'manual') continue; // en manual solo se cría en el Criadero
     const ready = w.animals.filter((a) =>
-      a.species === species && a.stage === 'adult' && a.cool <= 0 && !a.sick &&
+      a.species === species && a.stage === 'adult' && a.cool <= 0 && !a.sick && !a.away &&
       a.fed >= B.minFedToBreed && a.happy >= B.minHappyToBreed);
     while (ready.length >= 2 && hasSpace(w, corral.id)) {
       const a = ready.shift();
@@ -220,9 +252,9 @@ export function cure(w, id) {
  * Color de una cría: hereda el de un padre al azar; con probabilidad `mutationChance` muta
  * a un color poco común o raro (las probabilidades están en BALANCE, en data.js).
  */
-export function pickBabyVariant(w, a, b) {
+export function pickBabyVariant(w, a, b, bonus = 0) {
   const inherited = chance(w, 0.5) ? a.variant : b.variant;
-  if (!chance(w, BALANCE.mutationChance)) return inherited;
+  if (!chance(w, BALANCE.mutationChance + bonus)) return inherited;
   const tier = chance(w, BALANCE.mutantTierOdds.poco) ? 'poco' : 'raro';
   return VARIANT_TIERS.indexOf(tier);
 }
@@ -243,6 +275,7 @@ export function renameAnimal(w, id, raw) {
 export function feed(w, id, food) {
   const a = find(w, id);
   if (!a) return no('No encuentro a ese animal.');
+  if (a.away) return no(`${a.name} está en el Criadero.`);
   if (!FOODS[food]) return no('Esa comida no existe.');
   if (!(w.foods[food] > 0)) return no(`No te queda ${FOODS[food].nombre.toLowerCase()}.`);
   if (a.fed >= 95) return no(`${a.name} está llenito.`);
@@ -260,6 +293,7 @@ export function feed(w, id, food) {
 export function pet(w, id) {
   const a = find(w, id);
   if (!a) return no('No encuentro a ese animal.');
+  if (a.away) return no(`${a.name} está en el Criadero.`);
   if (a.petCd > 0) return no(`${a.name} ya recibió mimos hace un ratito.`);
   a.happy = Math.min(100, a.happy + BALANCE.petHappy);
   a.petCd = BALANCE.petCooldown;
@@ -271,6 +305,7 @@ export function pet(w, id) {
 export function collect(w, id) {
   const a = find(w, id);
   if (!a) return no('No encuentro a ese animal.');
+  if (a.away) return no(`${a.name} está en el Criadero.`);
   if (a.ready < 1) return no(`${a.name} todavía no tiene nada.`);
   const product = SPECIES[a.species].product;
   const n = a.shiny ? 2 : 1;
@@ -282,7 +317,7 @@ export function collect(w, id) {
 
 export function collectAll(w) {
   let total = 0;
-  for (const a of w.animals) while (a.ready > 0) { collect(w, a.id); total++; }
+  for (const a of w.animals) while (!a.away && a.ready > 0) { collect(w, a.id); total++; }
   return total ? ok(`Recogiste ${total} producto${total > 1 ? 's' : ''}.`) : no('Nada listo para recoger.');
 }
 
@@ -306,6 +341,78 @@ export function buyFood(w, food, n = 1) {
   w.coins -= cost;
   w.foods[food] = (w.foods[food] || 0) + n;
   return ok(`Compraste ${n} de ${FOODS[food].nombre.toLowerCase()}.`);
+}
+
+// ------------------------------------------------------------------ Criadero
+const chapterOf = (w) => QUESTS.find((q) => !w.quests.claimed[q.id])?.ch ?? Infinity;
+const cutOf = (w) => Math.max(0.3, 1 - BALANCE.criaderoTimeCut * w.criadero.level);
+export const criaderoOpen = (w) => chapterOf(w) >= BALANCE.criaderoMinCh;
+export function criaderoInfo(w) {
+  const c = w.criadero, max = BALANCE.criaderoUpgradeCosts.length;
+  const slots = BALANCE.criaderoSlots[c.level];
+  return { built: c.built, open: criaderoOpen(w), level: c.level, maxLevel: max, slots, used: c.lanes.length, free: slots - c.lanes.length,
+    upgradeCost: c.level < max ? BALANCE.criaderoUpgradeCosts[c.level] : null };
+}
+export function buildCriadero(w) {
+  if (w.criadero.built) return no('Ya tienes el Criadero.');
+  if (!criaderoOpen(w)) return no('El Criadero se abre cuando la historia llegue al capítulo 2.');
+  if (w.coins < BALANCE.criaderoCost) return no('Te faltan monedas.');
+  w.coins -= BALANCE.criaderoCost;
+  w.criadero.built = true;
+  return ok('¡Construiste el Criadero! Ahora puedes elegir las parejas.');
+}
+export function upgradeCriadero(w) {
+  const info = criaderoInfo(w);
+  if (!info.built) return no('Primero construye el Criadero.');
+  if (info.upgradeCost == null) return no('El Criadero ya está al máximo.');
+  if (w.coins < info.upgradeCost) return no('Te faltan monedas.');
+  w.coins -= info.upgradeCost;
+  w.criadero.level++;
+  return ok(`¡Criadero al nivel ${w.criadero.level + 1}! Más cupos y menos espera.`);
+}
+/** ¿Este animal puede ir a un nido? Adulto, sano, comido, contento, sin descanso y que no esté ya en el Criadero. */
+export const canNest = (a) => a.stage === 'adult' && !a.sick && !a.away && a.cool <= 0
+  && a.fed >= BALANCE.minFedToBreed && a.happy >= BALANCE.minHappyToBreed;
+export const eligibleParents = (w, species) => w.animals.filter((a) => a.species === species && canNest(a));
+export function pairAnimals(w, idA, idB) {
+  const c = w.criadero;
+  if (!c.built) return no('Primero construye el Criadero.');
+  const A = find(w, idA), Bb = find(w, idB);
+  if (!A || !Bb || A === Bb) return no('Elige dos animales distintos.');
+  if (A.species !== Bb.species) return no('Tienen que ser de la misma especie.');
+  for (const x of [A, Bb]) {
+    if (x.away) return no(`${x.name} ya está en el Criadero.`);
+    if (x.sick) return no(`${x.name} está enfermo.`);
+    if (x.stage !== 'adult') return no(`${x.name} todavía es una cría.`);
+    if (x.cool > 0) return no(`${x.name} está descansando de su última cría.`);
+    if (x.fed < BALANCE.minFedToBreed || x.happy < BALANCE.minHappyToBreed) return no(`${x.name} necesita estar bien comido y contento.`);
+  }
+  if (c.lanes.length >= BALANCE.criaderoSlots[c.level]) return no('No quedan cupos libres: espera o mejora el Criadero.');
+  const corral = corralOfSpecies(w, A.species);
+  if (!corral || !hasSpace(w, corral.id)) return no(`No hay espacio en ${corral?.nombre || 'su corral'} para la cría: amplíalo.`);
+  const total = Math.max(15000, SPECIES[A.species].breed * BALANCE.criaderoNestMul * cutOf(w));
+  c.lanes.push({ id: w.nextId++, phase: 'nest', species: A.species, corral: corral.id, a: A.id, b: Bb.id, left: total, total, variant: 0, shiny: false, heat: 0, heatCd: 0 });
+  A.away = Bb.away = true;
+  return ok(`${A.name} y ${Bb.name} se fueron al nido.`);
+}
+/** «Darle calor» a un huevo del Criadero: adelanta parte del tiempo, con tope y enfriamiento. */
+export function heatEgg(w, laneId) {
+  const l = w.criadero.lanes.find((x) => x.id === laneId);
+  if (!l || l.phase !== 'egg') return no('Ese huevo no está en la incubadora.');
+  if (l.heat >= BALANCE.heatMax) return no('Ya recibió todo el calor que aguanta.');
+  if (l.heatCd > 0) return no('Dale un ratito: todavía está calentito.');
+  l.left = Math.max(0, l.left - l.total * BALANCE.heatCut);
+  l.heat++;
+  l.heatCd = BALANCE.heatCooldown;
+  return ok('¡Calorcito para el huevo!');
+}
+/** Cría «automática» (por defecto) o «manual» (solo en el Criadero) para un corral. */
+export function setCorralBreed(w, corralId, mode) {
+  const c = getCorral(w, corralId);
+  if (!c) return no('Ese corral no existe.');
+  if (mode !== 'auto' && mode !== 'manual') return no('Modo desconocido.');
+  c.breed = mode;
+  return ok(mode === 'manual' ? `En ${c.nombre} ahora solo se cría en el Criadero.` : `En ${c.nombre} la cría vuelve a ser automática.`);
 }
 
 export function canBuyAnimal(w, species) {
@@ -414,6 +521,7 @@ export function secretsByState(w) {
 export function wander(w, dt) {
   if (!(dt > 0)) return;
   for (const a of w.animals) {
+    if (a.away) continue;
     if (a.wait > 0) { a.wait -= dt; continue; }
     const dx = a.tx - a.x, dy = a.ty - a.y;
     const dist = Math.hypot(dx, dy);

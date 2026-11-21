@@ -67,6 +67,15 @@ app.claimGift = () => {
   ui.toast(r.ok ? `${r.msg}: ${rewardText(r.reward)}.` : r.msg, r.ok ? 'ok' : 'warn');
   if (r.ok) { app.audio.play('collect'); saveNow(false); ui.refresh(); }
 };
+app.buildCriadero = () => report(sim.buildCriadero(app.w), undefined, 'buy');
+app.upgradeCriadero = () => report(sim.upgradeCriadero(app.w), undefined, 'buy');
+app.pair = (a, b) => {
+  const r = sim.pairAnimals(app.w, a, b);
+  if (r.ok && [a, b].includes(app.selectedId)) app.selectedId = null; // un animal en el nido ya no está en el corral
+  report(r, undefined, 'heart');
+};
+app.heat = (id) => report(sim.heatEgg(app.w, id), undefined, 'pet');
+app.setBreed = (corralId, mode) => report(sim.setCorralBreed(app.w, corralId, mode), undefined, 'tap');
 app.collectAll = () => report(sim.collectAll(app.w), undefined, 'collect');
 app.buyAnimal = (s) => {
   const r = sim.buyAnimal(app.w, s);
@@ -236,6 +245,7 @@ function setupCanvas(canvas) {
       const tipo = hitMap(app.w, lx, ly);
       if (!tipo) return;
       if (tipo === 'vet') ui.openPanel('vet');
+      else if (tipo === 'criadero') ui.openPanel('criadero');
       else if (getCorral(app.w, tipo)) app.goTo(tipo);
       else ui.openPanel('shop', 'corrales');
       return;

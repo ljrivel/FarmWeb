@@ -3,7 +3,7 @@
 
 import {
   VERSION, SPECIES, FOODS, PRODUCTS, QUESTS, SIDE_QUESTS, SECRETS, SCENES, VISITS, CORRAL_TYPES, MAX_CORRAL_LEVEL, corralTypeOf,
-  MAX_ANIMALS_IMPORT, MAX_OFFLINE_MS, MAX_HEARTS, DISEASES,
+  MAX_ANIMALS_IMPORT, MAX_OFFLINE_MS, MAX_HEARTS, DISEASES, BALANCE,
 } from './data.js';
 import { rand, randInt } from './rng.js';
 import { migrateWorld } from './migrate.js';
@@ -26,7 +26,7 @@ export function addCorral(w, tipo, nivel = 0) {
   if (!CORRAL_TYPES[tipo]) throw new Error(`Tipo de corral desconocido: ${tipo}`);
   const have = getCorral(w, tipo);
   if (have) return have;
-  const c = { id: tipo, tipo, nombre: CORRAL_TYPES[tipo].nombre, nivel };
+  const c = { id: tipo, tipo, nombre: CORRAL_TYPES[tipo].nombre, nivel, breed: 'auto' };
   w.corrales.push(c);
   return c;
 }
@@ -43,7 +43,7 @@ export function randomSpot(w, species) {
 }
 
 /** Campos de cuidado de la fase 2B (corazones y enfermedad) con su valor por defecto. */
-export const CARE_DEFAULTS = Object.freeze({ hearts: 0, love: 0, loveDay: 0, loveToday: 0, sick: null, sickT: 0, sadT: 0, hungryT: 0 });
+export const CARE_DEFAULTS = Object.freeze({ hearts: 0, love: 0, loveDay: 0, loveToday: 0, sick: null, sickT: 0, sadT: 0, hungryT: 0, away: false });
 /** Segundo aleatorio con semilla, solo para enfermedades: así no cambia la secuencia de la cría. */
 const careSeed = (seed) => (seed ^ 0xa5a5a5a5) >>> 0;
 
@@ -70,13 +70,14 @@ export function newWorld(name = 'Granja de la familia', now = Date.now(), seed =
     name, createdAt: now, lastTick: now, rng: seed >>> 0, careRng: careSeed(seed),
     coins: 100,
     foods: { grano: 10 }, products: {},
-    corrales: [{ id: 'pradera', tipo: 'pradera', nombre: CORRAL_TYPES.pradera.nombre, nivel: 0 }],
+    corrales: [{ id: 'pradera', tipo: 'pradera', nombre: CORRAL_TYPES.pradera.nombre, nivel: 0, breed: 'auto' }],
     animals: [], eggs: [], nextId: 1,
     stats: { fed: 0, petted: 0, sold: 0, collected: {}, born: {}, bornTotal: 0, bought: {}, breedStarted: 0, cured: 0, named: 0 },
     quests: { claimed: {}, side: {}, sideBase: {} },
     secrets: {},
     story: { seen: {}, talked: {} },
     gift: { day: '', n: 0 },
+    criadero: { built: false, level: 0, lanes: [] },
     unlocked: [...INITIAL_UNLOCKED],
     players: [{ id: 'local', name: 'Jugador 1' }],
     maxPlayers: 4,
@@ -157,9 +158,11 @@ export function validateWorld(raw, now = Date.now()) {
   // Un corral por tipo (gana el primero); la Pradera siempre existe.
   for (const c of (Array.isArray(raw.corrales) ? raw.corrales : [])) {
     if (!isObj(c) || !CORRAL_TYPES[c.tipo] || getCorral(w, c.tipo)) continue;
-    addCorral(w, c.tipo, int(c.nivel, 0, MAX_CORRAL_LEVEL, 0)).nombre = text(c.nombre, 24, CORRAL_TYPES[c.tipo].nombre);
+    const cor = addCorral(w, c.tipo, int(c.nivel, 0, MAX_CORRAL_LEVEL, 0));
+    cor.nombre = text(c.nombre, 24, CORRAL_TYPES[c.tipo].nombre);
+    cor.breed = c.breed === 'manual' ? 'manual' : 'auto';
   }
-  if (!getCorral(w, 'pradera')) w.corrales.unshift({ id: 'pradera', tipo: 'pradera', nombre: CORRAL_TYPES.pradera.nombre, nivel: 0 });
+  if (!getCorral(w, 'pradera')) w.corrales.unshift({ id: 'pradera', tipo: 'pradera', nombre: CORRAL_TYPES.pradera.nombre, nivel: 0, breed: 'auto' });
   if (Array.isArray(raw.unlocked)) {
     for (const s of raw.unlocked) {
       if (SPECIES[s] && !w.unlocked.includes(s)) w.unlocked.push(s);
@@ -214,7 +217,7 @@ export function validateWorld(raw, now = Date.now()) {
       loveDay: int(a.loveDay, 0, 1e7, 0), loveToday: num(a.loveToday, 0, 1e4, 0),
       sick: typeof a.sick === 'string' && Object.hasOwn(DISEASES, a.sick) ? a.sick : null,
       sickT: num(a.sickT, 0, 1e9, 0), sadT: num(a.sadT, 0, 1e9, 0), hungryT: num(a.hungryT, 0, 1e9, 0),
-      x, y, tx: x, ty: y, wait: 0,
+      away: false, x, y, tx: x, ty: y, wait: 0,
     });
   }
   for (const e of (Array.isArray(raw.eggs) ? raw.eggs : []).slice(0, MAX_EGGS)) {
@@ -227,6 +230,32 @@ export function validateWorld(raw, now = Date.now()) {
       left: num(e.left, 0, sp.breed, sp.breed),
       ...spot(corral, e.x, e.y),
     });
+  }
+  // Criadero: cupos con su pareja (nido) o su huevo; los padres de un nido quedan «ausentes» del corral.
+  const cr = isObj(raw.criadero) ? raw.criadero : {};
+  w.criadero = { built: cr.built === true, level: 0, lanes: [] };
+  if (w.criadero.built) {
+    w.criadero.level = int(cr.level, 0, BALANCE.criaderoUpgradeCosts.length, 0);
+    const taken = new Set();
+    for (const l of (Array.isArray(cr.lanes) ? cr.lanes : [])) {
+      if (w.criadero.lanes.length >= BALANCE.criaderoSlots[w.criadero.level] || !isObj(l) || !SPECIES[l.species]) continue;
+      const sp = SPECIES[l.species];
+      const corral = getCorral(w, corralTypeOf(l.species));
+      if (!corral) continue;
+      const lane = {
+        id: newId(l.id), phase: l.phase === 'egg' ? 'egg' : 'nest', species: l.species, corral: corral.id, a: 0, b: 0,
+        left: num(l.left, 0, 1e9, 0), total: num(l.total, 1, 1e9, sp.breed),
+        variant: int(l.variant, 0, sp.variants.length - 1, 0), shiny: l.shiny === true,
+        heat: int(l.heat, 0, BALANCE.heatMax, 0), heatCd: num(l.heatCd, 0, 1e9, 0),
+      };
+      if (lane.phase === 'nest') {
+        const A = w.animals.find((x) => x.id === l.a), B = w.animals.find((x) => x.id === l.b);
+        if (!A || !B || A === B || A.species !== l.species || B.species !== l.species || taken.has(A.id) || taken.has(B.id)) continue;
+        lane.a = A.id; lane.b = B.id; taken.add(A.id); taken.add(B.id);
+        A.away = B.away = true;
+      }
+      w.criadero.lanes.push(lane);
+    }
   }
   // Un corral nunca queda más chico que sus habitantes: sube de nivel lo necesario.
   for (const c of w.corrales) {

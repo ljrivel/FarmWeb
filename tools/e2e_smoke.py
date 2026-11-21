@@ -946,6 +946,80 @@ def mao_mao(browser):
     ctx.close()
 
 
+def criadero_flow(browser):
+    print("\n== Criadero y dinosaurios en la tienda")
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    page = ctx.new_page()
+    errors = []
+    page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(URL)
+    page.wait_for_function("document.getElementById('loading').hidden === true", timeout=15000)
+    page.evaluate("""(async () => {
+      const { QUESTS } = await import('/src/data.js');
+      const w = farmweb.app.w;
+      for (const q of QUESTS) { if (q.id === 'c2-mapache') break; w.quests.claimed[q.id] = true; }
+      w.coins = 6000;
+      for (const a of w.animals) { a.fed = 90; a.happy = 90; a.cool = 0; }
+    })()""")
+    page.click('[data-goto="mapa"]')
+    page.wait_for_timeout(300)
+    gbox = page.locator("#game").bounding_box()
+    page.mouse.click(gbox["x"] + 36 * gbox["width"] / 320, gbox["y"] + 34 * gbox["height"] / 224)
+    page.wait_for_selector('[data-key="cr-build"]', timeout=3000)
+    check(page.locator("#sheetTitle").inner_text() == "Criadero", "tocar el Criadero en el mapa abre su panel")
+    page.screenshot(path=f"{SHOTS}/movil-70-criadero-sin-construir.png")
+    page.locator('[data-key="cr-build"]').click()
+    page.wait_for_selector('[data-key^="pair-sp-"]', timeout=3000)
+    check(page.evaluate("farmweb.app.w.criadero.built"), "construirlo cuesta monedas y lo deja listo")
+    page.locator('[data-key="pair-sp-gallina"]').click()
+    picks = page.locator('[data-key^="pick-"]')
+    picks.nth(0).click(); picks.nth(1).click()
+    page.locator('[data-key="pair-go"]').click()
+    page.wait_for_timeout(300)
+    check(page.evaluate("farmweb.app.w.criadero.lanes.length") == 1 and page.evaluate("farmweb.app.w.animals.filter((a) => a.away).length") == 2, "emparejar manda a los dos al nido")
+    page.screenshot(path=f"{SHOTS}/movil-71-criadero-nido.png")
+    page.keyboard.press("Escape")
+    page.click('[data-panel="animals"]')
+    check("en el Criadero" in page.locator("#sheetBody").inner_text(), "Animales avisa que están en el Criadero")
+    page.locator('[data-key="breed-pradera"]').click()
+    check(page.evaluate("farmweb.app.w.corrales[0].breed") == "manual", "el corral pasa a cría manual")
+    page.keyboard.press("Escape")
+    page.evaluate("farmweb.app.w.criadero.lanes[0].left = 0")
+    page.wait_for_function("farmweb.app.w.criadero.lanes[0].phase === 'egg'", timeout=4000)
+    check(page.evaluate("farmweb.app.w.animals.filter((a) => a.away).length") == 0, "al terminar el nido los padres vuelven")
+    page.click('[data-goto="mapa"]')
+    page.wait_for_timeout(300)
+    page.mouse.click(gbox["x"] + 36 * gbox["width"] / 320, gbox["y"] + 34 * gbox["height"] / 224)
+    page.wait_for_selector('[data-key^="heat-"]', timeout=3000)
+    check("Huevo de gallina" in page.locator("#sheetBody").inner_text(), "el huevo aparece en la incubadora")
+    page.locator('[data-key^="heat-"]').click()
+    check(page.evaluate("farmweb.app.w.criadero.lanes[0].heat") == 1, "Darle calor lo adelanta")
+    page.screenshot(path=f"{SHOTS}/movil-72-criadero-huevo.png")
+    page.keyboard.press("Escape")
+    page.evaluate("farmweb.app.w.criadero.lanes[0].left = 0")
+    page.wait_for_function("farmweb.app.w.criadero.lanes.length === 0", timeout=4000)
+    check(page.evaluate("farmweb.app.w.animals.filter((a) => a.stage === 'baby').length") >= 1, "el huevo nace y la cría aparece en su corral")
+
+    # dinosaurios: una vez desbloqueados se ven y se compran en la tienda
+    page.evaluate("""(() => {
+      const w = farmweb.app.w;
+      for (const t of ['bosque', 'estanque', 'jurasico', 'valle']) if (!w.corrales.some((c) => c.tipo === t)) w.corrales.push({ id: t, tipo: t, nombre: t, nivel: 0, breed: 'auto' });
+      for (const s of ['carnotauro', 'spinosaurus', 'triceratops', 'estegosaurio', 'pterodactilo', 'plesiosaurio']) if (!w.unlocked.includes(s)) w.unlocked.push(s);
+      w.coins = 20000;
+    })()""")
+    page.click('[data-panel="shop"]')
+    texto = page.locator("#sheetBody").inner_text()
+    check(all(n in texto for n in ("Carnotauro", "Spinosaurus", "Triceratops", "Estegosaurio", "Pterodáctilo", "Plesiosaurio")), "la tienda lista los 6 dinosaurios")
+    check(page.locator('[data-key="buy-triceratops"]').is_enabled(), "el botón Comprar del triceratops está activo")
+    page.screenshot(path=f"{SHOTS}/movil-73-tienda-dinosaurios.png", full_page=False)
+    page.locator('[data-key="buy-triceratops"]').click()
+    page.wait_for_timeout(300)
+    check(page.evaluate("farmweb.app.w.animals.some((a) => a.species === 'triceratops')"), "comprar el triceratops lo trae al Valle")
+    check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
+    ctx.close()
+
+
 def main():
     server = subprocess.Popen([sys.executable, "-m", "http.server", str(PORT), "--bind", "127.0.0.1"],
                               cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -974,6 +1048,7 @@ def main():
             sheep_and_fox(browser)
             chapter8(browser)
             mao_mao(browser)
+            criadero_flow(browser)
             tutorial_flow(browser, "movil", {"width": 390, "height": 844}, 3, True)
             tutorial_flow(browser, "pc", {"width": 1280, "height": 800}, 1, False)
             tutorial_returning_player(browser)
