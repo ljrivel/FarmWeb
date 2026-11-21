@@ -1,0 +1,13 @@
+{
+ "cell": 48,
+ "index": {
+  "pradera": 0,
+  "bosque": 1,
+  "estanque": 2,
+  "jurasico": 3,
+  "pradera_bloq": 4,
+  "bosque_bloq": 5,
+  "estanque_bloq": 6,
+  "jurasico_bloq": 7
+ }
+}

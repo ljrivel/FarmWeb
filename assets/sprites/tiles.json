@@ -7,6 +7,11 @@
   "path": 3,
   "water": 4,
   "fence_h": 5,
-  "fence_v": 6
+  "fence_v": 6,
+  "moss": 7,
+  "fern": 8,
+  "sand": 9,
+  "rock": 10,
+  "tree": 11
  }
 }

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Genera el pixel art de FarmWeb: animales (32x32), iconos y tiles (16x16).
+"""Genera el pixel art de FarmWeb: animales (32x32), iconos y tiles (16x16) y lugares del mapa (48x48).
 
 Uso:  python3 tools/gen_sprites.py
-Salida: assets/sprites/{animals,icons,tiles}.png + .json, docs/preview-sprites.png
+Salida: assets/sprites/{animals,icons,tiles,places}.png + .json, docs/preview-sprites.png
 
 Estilo kawaii: formas redondas, ojos grandes con brillo, mejillas rosadas,
 contorno con el tono oscuro del propio color (nunca negro).
@@ -490,6 +490,31 @@ def ic_destello(c):
     c.ell(7, 7, 2, 2, WHITE)
 
 
+def ic_mapa(c):
+    c.rect(2, 3, 13, 12, hx("#fff1cf"))
+    c.rect(5, 3, 5, 12, hx("#f3d9a0"))
+    c.rect(10, 3, 10, 12, hx("#f3d9a0"))
+    for x, y in ((3, 10), (4, 9), (6, 8), (7, 8), (8, 7), (9, 6)):
+        c.px(x, y, hx("#ff8fb0"))
+    c.px(11, 5, hx("#e0647d"))
+    c.px(12, 6, hx("#e0647d"))
+    c.px(12, 5, hx("#e0647d"))
+    c.px(11, 6, hx("#e0647d"))
+
+
+def ic_candado(c):
+    c.rect(5, 3, 6, 7, hx("#b9a9c9"))
+    c.rect(9, 3, 10, 7, hx("#b9a9c9"))
+    c.rect(5, 3, 10, 4, hx("#b9a9c9"))
+    c.rect(3, 7, 12, 13, hx("#d9c7e6"))
+    c.px(7, 9, EYE)
+    c.px(7, 10, EYE)
+    c.px(8, 9, EYE)
+    c.px(8, 10, EYE)
+    c.px(7, 11, EYE)
+    c.px(8, 11, EYE)
+
+
 ICONS = [
     ("coin", "#ffd95e", ic_coin), ("heart", "#ff6f91", ic_heart),
     ("huevo", "#fffaf0", ic_huevo), ("huevo_dino", "#cfeee0", ic_huevo_dino),
@@ -500,6 +525,7 @@ ICONS = [
     ("heno", "#efd36a", ic_heno), ("pescadito", "#7fc4ff", ic_pescadito),
     ("bayas", "#ff6a8a", ic_bayas), ("carnita", "#d9744f", ic_carnita),
     ("gusanito", "#ff9fb4", ic_gusanito), ("destello", "#fff3a8", ic_destello),
+    ("mapa", "#fff1cf", ic_mapa), ("candado", "#d9c7e6", ic_candado),
 ]
 
 
@@ -558,11 +584,136 @@ def tile_fence(horizontal):
     return img
 
 
+def _speckled(base, dark, light, seed, n_dark=6, n_light=3):
+    rng = random.Random(seed)
+    img = Image.new("RGBA", (16, 16), hx(base))
+    for _ in range(n_dark):
+        img.putpixel((rng.randrange(16), rng.randrange(16)), hx(dark))
+    for _ in range(n_light):
+        img.putpixel((rng.randrange(16), rng.randrange(16)), hx(light))
+    return img
+
+
+def tile_moss():
+    img = _speckled("#9fd29a", "#86c283", "#c3e6b4", 201, 8, 3)
+    for x, y in ((4, 4), (11, 9)):
+        img.putpixel((x, y), hx("#ffd8e4"))
+    return img
+
+
+def tile_fern():
+    img = _speckled("#b5dfa0", "#a1d28c", "#d3f0b8", 202, 4, 2)
+    for fx, fy in ((4, 5), (11, 11)):
+        for dx, dy in ((0, 0), (-1, 1), (1, 1), (-2, 2), (2, 2)):
+            img.putpixel((fx + dx, fy + dy), hx("#6fb76a"))
+        img.putpixel((fx, fy + 1), hx("#6fb76a"))
+        img.putpixel((fx, fy + 2), hx("#6fb76a"))
+    return img
+
+
+def tile_sand():
+    return _speckled("#f6e4b8", "#ead3a0", "#fff3d6", 203, 8, 2)
+
+
+def tile_rock():
+    img = _speckled("#d9d2e6", "#c3bad6", "#ece8f5", 204, 6, 3)
+    d = ImageDraw.Draw(img)
+    d.ellipse([3, 6, 8, 10], fill=hx("#b9afcf"))
+    d.ellipse([9, 3, 13, 7], fill=hx("#c3bad6"))
+    img.putpixel((4, 7), hx("#ece8f5"))
+    img.putpixel((10, 4), hx("#ece8f5"))
+    return img
+
+
+def tile_tree():
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.rectangle([7, 10, 8, 14], fill=hx("#b9835a"))
+    d.ellipse([2, 1, 13, 11], fill=hx("#7cc68b"))
+    d.ellipse([4, 3, 8, 6], fill=hx("#a5dfae"))
+    img.putpixel((10, 8), hx("#69b87b"))
+    img.putpixel((9, 9), hx("#69b87b"))
+    return outline(img, auto_line(hx("#7cc68b")))
+
+
 TILES = [
     ("grass0", tile_grass(0)), ("grass1", tile_grass(1)), ("grass2", tile_grass(2)),
     ("path", tile_path()), ("water", tile_water()),
     ("fence_h", tile_fence(True)), ("fence_v", tile_fence(False)),
+    ("moss", tile_moss()), ("fern", tile_fern()), ("sand", tile_sand()),
+    ("rock", tile_rock()), ("tree", tile_tree()),
 ]
+
+
+# ------------------------------------------------------------ lugares del mapa (48x48)
+def _place(fn):
+    c = Canvas(48)
+    fn(c)
+    return outline(shade_pass(c.img), hx("#6b4a63"))
+
+
+def pl_pradera(c):
+    c.ell(24, 42, 21, 4, hx("#a9d98a"))
+    c.rect(8, 24, 40, 41, hx("#ff9fb4"))
+    c.poly([(4, 25), (24, 7), (44, 25)], hx("#e0647d"))
+    c.rect(18, 29, 30, 41, hx("#fff1cf"))
+    c.rect(18, 29, 19, 41, hx("#f3d9a0"))
+    c.rect(29, 29, 30, 41, hx("#f3d9a0"))
+    c.rect(18, 35, 30, 36, hx("#f3d9a0"))
+    c.ell(24, 19, 3, 3, hx("#fff1cf"))
+
+
+def pl_bosque(c):
+    c.ell(24, 43, 21, 4, hx("#a9d98a"))
+    c.rect(21, 32, 27, 43, hx("#b9835a"))
+    c.poly([(24, 20), (7, 40), (41, 40)], hx("#69b87b"))
+    c.poly([(24, 12), (10, 30), (38, 30)], hx("#7cc68b"))
+    c.poly([(24, 4), (13, 21), (35, 21)], hx("#8fd49b"))
+    c.rect(35, 34, 44, 39, hx("#e8bf92"))
+    c.rect(38, 39, 40, 44, hx("#b9835a"))
+    c.px(37, 36, hx("#b9835a"))
+    c.px(42, 36, hx("#b9835a"))
+
+
+def pl_estanque(c):
+    c.ell(24, 33, 22, 12, hx("#f6e4b8"))
+    c.ell(24, 32, 18, 9, hx("#9fdcf5"))
+    c.ell(24, 31, 11, 5, hx("#bfeaff"))
+    c.ell(17, 33, 5, 3, hx("#7fd38f"))
+    c.ell(17, 32, 2, 1, hx("#ffb3c8"))
+    c.rect(38, 14, 39, 32, hx("#7fb86a"))
+    c.rect(34, 20, 35, 32, hx("#7fb86a"))
+    c.ell(38, 14, 2, 4, hx("#b9835a"))
+    c.ell(34, 20, 2, 3, hx("#b9835a"))
+
+
+def pl_jurasico(c):
+    c.ell(24, 40, 21, 6, hx("#d9d2e6"))
+    c.ell(24, 40, 14, 3, hx("#c3bad6"))
+    c.ell(24, 23, 11, 14, hx("#cfeee0"))
+    c.ell(20, 17, 4, 3, hx("#e8fbf3"))
+    c.ell(28, 26, 3, 2, hx("#9fd8c0"))
+    c.ell(19, 29, 2, 2, hx("#9fd8c0"))
+    c.ell(25, 19, 2, 1, hx("#9fd8c0"))
+    c.poly([(5, 42), (9, 28), (13, 42)], hx("#7cc68b"))
+    c.poly([(36, 42), (40, 30), (44, 42)], hx("#69b87b"))
+
+
+def desaturate(img):
+    out = img.copy()
+    px = out.load()
+    for y in range(out.height):
+        for x in range(out.width):
+            r, g, b, a = px[x, y]
+            if a == 0:
+                continue
+            gray = 0.3 * r + 0.59 * g + 0.11 * b
+            k = 0.12
+            px[x, y] = (int(gray * (1 - k) + r * k + 24), int(gray * (1 - k) + g * k + 22), int(gray * (1 - k) + b * k + 28), a)
+    return out
+
+
+PLACES = [("pradera", pl_pradera), ("bosque", pl_bosque), ("estanque", pl_estanque), ("jurasico", pl_jurasico)]
 
 
 # --------------------------------------------------------------------- salida
@@ -601,11 +752,23 @@ def build():
     with open(os.path.join(OUT, "tiles.json"), "w") as fh:
         json.dump({"cell": 16, "index": {n: i for i, (n, _) in enumerate(TILES)}}, fh, indent=1)
 
+    places = [(n, _place(f)) for n, f in PLACES]
+    places += [(n + "_bloq", desaturate(im)) for n, im in places[:len(PLACES)]]
+    psheet = Image.new("RGBA", (48 * len(places), 48), (0, 0, 0, 0))
+    for i, (_, im) in enumerate(places):
+        psheet.paste(im, (i * 48, 0))
+    psheet.save(os.path.join(OUT, "places.png"))
+    with open(os.path.join(OUT, "places.json"), "w") as fh:
+        json.dump({"cell": 48, "index": {n: i for i, (n, _) in enumerate(places)}}, fh, indent=1)
+
     # vista previa: 8 especies en columnas; filas = bebé/adulto de cada color
     z, pad = 4, 8
     cols = len(SPECIES)
     cellp = CELL * z + pad
-    prev = Image.new("RGBA", (cols * cellp + pad, 4 * cellp + pad + 2 * (16 * z + pad)), hx("#fff6e5"))
+    icons_y = 4 * cellp + pad
+    tiles_y = icons_y + 2 * (16 * z + pad)
+    places_y = tiles_y + 16 * z + pad
+    prev = Image.new("RGBA", (cols * cellp + pad, places_y + 48 * 2 + pad), hx("#fff6e5"))
     for ci, sp in enumerate(SPECIES):
         for ri, (v, st) in enumerate(((0, "baby"), (0, "adult"), (1, "baby"), (1, "adult"))):
             im = render_animal(sp, v, st, 0).resize((CELL * z, CELL * z), Image.NEAREST)
@@ -613,10 +776,14 @@ def build():
     per_row = (len(icons) + 1) // 2
     for i, (_, im) in enumerate(icons):
         big = im.resize((16 * z, 16 * z), Image.NEAREST)
-        prev.alpha_composite(big, (pad + (i % per_row) * (16 * z + pad), 4 * cellp + pad + (i // per_row) * (16 * z + pad)))
+        prev.alpha_composite(big, (pad + (i % per_row) * (16 * z + pad), icons_y + (i // per_row) * (16 * z + pad)))
+    for i, (_, im) in enumerate(TILES):
+        prev.alpha_composite(im.resize((16 * z, 16 * z), Image.NEAREST), (pad + i * (16 * z + pad), tiles_y))
+    for i, (_, im) in enumerate(places):
+        prev.alpha_composite(im.resize((96, 96), Image.NEAREST), (pad + i * (96 + pad), places_y))
     prev.save(os.path.join(DOCS, "preview-sprites.png"))
     render_animal("gallina", 0, "adult", 0).save(os.path.join(ROOT, "assets", "favicon.png"))
-    print(f"animals.png {atlas.size}, {len(keys)} filas; icons {len(icons)}; tiles {len(TILES)}")
+    print(f"animals.png {atlas.size}, {len(keys)} filas; icons {len(icons)}; tiles {len(TILES)}; places {len(places)}")
 
 
 if __name__ == "__main__":
