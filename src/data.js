@@ -65,8 +65,8 @@ export const DISEASE_ORDER = Object.keys(DISEASES);
 // `cap` es la capacidad base; cada nivel de ampliación suma 4. `cost` null = llega por la historia.
 const LAND = { x0: 28, x1: 292, y0: 66, y1: 204 };
 export const CORRAL_TYPES = {
-  pradera: { nombre: 'Pradera', species: ['gallina', 'gato', 'vaca', 'chanchito'], cap: 8, cost: 0, area: LAND, aquatic: false },
-  bosque: { nombre: 'Bosque', species: ['mapache', 'conejo'], cap: 6, cost: 300, area: LAND, aquatic: false },
+  pradera: { nombre: 'Pradera', species: ['gallina', 'gato', 'vaca', 'chanchito', 'oveja'], cap: 8, cost: 0, area: LAND, aquatic: false },
+  bosque: { nombre: 'Bosque', species: ['mapache', 'conejo', 'zorro'], cap: 6, cost: 300, area: LAND, aquatic: false },
   estanque: { nombre: 'Estanque', species: ['ajolote', 'spinosaurus', 'pato', 'plesiosaurio'], cap: 6, cost: 250, area: { x0: 52, x1: 268, y0: 104, y1: 196 }, aquatic: true },
   jurasico: { nombre: 'Jurásico', species: ['carnotauro'], cap: 4, cost: null, area: LAND, aquatic: false },
   valle: { nombre: 'Valle', species: ['triceratops', 'estegosaurio', 'pterodactilo'], cap: 6, cost: null, area: LAND, aquatic: false },
@@ -181,6 +181,20 @@ export const SPECIES = {
     variants: ['Marino', 'Coral', 'Violeta', 'Dorado'],
     names: ['Ondina', 'Cuello', 'Ola', 'Perlita', 'Coco'],
   },
+  oveja: {
+    nombre: 'Oveja', food: 'heno', product: 'vellon', price: 170,
+    dato: 'Su vellón es tan suave que parece una nube.',
+    grow: 4 * MIN, prod: 160 * 1000, breed: 3 * MIN, aquatic: false,
+    variants: ['Blanca', 'Crema', 'Rosa', 'Lavanda'],
+    names: ['Lanita', 'Nube', 'Beti', 'Copo', 'Merino'],
+  },
+  zorro: {
+    nombre: 'Zorro', food: 'bayas', product: 'pelo_dorado', price: 210,
+    dato: 'Es curioso y siempre devuelve lo que se lleva.',
+    grow: 5 * MIN, prod: 200 * 1000, breed: 4 * MIN, aquatic: false,
+    variants: ['Naranja', 'Canela', 'Nieve', 'Luna'],
+    names: ['Foxi', 'Chispa', 'Rojito', 'Fuego', 'Colita'],
+  },
 };
 export const ORDER = Object.keys(SPECIES);
 
@@ -221,6 +235,8 @@ export const PRODUCTS = {
   placa_dorada: { nombre: 'Placa dorada', price: 45 },
   pluma_celeste: { nombre: 'Pluma celeste', price: 48 },
   perla_marina: { nombre: 'Perla marina', price: 50 },
+  vellon: { nombre: 'Vellón', price: 16 },
+  pelo_dorado: { nombre: 'Pelo dorado', price: 24 },
 };
 
 // Personajes: hablan en las misiones (campo `who`). `rol` explica su lugar en la historia.
@@ -434,6 +450,18 @@ export const SIDE_QUESTS = [
   { id: 's-perlas', minCh: 7, needs: 'plesiosaurio', who: 'mia', title: 'Un collar de perlas',
     text: 'Quiero hacerle un collar a la señora Cosi con perlas marinas. Recoge 2 perlas marinas.',
     goal: { type: 'collect', product: 'perla_marina', n: 2 }, reward: { coins: 150 } },
+  { id: 's-oveja', minCh: 3, who: 'tomas', title: 'Un balido en la colina',
+    text: '¡Oí un balido detrás de la colina! Creo que es una ovejita perdida. Da de comer 30 veces y verás que se anima a quedarse.',
+    goal: { type: 'fed', n: 30 }, reward: { unlock: ['oveja'], foods: { heno: 5 } } },
+  { id: 's-vellon', minCh: 3, needs: 'oveja', who: 'mia', title: 'Un suéter para Tomás',
+    text: 'Con vellón se teje un suéter calentito. Recoge 4 vellones y me pongo a tejer.',
+    goal: { type: 'collect', product: 'vellon', n: 4 }, reward: { coins: 80 } },
+  { id: 's-zorro', minCh: 4, who: 'lia', title: 'Huellas de zorro',
+    text: 'Hay huellas de zorro en la orilla del bosque: un zorrito curioso. Solo se acerca a las granjas animadas, así que cuida a 12 animales a la vez.',
+    goal: { type: 'owncount', n: 12 }, reward: { unlock: ['zorro'], foods: { bayas: 5 } } },
+  { id: 's-pelo', minCh: 4, needs: 'zorro', who: 'bruno', title: 'Colitas doradas',
+    text: 'Dicen que el pelo dorado del zorro da suerte con el correo. Recoge 3 pelos dorados y lo compruebo.',
+    goal: { type: 'collect', product: 'pelo_dorado', n: 3 }, reward: { coins: 100 } },
 ];
 
 // Secretos (easter eggs): discretos, sin efecto en la economía; cuentan como logros en Misiones.
@@ -736,6 +764,30 @@ export const SCENES = [
     ['lia', 1, 'Yo traigo el río.'],
     ['noa', 1, 'Y yo, las preguntas. Siempre tengo preguntas.'],
     ['tomas', 1, 'Y yo las llaves del granero. ¡Y los abrazos!'],
+  ] },
+  { id: 'una-ovejita', when: 'fin:s-oveja', title: 'Una ovejita', lines: [
+    ['tomas', 1, '¡Es una oveja! Y se dejó acariciar a la primera.'],
+    ['mia', 1, 'Parece una nube con patas.'],
+    ['tomas', 0, 'Una nube que se come el heno, Mía.'],
+    ['mia', 1, 'Las mejores nubes.'],
+  ] },
+  { id: 'sueter-para-tomas', when: 'fin:s-vellon', title: 'Un suéter para Tomás', lines: [
+    ['mia', 1, 'Tejí algo con el vellón. Es para ti, Tomás.'],
+    ['tomas', 2, '¿Es… un suéter?'],
+    ['mia', 0, 'Tiene tres mangas. Todavía estoy aprendiendo.'],
+    ['tomas', 1, '¡Es el mejor suéter con tres mangas del mundo!'],
+  ] },
+  { id: 'huellas-de-zorro', when: 'fin:s-zorro', title: 'Huellas de zorro', lines: [
+    ['lia', 0, 'Mira: huellas pequeñas, muy limpias. Un zorro que cuida dónde pisa.'],
+    ['bruno', 1, '¡Y se lleva mis cartas! Digo… se las lleva y me las devuelve.'],
+    ['lia', 0, 'Es curioso. Y es el único que no te teme.'],
+    ['bruno', 2, 'Eso es lo que más me asusta.'],
+  ] },
+  { id: 'colitas-doradas', when: 'fin:s-pelo', title: 'Colitas doradas', lines: [
+    ['bruno', 1, 'Mi suerte cambió: hoy entregué todas las cartas a la primera.'],
+    ['ramon', 0, 'Eso es el pelo dorado. O las ganas.'],
+    ['bruno', 1, '¡Quiero un llavero de pelo dorado!'],
+    ['ramon', 0, 'No se vende, Bruno.'],
   ] },
 ];
 

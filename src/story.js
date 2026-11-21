@@ -8,7 +8,7 @@ const split = (when) => when.split(':');
 function met(w, when) {
   const [kind, id] = split(when);
   if (kind === 'inicio') return QUESTS.find((q) => !w.quests.claimed[q.id])?.id === id;
-  if (kind === 'fin') return !!w.quests.claimed[id];
+  if (kind === 'fin') return !!(w.quests.claimed[id] || w.quests.side[id]); // también cierres de secundarias
   return id === 'primera-enfermedad' && w.animals.some((a) => a.sick);
 }
 
@@ -19,7 +19,7 @@ export const nextScene = (w) => SCENES.find((s) => !w.story.seen[s.id] && met(w,
 export function markPastScenes(w) {
   for (const s of SCENES) {
     const [kind, id] = split(s.when);
-    if (kind === 'evento' ? w.stats.cured > 0 : w.quests.claimed[id]) w.story.seen[s.id] = true;
+    if (kind === 'evento' ? w.stats.cured > 0 : w.quests.claimed[id] || w.quests.side[id]) w.story.seen[s.id] = true;
   }
 }
 

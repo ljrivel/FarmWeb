@@ -136,3 +136,15 @@ arreglo: la tarjeta de un animal sano mostraba «null» desde el sub-paso 2 de l
   hasta agotarlas. `w.story.talked` con valor por defecto. Usan `Math.random`, no `w.rng` ni `w.careRng`.
 - Diario (Etapa D): pestaña en Misiones con las cartas recibidas y las escenas vistas (se repiten sin marcarlas).
 - Sin hacer: «Álbum» de personajes y ampliar el `EPILOGUE` (ver `docs/GUION_HISTORIA.md`).
+
+## Cesta, especies nuevas y capítulos 6 y 7 (sesión posterior)
+- Cesta diaria: una por fecha local (`w.gift = { day, n }`), ciclo de 7 días (`BALANCE.giftCoins`), comida favorita de lo
+  que tienes. Etiquetas en el corral (`farmweb:ui:v1`, en el dispositivo) y Guía de especies con `dato`.
+- Especies nuevas: triceratops, estegosaurio, pterodáctilo, plesiosaurio (por historia; no se compran) y oveja y zorro
+  (con precio, se conocen con secundarias). Corral nuevo **Valle** (por historia, `cost: null`).
+- Capítulo 6 (Noa llega al valle; conflicto: publicar o proteger → una reserva) y Capítulo 7 (alas y mareas; última carta
+  de Cosi en el Diario). Escenas de cierre también para secundarias (`fin:s-…`). `EPILOGUE` ampliado; `chapterNow` calcula
+  el último capítulo en vez de un número fijo.
+- Decisiones: los dinosaurios nuevos llegan como regalo de misión (uno de cada); Noa es la voz científica y nunca antagonista;
+  la oveja y el zorro llegan por secundarias para no alargar la historia principal.
+- Sin hacer: «Álbum» de personajes, secretos nuevos, sonido de los animales nuevos escuchado por el dueño.

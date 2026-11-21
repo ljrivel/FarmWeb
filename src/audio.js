@@ -58,6 +58,9 @@ export const VOICES = {
   // pterodáctilo: dos chillidos agudos; plesiosaurio: un canto de ballena suave que sube
   pterodactilo: [n('square', 0, 0.08, 1400, 0.07, { f1: 2000, lp: 3000 }), n('square', 0.12, 0.08, 1500, 0.07, { f1: 2200, lp: 3000 })],
   plesiosaurio: [n('sine', 0, 0.6, 300, 0.14, { f1: 520 }), n('sine', 0.1, 0.5, 450, 0.07, { f1: 700 })],
+  // oveja: un «beee» con vibrato; zorro: dos ladridos agudos y cortos
+  oveja: [n('sawtooth', 0, 0.45, 380, 0.1, { f1: 340, lp: 1400 }), n('sawtooth', 0.1, 0.4, 400, 0.06, { f1: 360, lp: 1400 })],
+  zorro: [n('square', 0, 0.06, 900, 0.07, { f1: 1300, lp: 2500 }), n('square', 0.1, 0.06, 1000, 0.07, { f1: 1400, lp: 2500 })],
 };
 
 // ------------------------------------------------------------- programación

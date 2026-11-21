@@ -34,7 +34,9 @@
   "cuerno_cristal": 30,
   "placa_dorada": 31,
   "pluma_celeste": 32,
-  "perla_marina": 33
+  "perla_marina": 33,
+  "vellon": 34,
+  "pelo_dorado": 35
  },
- "version": "fbc6f6bc57"
+ "version": "5c8bbcee3c"
 }

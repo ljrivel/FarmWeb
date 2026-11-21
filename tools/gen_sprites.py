@@ -433,6 +433,45 @@ def plesio_face(c, p, blink):
     pxs(c, [(-1, -21), (0, -20), (1, -21)], EYE)
 
 
+# -------------------------------------------------------------------- oveja
+def oveja_body(c, p):
+    c.rect(-5, -2, -4, 0, p["leg"])
+    c.rect(4, -2, 5, 0, p["leg"])
+    for x, y, r in ((-9, -10, 5), (9, -10, 5), (-6, -17, 5), (6, -17, 5), (0, -20, 5)):
+        c.ell(x, y, r, r, p["body"])
+    c.ell(0, -9, 11, 8, p["body"])
+    c.ell(0, -8, 7, 6, p["face"])
+    c.ell(-9, -9, 2, 1, p["face"])                # orejas
+    c.ell(9, -9, 2, 1, p["face"])
+
+
+def oveja_face(c, p, blink):
+    eyes(c, -10, 4, blink)
+    blush(c, -7, 6)
+    pxs(c, [(-1, -6), (0, -5), (1, -6)], EYE)
+
+
+# -------------------------------------------------------------------- zorro
+def zorro_body(c, p):
+    c.ell(13, -5, 5, 4, p["body"])                # cola con la punta clara
+    c.ell(16, -4, 2, 2, p["tip"])
+    c.poly([(-9, -15), (-6, -25), (-2, -16)], p["body"])
+    c.poly([(9, -15), (6, -25), (2, -16)], p["body"])
+    c.poly([(-7, -16), (-6, -22), (-4, -16)], p["ear"])
+    c.poly([(7, -16), (6, -22), (4, -16)], p["ear"])
+    c.ell(0, -9, 10, 8, p["body"])
+    c.ell(0, -5, 7, 4, p["cheek"])
+    c.ell(-5, -1, 3, 2, p["dark"])
+    c.ell(5, -1, 3, 2, p["dark"])
+
+
+def zorro_face(c, p, blink):
+    eyes(c, -11, 5, blink)
+    blush(c, -8, 8)
+    c.rect(-1, -8, 1, -8, p["nose"])
+    pxs(c, [(-2, -6), (-1, -5), (0, -5), (1, -5), (2, -6)], EYE)
+
+
 SPECIES = {
     "gallina": (gallina_body, gallina_face, [
         dict(body="#fffaf0", wing="#f1e0cc", comb="#ff7b8e", beak="#ffb347", feet="#ffb347"),
@@ -518,6 +557,18 @@ SPECIES = {
         dict(body="#b79af0", belly="#f4eeff", fin="#9378d6"),  # Violeta
         dict(body="#ffd36e", belly="#fff6d0", fin="#e8b84a"),  # Dorado
     ]),
+    "oveja": (oveja_body, oveja_face, [
+        dict(body="#fffdf8", face="#ffe3cf", leg="#7a6a80"),
+        dict(body="#f6e8c9", face="#ffd9b8", leg="#8a6a58"),
+        dict(body="#ffd0dc", face="#fff0e6", leg="#c0708a"),  # Rosa
+        dict(body="#d9c8f5", face="#fff0f4", leg="#8a78b8"),  # Lavanda
+    ]),
+    "zorro": (zorro_body, zorro_face, [
+        dict(body="#ff9a55", tip="#fffdf8", ear="#ffc4a0", cheek="#fff3e6", dark="#7a4a38", nose="#5a3a3a"),
+        dict(body="#c98b60", tip="#fff1dc", ear="#e8b896", cheek="#fff6ea", dark="#6a4a3a", nose="#4a3030"),
+        dict(body="#f4f6fb", tip="#8fb0d9", ear="#ffd6e0", cheek="#ffffff", dark="#8aa0c0", nose="#5a6a8a"),  # Nieve
+        dict(body="#5c5f8c", tip="#bfc7ff", ear="#ffb3d1", cheek="#c8ccf0", dark="#3f4270", nose="#ffe08a"),  # Luna
+    ]),
 }
 STAGES = {"baby": 0.74, "adult": 1.0}
 
@@ -537,6 +588,8 @@ SHINY = {
     "estegosaurio": dict(body="#fff0b0", belly="#fffbe6", plate="#7fe3d6", foot="#f5c562"),
     "pterodactilo": dict(body="#fff0b0", belly="#fffbe6", wing="#7fe3d6", crest="#ffd04d", beak="#ffd04d", foot="#ffd04d"),
     "plesiosaurio": dict(body="#fff0b0", belly="#fffbe6", fin="#7fe3d6"),
+    "oveja": dict(body="#fff3c4", face="#fff6dc", leg="#c9a85a"),
+    "zorro": dict(body="#fff0b0", tip="#7fe3d6", ear="#ffe39a", cheek="#fffbe6", dark="#f0c85a", nose="#d9a24a"),
 }
 
 
@@ -623,6 +676,19 @@ def ic_perla_marina(c):
     c.rect(8, 4, 8, 14, hx("#ff9fbd"))
     c.ell(8, 8, 3, 3, hx("#fffdf8"))
     c.px(7, 7, WHITE)
+
+
+def ic_vellon(c):
+    for x, y in ((5, 8), (8, 6), (11, 8), (8, 10)):
+        c.ell(x, y, 3, 3, hx("#fffdf8"))
+    c.px(5, 6, hx("#ffe3ea"))
+    c.px(8, 4, hx("#ffe3ea"))
+
+
+def ic_pelo_dorado(c):
+    c.poly([(8, 2), (12, 9), (10, 14), (6, 14), (4, 9)], hx("#ffb347"))
+    c.poly([(8, 2), (8, 14), (6, 14), (4, 9)], hx("#ffd88a"))
+    c.px(7, 6, WHITE)
 
 
 def ic_huevo(c):
@@ -815,6 +881,7 @@ ICONS = [
     ("regalo", "#e0a866", ic_regalo),
     ("helecho", "#7cc68b", ic_helecho), ("cuerno_cristal", "#9fd8ff", ic_cuerno_cristal), ("placa_dorada", "#ffd95e", ic_placa_dorada),
     ("pluma_celeste", "#8fd0f0", ic_pluma_celeste), ("perla_marina", "#ffc2d9", ic_perla_marina),
+    ("vellon", "#fffdf8", ic_vellon), ("pelo_dorado", "#ffb347", ic_pelo_dorado),
 ]
 
 

@@ -726,6 +726,39 @@ def chapter7(browser):
     ctx.close()
 
 
+def sheep_and_fox(browser):
+    print("\n== oveja y zorro")
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    page = ctx.new_page()
+    errors = []
+    page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(URL)
+    page.wait_for_function("document.getElementById('loading').hidden === true", timeout=15000)
+    page.evaluate("""(() => {
+      const w = farmweb.app.w;
+      w.unlocked.push('oveja', 'zorro'); w.coins = 1000;
+      if (!w.corrales.some((c) => c.tipo === 'bosque')) w.corrales.push({ id: 'bosque', tipo: 'bosque', nombre: 'Bosque', nivel: 0 });
+      farmweb.sim.buyAnimal(w, 'oveja'); farmweb.sim.buyAnimal(w, 'zorro');
+      for (const a of w.animals) if (a.species === 'oveja' || a.species === 'zorro') a.stage = 'adult';
+    })()""")
+    page.evaluate("farmweb.app.setLabels('todo')")
+    page.evaluate("farmweb.app.goTo('pradera', true)")
+    page.wait_for_timeout(500)
+    page.screenshot(path=f"{SHOTS}/movil-40-oveja.png")
+    page.evaluate("farmweb.app.goTo('bosque', true)")
+    page.wait_for_timeout(500)
+    page.screenshot(path=f"{SHOTS}/movil-41-zorro.png")
+    check(page.evaluate("farmweb.app.w.animals.filter((a) => a.species === 'oveja' && a.corral === 'pradera').length") == 1, "la oveja vive en la Pradera")
+    check(page.evaluate("farmweb.app.w.animals.filter((a) => a.species === 'zorro' && a.corral === 'bosque').length") == 1, "el zorro vive en el Bosque")
+    page.click('[data-panel="animals"]')
+    page.locator('[data-key="tab-guia"]').click()
+    texto = page.locator("#sheetBody").inner_text()
+    check("Oveja" in texto and "Zorro" in texto, "la Guía conoce a la oveja y al zorro")
+    check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
+    ctx.close()
+
+
 def main():
     server = subprocess.Popen([sys.executable, "-m", "http.server", str(PORT), "--bind", "127.0.0.1"],
                               cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -751,6 +784,7 @@ def main():
             gift_labels_guide(browser)
             chapter6(browser)
             chapter7(browser)
+            sheep_and_fox(browser)
             browser.close()
     finally:
         server.terminate()

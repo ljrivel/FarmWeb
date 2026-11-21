@@ -2,7 +2,15 @@
 
 Juego web de granja, **tierno y familiar** (por ahora de un solo jugador; el mundo compartido queda para más adelante). Cría gallinas, gatos, vacas, mapaches, conejos, chanchitos, ajolotes, patos y hasta dinosaurios bebé (carnotauro y spinosaurus), con misiones, historia por capítulos y pixel art propio. Funciona en el navegador del móvil y de la PC.
 
-## Estado (v0.4 — cuidado profundo, historia completa y más contenido)
+## Estado (v0.5 — más dinosaurios, historia ampliada y regalo diario)
+
+- **Dieciséis especies.** Se suman cuatro dinosaurios (**triceratops**, **estegosaurio**, **pterodáctilo** y **plesiosaurio**), una **oveja** y un **zorro**, cada una con 4 colores, brillante, voz, comida y producto propios. Hay un corral nuevo, el **Valle**, que se abre con la historia.
+- **Historia hasta el Capítulo 7.** *El valle escondido* (llega **Noa**, la paleontóloga) y *Alas y mareas*, con 11 misiones, 17 escenas con diálogo y retratos pixel art.
+- **Escenas, visitas y Diario.** Los personajes hablan en escenas con retrato, pasan de visita por la granja cada 8 a 12 minutos y el **Diario** (en *Misiones*) guarda las cartas de Cosi y deja repetir las escenas.
+- **Cesta diaria de Bruno.** Una al día (fecha del dispositivo), con un ciclo de 7 días y sin castigo por faltar.
+- **Etiquetas y Guía.** El animal seleccionado muestra su nombre y su especie; en *Mundo* se pueden poner etiquetas a todos. *Animales › Guía* explica cada especie con un dato curioso.
+
+### Antes (v0.4 — cuidado profundo, historia completa y más contenido)
 
 - **Corazones.** Cada animal tiene de 0 a 5 corazones («Corazones 3 de 5» en la tarjeta y en *Animales*). Suben al acariciarlo y con su comida favorita (con un tope diario) y bajan muy despacio solo si lo descuidas con el juego abierto. Cada corazón acelera un 4 % su producción.
 - **Enfermedades y Veterinaria.** Resfriado, pancita, pulgas y tristeza. Un animal enfermo no produce, no crece ni cría, pero nunca muere ni pierde nada. Se cura solo si lo cuidas en casa, o al instante en la **Veterinaria** del mapa por unas pocas monedas. Mientras no juegas nadie enferma ni empeora.

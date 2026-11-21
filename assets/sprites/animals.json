@@ -151,7 +151,27 @@
   "plesiosaurio:3:baby": 136,
   "plesiosaurio:3:adult": 137,
   "plesiosaurio:shiny:baby": 138,
-  "plesiosaurio:shiny:adult": 139
+  "plesiosaurio:shiny:adult": 139,
+  "oveja:0:baby": 140,
+  "oveja:0:adult": 141,
+  "oveja:1:baby": 142,
+  "oveja:1:adult": 143,
+  "oveja:2:baby": 144,
+  "oveja:2:adult": 145,
+  "oveja:3:baby": 146,
+  "oveja:3:adult": 147,
+  "oveja:shiny:baby": 148,
+  "oveja:shiny:adult": 149,
+  "zorro:0:baby": 150,
+  "zorro:0:adult": 151,
+  "zorro:1:baby": 152,
+  "zorro:1:adult": 153,
+  "zorro:2:baby": 154,
+  "zorro:2:adult": 155,
+  "zorro:3:baby": 156,
+  "zorro:3:adult": 157,
+  "zorro:shiny:baby": 158,
+  "zorro:shiny:adult": 159
  },
  "species": {
   "gallina": 4,
@@ -167,7 +187,9 @@
   "triceratops": 4,
   "estegosaurio": 4,
   "pterodactilo": 4,
-  "plesiosaurio": 4
+  "plesiosaurio": 4,
+  "oveja": 4,
+  "zorro": 4
  },
- "version": "76f2ee7dcd"
+ "version": "e69a857993"
 }

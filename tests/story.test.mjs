@@ -1,7 +1,7 @@
 // Escenas con diálogo: datos bien formados y cuál toca en cada momento.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { SCENES, QUESTS, CHARACTERS, VISITS, LETTERS } from '../src/data.js';
+import { SCENES, QUESTS, SIDE_QUESTS, CHARACTERS, VISITS, LETTERS } from '../src/data.js';
 import { newWorld, addAnimal, validateWorld } from '../src/state.js';
 import { nextScene, pickVisit, chapterNow } from '../src/story.js';
 import { claim } from '../src/quests.js';
@@ -11,7 +11,7 @@ test('cada escena tiene id único, disparador válido, 3 a 6 líneas y personaje
   assert.equal(new Set(SCENES.map((s) => s.id)).size, SCENES.length);
   for (const s of SCENES) {
     const [kind, id] = s.when.split(':');
-    assert.ok(kind === 'evento' ? id === 'primera-enfermedad' : ['inicio', 'fin'].includes(kind) && QUESTS.some((q) => q.id === id), s.id);
+    assert.ok(kind === 'evento' ? id === 'primera-enfermedad' : kind === 'fin' ? [...QUESTS, ...SIDE_QUESTS].some((q) => q.id === id) : kind === 'inicio' && QUESTS.some((q) => q.id === id), s.id);
     assert.ok(s.lines.length >= 3 && s.lines.length <= 6, `${s.id}: ${s.lines.length} líneas`);
     for (const [who, mood, text] of s.lines) {
       assert.ok(CHARACTERS[who], `${s.id}: ${who}`);
