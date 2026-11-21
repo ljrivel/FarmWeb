@@ -2,15 +2,19 @@
 // guardado en el mundo, así que el mismo código sirve para el progreso sin conexión
 // y para trasladarse a un servidor sin cambios.
 
-import { SPECIES, FOODS, PRODUCTS, BALANCE, AREA, CORRAL_COSTS, POND_COST, POND } from './data.js';
+import {
+  SPECIES, FOODS, PRODUCTS, BALANCE, CORRAL_COSTS, CORRAL_TYPES, CORRAL_TYPE_ORDER, MAX_CORRAL_LEVEL, corralTypeOf,
+} from './data.js';
 import { rand, randInt, chance } from './rng.js';
-import { addAnimal, capacityFor, inPond } from './state.js';
+import { addAnimal, addCorral, capacityOf, getCorral, corralOfSpecies } from './state.js';
 
 const ok = (msg, extra = {}) => ({ ok: true, msg, ...extra });
 const no = (msg) => ({ ok: false, msg });
 
-export const spaceUsed = (w) => w.animals.length + w.eggs.length;
-export const hasSpace = (w) => spaceUsed(w) < w.capacity;
+/** Animales y huevos que ocupan lugar en un corral. */
+export const spaceUsed = (w, corralId) =>
+  w.animals.filter((a) => a.corral === corralId).length + w.eggs.filter((e) => e.corral === corralId).length;
+export const hasSpace = (w, corralId) => spaceUsed(w, corralId) < capacityOf(w, corralId);
 export const find = (w, id) => w.animals.find((a) => a.id === id);
 
 /** Avanza la simulación dt milisegundos. Devuelve eventos para mostrar avisos. */
@@ -18,14 +22,14 @@ export function tick(w, dt) {
   const events = [];
   const s = dt / 1000;
   const B = BALANCE;
-  const crowded = spaceUsed(w) > w.capacity;
+  const crowded = new Set(w.corrales.filter((c) => spaceUsed(w, c.id) > capacityOf(w, c.id)).map((c) => c.id));
 
   for (const a of w.animals) {
     const sp = SPECIES[a.species];
     a.fed = Math.max(0, a.fed - B.fedDecayPerSec * s);
     if (a.fed >= 50) a.happy = Math.min(100, a.happy + B.happyUpPerSec * s);
     else if (a.fed < 25) a.happy = Math.max(0, a.happy - B.happyDownPerSec * s);
-    if (crowded) a.happy = Math.max(0, a.happy - B.crowdPenaltyPerSec * s);
+    if (crowded.has(a.corral)) a.happy = Math.max(0, a.happy - B.crowdPenaltyPerSec * s);
     if (a.petCd > 0) a.petCd = Math.max(0, a.petCd - dt);
     if (a.cool > 0) a.cool = Math.max(0, a.cool - dt);
 
@@ -62,10 +66,12 @@ export function tick(w, dt) {
 
   // cría: parejas de la misma especie, felices y comidas
   for (const species of Object.keys(SPECIES)) {
+    const corral = corralOfSpecies(w, species);
+    if (!corral) continue;
     const ready = w.animals.filter((a) =>
       a.species === species && a.stage === 'adult' && a.cool <= 0 &&
       a.fed >= B.minFedToBreed && a.happy >= B.minHappyToBreed);
-    while (ready.length >= 2 && hasSpace(w)) {
+    while (ready.length >= 2 && hasSpace(w, corral.id)) {
       const a = ready.shift();
       const b = ready.shift();
       const sp = SPECIES[species];
@@ -74,7 +80,7 @@ export function tick(w, dt) {
       if (sp.variants.length > 1 && chance(w, B.mutationChance)) variant = (variant + 1) % sp.variants.length;
       const shiny = chance(w, a.shiny || b.shiny ? B.shinyChanceParent : B.shinyChance);
       w.eggs.push({
-        id: w.nextId++, species, variant, shiny, left: sp.breed,
+        id: w.nextId++, species, corral: corral.id, variant, shiny, left: sp.breed,
         x: (a.x + b.x) / 2, y: (a.y + b.y) / 2,
       });
       a.cool = b.cool = sp.breed * 2;
@@ -156,8 +162,9 @@ export function canBuyAnimal(w, species) {
   if (!sp) return no('Esa especie no existe.');
   if (!w.unlocked.includes(species)) return no('Todavía no la conoces: avanza en la historia.');
   if (sp.price == null) return no('No se vende: llega por la historia.');
-  if (sp.aquatic && !w.upgrades.estanque) return no('Necesita un estanque.');
-  if (!hasSpace(w)) return no('No hay espacio: amplía el corral.');
+  const corral = corralOfSpecies(w, species);
+  if (!corral) return no(`Necesita el corral ${CORRAL_TYPES[corralTypeOf(species)].nombre}: constrúyelo en el mapa.`);
+  if (!hasSpace(w, corral.id)) return no(`No hay espacio en ${corral.nombre}: amplíalo.`);
   if (w.coins < sp.price) return no('Te faltan monedas.');
   return ok('');
 }
@@ -172,37 +179,52 @@ export function buyAnimal(w, species) {
   return ok(`¡${a.name} se unió a la granja!`, { animal: a });
 }
 
-export function upgradeInfo(w) {
-  const lvl = w.upgrades.corral;
-  return {
-    corralCost: lvl < CORRAL_COSTS.length ? CORRAL_COSTS[lvl] : null,
-    corralLevel: lvl,
-    pondCost: w.upgrades.estanque ? null : POND_COST,
-  };
+/** Un resumen por tipo de corral, en orden, para la tienda y el mapa. */
+export function corralInfo(w) {
+  return CORRAL_TYPE_ORDER.map((tipo) => {
+    const t = CORRAL_TYPES[tipo];
+    const c = getCorral(w, tipo);
+    return {
+      tipo, nombre: t.nombre, id: c ? c.id : null, built: !!c,
+      nivel: c ? c.nivel : 0,
+      capacity: c ? capacityOf(w, c.id) : t.cap,
+      used: c ? spaceUsed(w, c.id) : 0,
+      buildCost: c ? null : t.cost,
+      upgradeCost: c && c.nivel < MAX_CORRAL_LEVEL ? CORRAL_COSTS[c.nivel] : null,
+    };
+  });
 }
 
-export function buyUpgrade(w, key) {
-  if (key === 'corral') {
-    const cost = upgradeInfo(w).corralCost;
-    if (cost == null) return no('El corral ya es lo más grande posible.');
-    if (w.coins < cost) return no('Te faltan monedas.');
-    w.coins -= cost;
-    w.upgrades.corral++;
-    w.capacity = capacityFor(w.upgrades.corral);
-    return ok(`Corral ampliado: ahora caben ${w.capacity}.`);
-  }
-  if (key === 'estanque') {
-    if (w.upgrades.estanque) return no('Ya tienes estanque.');
-    if (w.coins < POND_COST) return no('Te faltan monedas.');
-    w.coins -= POND_COST;
-    w.upgrades.estanque = true;
-    // los animales de tierra que estaban en esa zona salen del agua
-    for (const a of w.animals) {
-      if (!SPECIES[a.species].aquatic && inPond(a.x, a.y)) { a.x = POND.x0 - 16; a.tx = a.x; }
-    }
-    return ok('¡Estanque construido!');
-  }
-  return no('Mejora desconocida.');
+export function buildCorral(w, tipo) {
+  const t = CORRAL_TYPES[tipo];
+  if (!t) return no('Ese corral no existe.');
+  if (getCorral(w, tipo)) return no(`Ya tienes el corral ${t.nombre}.`);
+  if (t.cost == null) return no(`El corral ${t.nombre} llega con la historia.`);
+  if (w.coins < t.cost) return no('Te faltan monedas.');
+  w.coins -= t.cost;
+  const corral = addCorral(w, tipo);
+  return ok(`¡Construiste el corral ${t.nombre}!`, { corral });
+}
+
+export function upgradeCorral(w, corralId) {
+  const c = getCorral(w, corralId);
+  if (!c) return no('Ese corral no está construido.');
+  if (c.nivel >= MAX_CORRAL_LEVEL) return no('El corral ya es lo más grande posible.');
+  const cost = CORRAL_COSTS[c.nivel];
+  if (w.coins < cost) return no('Te faltan monedas.');
+  w.coins -= cost;
+  c.nivel++;
+  return ok(`${c.nombre} ampliado: ahora caben ${capacityOf(w, c.id)}.`);
+}
+
+/** Cifras de un corral para el mapa y el encabezado. */
+export function corralStatus(w, corralId) {
+  const here = w.animals.filter((a) => a.corral === corralId);
+  return {
+    used: spaceUsed(w, corralId), capacity: capacityOf(w, corralId),
+    ready: here.reduce((n, a) => n + a.ready, 0),
+    hungry: here.filter((a) => a.fed < 30).length,
+  };
 }
 
 // ------------------------------------------------------------------ paseo
@@ -226,21 +248,9 @@ export function wander(w, dt) {
 }
 
 function pickTarget(w, a) {
-  const aquatic = SPECIES[a.species].aquatic && w.upgrades.estanque;
-  for (let i = 0; i < 8; i++) {
-    let x, y;
-    if (aquatic && Math.random() < 0.8) {
-      x = POND.x0 + 16 + Math.random() * (POND.x1 - POND.x0 - 32);
-      y = POND.y0 + 24 + Math.random() * (POND.y1 - POND.y0 - 28);
-    } else {
-      x = AREA.x0 + Math.random() * (AREA.x1 - AREA.x0);
-      y = AREA.y0 + Math.random() * (AREA.y1 - AREA.y0);
-    }
-    if (aquatic || !(w.upgrades.estanque && inPond(x, y))) {
-      a.tx = x; a.ty = y;
-      return;
-    }
-  }
+  const { area } = CORRAL_TYPES[getCorral(w, a.corral)?.tipo ?? 'pradera'];
+  a.tx = area.x0 + Math.random() * (area.x1 - area.x0);
+  a.ty = area.y0 + Math.random() * (area.y1 - area.y0);
 }
 
 export { rand };

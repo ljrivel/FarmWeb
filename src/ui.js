@@ -2,7 +2,7 @@
 // Todo el texto dinámico se inserta con textContent / nodos de texto (nunca innerHTML).
 
 import {
-  SPECIES, ORDER, FOODS, PRODUCTS, QUESTS, CHAPTERS, BALANCE, CORRAL_COSTS, POND_COST,
+  SPECIES, ORDER, FOODS, PRODUCTS, QUESTS, CHAPTERS, BALANCE, CORRAL_TYPES,
 } from './data.js';
 import * as sim from './sim.js';
 import { activeQuest, progress, rewardText } from './quests.js';
@@ -26,6 +26,9 @@ export function h(tag, props, ...kids) {
 
 const $ = (id) => document.getElementById(id);
 const plural = (n, one, many) => (n === 1 ? one : many);
+/** Lugares usados y disponibles sumando todos los corrales construidos. */
+const totals = (w) => sim.corralInfo(w).filter((c) => c.built)
+  .reduce((t, c) => ({ used: t.used + c.used, capacity: t.capacity + c.capacity }), { used: 0, capacity: 0 });
 const fmtTime = (ms) => {
   const s = Math.max(1, Math.ceil(ms / 1000));
   return s >= 60 ? `${Math.ceil(s / 60)} min` : `${s} s`;
@@ -119,7 +122,8 @@ export function createUI(app) {
     const ready = w.animals.reduce((n, a) => n + a.ready, 0);
     $('collectAll').hidden = ready === 0;
     $('readyCount').textContent = String(ready);
-    $('spaceInfo').textContent = `${sim.spaceUsed(w)}/${w.capacity}`;
+    const { used, capacity } = totals(w);
+    $('spaceInfo').textContent = `${used}/${capacity}`;
   }
 
   // ----------------------------------------------------- tarjeta del animal
@@ -219,7 +223,7 @@ export function createUI(app) {
     const w = W();
     const list = [...w.animals].sort((a, b) => a.species.localeCompare(b.species) || a.id - b.id);
     return h('div', null,
-      h('p', { class: 'muted', text: `En el corral: ${sim.spaceUsed(w)} de ${w.capacity}${w.eggs.length ? ` (incluye ${w.eggs.length} ${plural(w.eggs.length, 'huevo', 'huevos')})` : ''}` }),
+      h('p', { class: 'muted', text: `En la granja: ${totals(w).used} de ${totals(w).capacity}${w.eggs.length ? ` (incluye ${w.eggs.length} ${plural(w.eggs.length, 'huevo', 'huevos')})` : ''}` }),
       list.map((a) => row(
         portrait(a.species, a.variant, a.stage, 2),
         h('div', { class: 'grow' },
@@ -233,7 +237,7 @@ export function createUI(app) {
   let shopTab = 'animals';
   function panelShop() {
     const w = W();
-    const tabs = [['animals', 'Animales'], ['food', 'Comida'], ['upgrades', 'Mejoras']];
+    const tabs = [['animals', 'Animales'], ['food', 'Comida'], ['corrales', 'Corrales']];
     const tabBar = h('div', { class: 'tabs', role: 'tablist' }, tabs.map(([id, label]) => h('button', {
       class: 'tab', type: 'button', role: 'tab', 'aria-selected': String(shopTab === id), 'data-key': `tab-${id}`,
       onclick: () => { shopTab = id; refreshSheet(); },
@@ -266,21 +270,20 @@ export function createUI(app) {
           h('span', { class: 'muted small', text: `${p} c/u` }));
       });
     } else {
-      const u = sim.upgradeInfo(w);
-      content = [
-        row(icon('heart', 3),
-          h('div', { class: 'grow' },
-            h('strong', { text: 'Ampliar corral' }),
-            h('div', { class: 'muted small', text: `Ahora caben ${w.capacity}. Cada mejora suma 4 (máximo 24).` })),
-          u.corralCost == null ? h('span', { class: 'muted', text: 'Al máximo' }) : price(u.corralCost),
-          u.corralCost != null && btn('Ampliar', () => app.buyUpgrade('corral'), { cls: 'primary', disabled: w.coins < u.corralCost, key: 'up-corral' })),
-        row(icon('burbuja', 3),
-          h('div', { class: 'grow' },
-            h('strong', { text: 'Estanque' }),
-            h('div', { class: 'muted small', text: 'Hogar de ajolotes y spinosaurus.' })),
-          u.pondCost == null ? h('span', { class: 'ok', text: '✓ Construido' }) : price(u.pondCost),
-          u.pondCost != null && btn('Construir', () => app.buyUpgrade('estanque'), { cls: 'primary', disabled: w.coins < u.pondCost, key: 'up-pond' })),
-      ];
+      content = sim.corralInfo(w).map((c) => row(
+        icon(c.tipo === 'estanque' ? 'burbuja' : 'heart', 3),
+        h('div', { class: 'grow' },
+          h('strong', { text: c.nombre }),
+          h('div', { class: 'muted small', text: c.built
+            ? `Nivel ${c.nivel} · caben ${c.capacity} (${c.used} ocupados)`
+            : c.buildCost == null ? 'Llega con la historia.'
+              : `Hogar de ${CORRAL_TYPES[c.tipo].species.map((s) => SPECIES[s].nombre.toLowerCase()).join(', ')}.` })),
+        c.built
+          ? (c.upgradeCost == null ? h('span', { class: 'muted', text: 'Al máximo' }) : price(c.upgradeCost))
+          : (c.buildCost != null && price(c.buildCost)),
+        c.built
+          ? c.upgradeCost != null && btn('Ampliar', () => app.upgradeCorral(c.id), { cls: 'primary', disabled: w.coins < c.upgradeCost, key: `up-${c.tipo}` })
+          : c.buildCost != null && btn('Construir', () => app.buildCorral(c.tipo), { cls: 'primary', disabled: w.coins < c.buildCost, key: `build-${c.tipo}` })));
     }
     return h('div', null, tabBar, h('div', { class: 'tabpanel', role: 'tabpanel' }, content));
   }

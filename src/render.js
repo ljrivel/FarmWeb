@@ -54,14 +54,6 @@ function ground(ctx, S, w) {
     }
   }
   for (let r = 11; r < ROWS; r++) { tile(ctx, S, 'path', 9 * 16, r * 16); tile(ctx, S, 'path', 10 * 16, r * 16); }
-  if (w.upgrades.estanque) {
-    for (let r = 7; r <= 11; r++) for (let c = 13; c <= 18; c++) tile(ctx, S, 'water', c * 16, r * 16);
-    ctx.fillStyle = '#7fc4e0';
-    ctx.fillRect(13 * 16, 7 * 16, 96, 1);
-    ctx.fillRect(13 * 16, 12 * 16 - 1, 96, 1);
-    ctx.fillRect(13 * 16, 7 * 16, 1, 80);
-    ctx.fillRect(19 * 16 - 1, 7 * 16, 1, 80);
-  }
   for (let c = 0; c < COLS; c++) {
     tile(ctx, S, 'fence_h', c * 16, 0);
     if (c !== 9 && c !== 10) tile(ctx, S, 'fence_h', c * 16, (ROWS - 1) * 16);
@@ -114,13 +106,14 @@ export function draw(ctx, S, w, view, t) {
   ctx.imageSmoothingEnabled = false;
   ground(ctx, S, w);
 
-  for (const e of w.eggs) {
+  const here = (x) => x.corral === 'pradera'; // provisional: la tarea de escenas reemplaza esto
+  for (const e of w.eggs.filter(here)) {
     const wob = Math.round(Math.sin(t / 250 + e.id) * 1);
     shadow(ctx, e.x, e.y, 0.8);
     icon(ctx, S, SPECIES[e.species].product.startsWith('escama') ? 'huevo_dino' : 'huevo', e.x - 8 + wob, e.y - 14);
   }
 
-  const sorted = [...w.animals].sort((a, b) => a.y - b.y);
+  const sorted = w.animals.filter(here).sort((a, b) => a.y - b.y);
   const idle = S.animals.idle;
   for (const a of sorted) {
     const x = Math.round(a.x), y = Math.round(a.y);
@@ -148,7 +141,7 @@ export function draw(ctx, S, w, view, t) {
 
 /** Qué hay bajo el dedo: la burbuja de recolección tiene prioridad. */
 export function hitTest(w, lx, ly) {
-  const front = [...w.animals].sort((a, b) => b.y - a.y);
+  const front = w.animals.filter((a) => a.corral === 'pradera').sort((a, b) => b.y - a.y);
   for (const a of front) {
     if (a.ready > 0 && lx >= a.x - 11 && lx <= a.x + 11 && ly >= a.y - 60 && ly <= a.y - 35) return { animal: a, bubble: true };
   }

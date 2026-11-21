@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { newWorld, addAnimal } from '../src/state.js';
+import { newWorld, addAnimal, addCorral, getCorral } from '../src/state.js';
 import * as sim from '../src/sim.js';
 import { activeQuest, progress, claim } from '../src/quests.js';
-import { QUESTS, SPECIES, FOODS, PRODUCTS } from '../src/data.js';
+import { QUESTS, SPECIES, FOODS, PRODUCTS, CORRAL_TYPES } from '../src/data.js';
 
 const fresh = () => newWorld('T', 1_700_000_000_000, 9);
 
@@ -18,7 +18,22 @@ test('datos de misiones consistentes', () => {
     for (const f of Object.keys(q.reward?.foods || {})) assert.ok(FOODS[f], q.id);
     for (const s of q.reward?.unlock || []) assert.ok(SPECIES[s], q.id);
     if (q.reward?.gift) assert.ok(SPECIES[q.reward.gift], q.id);
+    if (q.reward?.corral) assert.ok(CORRAL_TYPES[q.reward.corral], q.id);
+    if (g.type === 'corral') assert.ok(CORRAL_TYPES[g.tipo], q.id);
+    if (q.reward?.gift) {
+      const home = q.reward.corral || Object.keys(CORRAL_TYPES).find((t) => CORRAL_TYPES[t].species.includes(q.reward.gift));
+      assert.ok(CORRAL_TYPES[home].species.includes(q.reward.gift), `${q.id}: el regalo cabe en su corral`);
+    }
   }
+});
+
+test('la meta de corral se cumple al construirlo', () => {
+  const w = fresh();
+  w.coins = 1000;
+  const q = QUESTS.find((x) => x.id === 'c2-estanque');
+  assert.deepEqual(progress(w, q), { current: 0, target: 1, done: false });
+  sim.buildCorral(w, 'estanque');
+  assert.deepEqual(progress(w, q), { current: 1, target: 1, done: true });
 });
 
 test('la primera misión es alimentar y se reclama al terminar', () => {
@@ -43,20 +58,46 @@ test('desbloqueos y regalos de misión', () => {
   assert.ok(r.ok);
   assert.ok(w.unlocked.includes('mapache') && w.unlocked.includes('chanchito'));
 
-  // misión con regalo: necesita espacio
+  // misión con regalo: abre el Jurásico y entrega el carnotauro bebé ahí
   const g = fresh();
   const upTo = QUESTS.findIndex((q) => q.id === 'c3-tormenta');
   g.quests.claimed = Object.fromEntries(QUESTS.slice(0, upTo).map((q) => [q.id, true]));
-  g.capacity = 6;
   while (g.animals.length < 6) addAnimal(g, 'gato', 0, 'baby');
   assert.equal(activeQuest(g).id, 'c3-tormenta');
-  assert.equal(claim(g).ok, false, 'sin espacio para el regalo');
-  g.capacity = 8;
+  assert.equal(getCorral(g, 'jurasico'), undefined);
   const rr = claim(g);
-  assert.ok(rr.ok);
+  assert.ok(rr.ok, rr.msg);
+  assert.ok(getCorral(g, 'jurasico'), 'la misión construye el Jurásico');
   assert.equal(rr.animal.species, 'carnotauro');
   assert.equal(rr.animal.stage, 'baby');
+  assert.equal(rr.animal.corral, 'jurasico');
   assert.ok(g.unlocked.includes('carnotauro'));
+});
+
+test('un regalo sin espacio no se reclama y la misión sigue pendiente', () => {
+  const g = fresh();
+  const upTo = QUESTS.findIndex((q) => q.id === 'c3-tormenta');
+  g.quests.claimed = Object.fromEntries(QUESTS.slice(0, upTo).map((q) => [q.id, true]));
+  addCorral(g, 'jurasico');
+  while (sim.hasSpace(g, 'jurasico')) addAnimal(g, 'carnotauro', 0, 'baby');
+  while (g.animals.length < 6) addAnimal(g, 'gato', 0, 'baby');
+  const r = claim(g);
+  assert.equal(r.ok, false);
+  assert.match(r.msg, /espacio/);
+  assert.equal(g.quests.claimed['c3-tormenta'], undefined);
+});
+
+test('un regalo cuyo corral no existe y la misión no abre se rechaza', () => {
+  const g = fresh();
+  const spino = QUESTS.findIndex((q) => q.id === 'c4-expedicion');
+  g.quests.claimed = Object.fromEntries(QUESTS.slice(0, spino).map((q) => [q.id, true]));
+  g.stats.sold = 15;
+  assert.equal(activeQuest(g).id, 'c4-expedicion');
+  const r = claim(g);
+  assert.equal(r.ok, false);
+  assert.match(r.msg, /Estanque/);
+  addCorral(g, 'estanque');
+  assert.ok(claim(g).ok);
 });
 
 test('al terminar todas las misiones no hay activa', () => {

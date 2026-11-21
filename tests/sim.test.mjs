@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { newWorld, addAnimal } from '../src/state.js';
+import { newWorld, addAnimal, addCorral, getCorral, capacityOf } from '../src/state.js';
 import * as sim from '../src/sim.js';
-import { SPECIES, MIN, BALANCE, CORRAL_COSTS, POND_COST } from '../src/data.js';
+import { SPECIES, MIN, BALANCE, CORRAL_COSTS, CORRAL_TYPES, CORRAL_TYPE_ORDER } from '../src/data.js';
 
 const NOW = 1_700_000_000_000;
 const fresh = (seed = 5) => newWorld('T', NOW, seed);
@@ -102,38 +102,107 @@ test('vender convierte productos en monedas', () => {
   assert.equal(sim.sell(w, 'huevo').ok, false);
 });
 
-test('comprar animal: monedas, desbloqueo, espacio y estanque', () => {
+test('comprar animal: monedas, desbloqueo, espacio y corral', () => {
   const w = fresh();
   w.coins = 1000;
   assert.equal(sim.buyAnimal(w, 'mapache').ok, false, 'bloqueado');
   assert.equal(sim.buyAnimal(w, 'carnotauro').ok, false, 'no se vende');
   w.unlocked.push('ajolote');
-  assert.equal(sim.buyAnimal(w, 'ajolote').ok, false, 'sin estanque');
+  const sinEstanque = sim.buyAnimal(w, 'ajolote');
+  assert.equal(sinEstanque.ok, false, 'sin corral Estanque');
+  assert.match(sinEstanque.msg, /Estanque/);
   const r = sim.buyAnimal(w, 'gato');
   assert.ok(r.ok);
   assert.equal(w.coins, 1000 - SPECIES.gato.price);
   assert.equal(r.animal.stage, 'baby');
+  assert.equal(r.animal.corral, 'pradera');
   assert.equal(w.stats.bought.gato, 1);
   w.coins = 5;
   assert.equal(sim.buyAnimal(w, 'vaca').ok, false, 'sin monedas');
   w.coins = 1e6;
-  while (sim.hasSpace(w)) sim.buyAnimal(w, 'gato');
+  while (sim.hasSpace(w, 'pradera')) sim.buyAnimal(w, 'gato');
   assert.equal(w.animals.length, 8);
-  assert.equal(sim.buyAnimal(w, 'gato').ok, false, 'corral lleno');
+  const lleno = sim.buyAnimal(w, 'gato');
+  assert.equal(lleno.ok, false, 'corral lleno');
+  assert.match(lleno.msg, /Pradera/);
 });
 
-test('mejoras: corral y estanque', () => {
+test('comprar un mapache pide construir el Bosque', () => {
   const w = fresh();
-  w.coins = 5000;
-  assert.ok(sim.buyUpgrade(w, 'corral').ok);
-  assert.equal(w.capacity, 12);
-  assert.equal(w.coins, 5000 - CORRAL_COSTS[0]);
-  assert.ok(sim.buyUpgrade(w, 'estanque').ok);
-  assert.equal(w.coins, 5000 - CORRAL_COSTS[0] - POND_COST);
-  assert.equal(sim.buyUpgrade(w, 'estanque').ok, false);
-  for (let i = 0; i < 6; i++) sim.buyUpgrade(w, 'corral');
-  assert.equal(w.capacity, 24);
-  assert.equal(sim.buyUpgrade(w, 'corral').ok, false);
+  w.coins = 500; // Bosque 300 + mapache 180
+  w.unlocked.push('mapache');
+  const antes = sim.canBuyAnimal(w, 'mapache');
+  assert.equal(antes.ok, false);
+  assert.match(antes.msg, /Bosque/);
+  assert.ok(sim.buildCorral(w, 'bosque').ok);
+  assert.equal(w.coins, 500 - CORRAL_TYPES.bosque.cost);
+  const r = sim.buyAnimal(w, 'mapache');
+  assert.ok(r.ok, r.msg);
+  assert.equal(r.animal.corral, 'bosque');
+});
+
+test('construir corrales: una vez, con monedas y solo los que se compran', () => {
+  const w = fresh();
+  w.coins = 1000;
+  assert.ok(sim.buildCorral(w, 'estanque').ok);
+  assert.equal(w.coins, 1000 - CORRAL_TYPES.estanque.cost);
+  assert.equal(sim.buildCorral(w, 'estanque').ok, false, 'ya existe');
+  const hist = sim.buildCorral(w, 'jurasico');
+  assert.equal(hist.ok, false);
+  assert.match(hist.msg, /historia/);
+  assert.equal(getCorral(w, 'jurasico'), undefined);
+  w.coins = 10;
+  assert.equal(sim.buildCorral(w, 'bosque').ok, false, 'sin monedas');
+  assert.equal(w.coins, 10, 'no descuenta');
+  assert.equal(sim.buildCorral(w, 'volcan').ok, false, 'tipo desconocido');
+});
+
+test('ampliar un corral: cuesta por nivel, suma 4 y tiene tope', () => {
+  const w = fresh();
+  w.coins = 1e6;
+  assert.equal(capacityOf(w, 'pradera'), 8);
+  assert.ok(sim.upgradeCorral(w, 'pradera').ok);
+  assert.equal(w.coins, 1e6 - CORRAL_COSTS[0]);
+  assert.equal(capacityOf(w, 'pradera'), 12);
+  for (let i = 0; i < 3; i++) assert.ok(sim.upgradeCorral(w, 'pradera').ok);
+  assert.equal(capacityOf(w, 'pradera'), 24);
+  assert.equal(sim.upgradeCorral(w, 'pradera').ok, false, 'nivel máximo');
+  assert.equal(sim.upgradeCorral(w, 'bosque').ok, false, 'no construido');
+  w.coins = 1;
+  assert.equal(sim.upgradeCorral(w, 'pradera').ok, false);
+});
+
+test('corralInfo describe cada tipo en orden', () => {
+  const w = fresh();
+  const info = sim.corralInfo(w);
+  assert.deepEqual(info.map((c) => c.tipo), CORRAL_TYPE_ORDER);
+  const [pradera, bosque, , jurasico] = info;
+  assert.deepEqual(
+    { built: pradera.built, id: pradera.id, nivel: pradera.nivel, capacity: pradera.capacity, used: pradera.used, upgradeCost: pradera.upgradeCost, buildCost: pradera.buildCost },
+    { built: true, id: 'pradera', nivel: 0, capacity: 8, used: 2, upgradeCost: CORRAL_COSTS[0], buildCost: null });
+  assert.deepEqual(
+    { built: bosque.built, id: bosque.id, capacity: bosque.capacity, used: bosque.used, buildCost: bosque.buildCost, upgradeCost: bosque.upgradeCost },
+    { built: false, id: null, capacity: CORRAL_TYPES.bosque.cap, used: 0, buildCost: 300, upgradeCost: null });
+  assert.equal(jurasico.buildCost, null, 'llega con la historia');
+});
+
+test('el espacio es por corral', () => {
+  const w = fresh();
+  w.coins = 1e6;
+  w.unlocked.push('mapache');
+  while (sim.hasSpace(w, 'pradera')) sim.buyAnimal(w, 'gato');
+  assert.equal(sim.canBuyAnimal(w, 'gallina').ok, false, 'Pradera llena');
+  sim.buildCorral(w, 'bosque');
+  assert.ok(sim.canBuyAnimal(w, 'mapache').ok, 'el Bosque tiene espacio propio');
+  assert.equal(sim.spaceUsed(w, 'pradera'), 8);
+  assert.equal(sim.spaceUsed(w, 'bosque'), 0);
+});
+
+test('corralStatus cuenta listos y hambrientos', () => {
+  const w = fresh();
+  w.animals[0].ready = 2;
+  w.animals[1].fed = 10;
+  assert.deepEqual(sim.corralStatus(w, 'pradera'), { used: 2, capacity: 8, ready: 2, hungry: 1 });
 });
 
 test('cría: dos adultas felices ponen un huevo y nace una cría', () => {
@@ -142,6 +211,7 @@ test('cría: dos adultas felices ponen un huevo y nace una cría', () => {
   const ev = sim.tick(w, 1000);
   assert.ok(ev.some((e) => e.type === 'egg'));
   assert.equal(w.eggs.length, 1);
+  assert.equal(w.eggs[0].corral, 'pradera');
   assert.equal(w.stats.breedStarted, 1);
   const hatched = [];
   for (let t = 0; t < SPECIES.gallina.breed + 10_000; t += 5000) {
@@ -150,18 +220,20 @@ test('cría: dos adultas felices ponen un huevo y nace una cría', () => {
   }
   assert.equal(hatched.length, 1);
   assert.equal(hatched[0].animal.stage, 'baby');
+  assert.equal(hatched[0].animal.corral, 'pradera');
   assert.equal(w.animals.length, 3);
   assert.equal(w.stats.born.gallina, 1);
 });
 
 test('no se cría sin espacio, ni con hambre, ni con una sola', () => {
+  const lleno = fresh(3);
+  for (const a of lleno.animals) { a.fed = 100; a.happy = 100; }
+  for (let i = 0; i < 6; i++) addAnimal(lleno, 'gato', 0, 'baby');
+  assert.equal(sim.hasSpace(lleno, 'pradera'), false);
+  sim.tick(lleno, 1000);
+  assert.equal(lleno.eggs.length, 0, 'sin espacio');
   const w = fresh(3);
-  for (const a of w.animals) { a.fed = 100; a.happy = 100; }
-  w.capacity = 2;
-  sim.tick(w, 1000);
-  assert.equal(w.eggs.length, 0, 'sin espacio');
-  w.capacity = 8;
-  for (const a of w.animals) a.fed = 10;
+  for (const a of w.animals) { a.fed = 10; a.happy = 100; }
   sim.tick(w, 1000);
   assert.equal(w.eggs.length, 0, 'con hambre');
   const solo = fresh(3);
@@ -169,6 +241,46 @@ test('no se cría sin espacio, ni con hambre, ni con una sola', () => {
   solo.animals[0].fed = 100; solo.animals[0].happy = 100;
   sim.tick(solo, 1000);
   assert.equal(solo.eggs.length, 0, 'una sola');
+});
+
+test('no se cría con el corral lleno aunque otro tenga espacio', () => {
+  const w = fresh(4);
+  addCorral(w, 'bosque');
+  for (const a of w.animals) { a.fed = 100; a.happy = 100; }
+  for (let i = 0; i < 6; i++) addAnimal(w, 'gato', 0, 'baby');
+  for (let i = 0; i < 2; i++) Object.assign(addAnimal(w, 'mapache', 0, 'adult'), { fed: 100, happy: 100 });
+  sim.tick(w, 1000);
+  assert.deepEqual(w.eggs.map((e) => [e.species, e.corral]), [['mapache', 'bosque']]);
+});
+
+test('el hacinamiento solo afecta al corral lleno', () => {
+  const w = fresh(6);
+  addCorral(w, 'bosque');
+  for (let i = 0; i < 7; i++) addAnimal(w, 'gato', 0, 'baby'); // Pradera: 9 de 8
+  const mapache = addAnimal(w, 'mapache', 0, 'adult');
+  for (const a of w.animals) { a.fed = 100; a.happy = 50; a.cool = 1e12; }
+  sim.tick(w, 60_000);
+  const gato = w.animals.find((a) => a.species === 'gato');
+  assert.ok(mapache.happy > gato.happy, `Bosque ${mapache.happy} vs Pradera ${gato.happy}`);
+  assert.ok(Math.abs(mapache.happy - (50 + BALANCE.happyUpPerSec * 60)) < 1e-6, 'el Bosque no pierde por hacinamiento');
+});
+
+test('simulación de 8 h con 4 corrales: sin NaN y dentro de los topes', () => {
+  const w = fresh(8);
+  for (const t of ['bosque', 'estanque', 'jurasico']) addCorral(w, t);
+  for (const s of Object.keys(SPECIES)) {
+    addAnimal(w, s, 0, 'adult'); addAnimal(w, s, 1, 'adult');
+  }
+  for (let t = 0; t < 8 * 60 * MIN; t += 30_000) {
+    for (const a of w.animals) a.fed = Math.max(a.fed, 60);
+    sim.tick(w, 30_000);
+  }
+  for (const a of w.animals) {
+    for (const k of ['fed', 'happy', 'growth', 'prod', 'ready', 'cool']) assert.ok(Number.isFinite(a[k]), `${a.species}.${k}`);
+    assert.ok(a.fed >= 0 && a.fed <= 100 && a.happy >= 0 && a.happy <= 100);
+    assert.equal(a.corral, CORRAL_TYPE_ORDER.find((t) => CORRAL_TYPES[t].species.includes(a.species)));
+  }
+  assert.ok(w.eggs.length <= 30);
 });
 
 test('la cría hereda color de un padre (sin mutar, 2 variantes)', () => {
@@ -204,11 +316,14 @@ test('wander nunca produce NaN (dt negativo, cero o enorme)', () => {
   }
 });
 
-test('wander mantiene a los animales dentro del área', () => {
+test('wander mantiene a cada animal dentro del área de su corral', () => {
   const w = fresh();
-  w.upgrades.estanque = true;
+  for (const t of ['bosque', 'estanque', 'jurasico']) addCorral(w, t);
+  for (const sp of Object.keys(SPECIES)) addAnimal(w, sp, 0, 'adult');
   for (let i = 0; i < 4000; i++) sim.wander(w, 100);
   for (const a of w.animals) {
-    assert.ok(a.x >= 20 && a.x <= 300 && a.y >= 40 && a.y <= 210, `fuera: ${a.x},${a.y}`);
+    const { area } = CORRAL_TYPES[getCorral(w, a.corral).tipo];
+    assert.ok(a.x >= area.x0 - 1e-6 && a.x <= area.x1 + 1e-6 && a.y >= area.y0 - 1e-6 && a.y <= area.y1 + 1e-6,
+      `${a.species} fuera de ${a.corral}: ${a.x},${a.y}`);
   }
 });

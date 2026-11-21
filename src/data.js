@@ -3,9 +3,7 @@
 export const VERSION = 2;
 export const MIN = 60 * 1000;
 export const MAX_OFFLINE_MS = 8 * 60 * MIN;
-export const BASE_CAPACITY = 8;
 export const CORRAL_COSTS = [120, 250, 500, 900]; // cada nivel: +4 de capacidad
-export const POND_COST = 250;
 export const MAX_ANIMALS_IMPORT = 60;
 
 export const BALANCE = {
@@ -26,10 +24,6 @@ export const BALANCE = {
   shinyChanceParent: 0.15,
   maxReady: 3,
 };
-
-// Zona caminable (píxeles lógicos del lienzo de 320x224) y estanque (columnas 13-18, filas 7-11).
-export const AREA = { x0: 28, x1: 292, y0: 66, y1: 204 };
-export const POND = { x0: 208, y0: 112, x1: 304, y1: 192 };
 
 // Corrales (v2): un corral por tipo en la fase 1, así que cada especie vive en uno solo.
 // `cap` es la capacidad base; cada nivel de ampliación suma 4. `cost` null = llega por la historia.
@@ -145,14 +139,14 @@ export const QUESTS = [
 
   // Capítulo 2 — Amigos del bosque
   { id: 'c2-mapache', ch: 2, title: 'Un visitante con antifaz',
-    text: 'Algo se mueve entre los arbustos… ¡un mapache curioso! Dale la bienvenida.',
+    text: 'Algo se mueve entre los arbustos… ¡un mapache curioso! Construye el corral del Bosque en el mapa y dale la bienvenida.',
     goal: { type: 'bought', species: 'mapache', n: 1 }, reward: { coins: 30, foods: { bayas: 5 } } },
   { id: 'c2-trufa', ch: 2, title: 'Trufas escondidas',
     text: 'El chanchito tiene un olfato increíble. Consigue una trufa.',
     goal: { type: 'collect', product: 'trufa', n: 1 }, reward: { coins: 80 } },
   { id: 'c2-estanque', ch: 2, title: 'Un estanque para refrescarse',
     text: 'En el cuaderno hay un dibujo de un animalito rosa que vive en el agua. Necesita un estanque.',
-    goal: { type: 'upgrade', key: 'estanque' }, reward: { coins: 60, foods: { gusanito: 6 }, unlock: ['ajolote'] } },
+    goal: { type: 'corral', tipo: 'estanque' }, reward: { coins: 60, foods: { gusanito: 6 }, unlock: ['ajolote'] } },
   { id: 'c2-burbuja', ch: 2, title: 'Burbujas de colores',
     text: '¡Ya puedes adoptar un ajolote! Cuando sea grande, recoge una burbuja.',
     goal: { type: 'collect', product: 'burbuja', n: 1 }, reward: { coins: 100 } },
@@ -160,7 +154,7 @@ export const QUESTS = [
   // Capítulo 3 — El huevo misterioso
   { id: 'c3-tormenta', ch: 3, title: 'La gran tormenta',
     text: 'Esta noche hubo una tormenta enorme y algo brilla en el corral. Cuida a 6 animales para mantener la granja animada.',
-    goal: { type: 'owncount', n: 6 }, reward: { coins: 100, unlock: ['carnotauro'], gift: 'carnotauro' } },
+    goal: { type: 'owncount', n: 6 }, reward: { coins: 100, unlock: ['carnotauro'], corral: 'jurasico', gift: 'carnotauro' } },
   { id: 'c3-carnotauro', ch: 3, title: 'El bebé carnotauro',
     text: '¡Del huevo misterioso nació un carnotauro! Es tierno aunque tenga cuernitos. Dale carnita hasta que crezca.',
     goal: { type: 'own', species: 'carnotauro', stage: 'adult', n: 1 }, reward: { coins: 200, foods: { carnita: 5 } } },

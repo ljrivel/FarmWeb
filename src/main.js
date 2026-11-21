@@ -45,7 +45,8 @@ app.buyAnimal = (s) => {
   report(r);
 };
 app.buyFood = (f, n) => report(sim.buyFood(app.w, f, n));
-app.buyUpgrade = (k) => report(sim.buyUpgrade(app.w, k));
+app.buildCorral = (tipo) => report(sim.buildCorral(app.w, tipo));
+app.upgradeCorral = (id) => report(sim.upgradeCorral(app.w, id));
 app.sell = (p) => report(sim.sell(app.w, p));
 app.sellAll = () => {
   let gain = 0;
