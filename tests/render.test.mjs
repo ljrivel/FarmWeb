@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { newWorld, addAnimal, addCorral } from '../src/state.js';
-import { MAP_SPOTS } from '../src/data.js';
+import { MAP_SPOTS, VET_SPOT } from '../src/data.js';
 import { hitMap, hitTest, spriteRow } from '../src/render.js';
 
 const fresh = () => newWorld('T', 1_700_000_000_000, 5);
@@ -14,6 +14,10 @@ test('hitMap devuelve el lugar bajo el dedo (área de 56x56) o null', () => {
   assert.equal(hitMap(w, x + 29, y), null);
   assert.equal(hitMap(w, 3, 3), null);
   for (const t of Object.keys(MAP_SPOTS)) assert.equal(hitMap(w, MAP_SPOTS[t].x, MAP_SPOTS[t].y), t);
+  assert.equal(hitMap(w, VET_SPOT.x, VET_SPOT.y), 'vet', 'la Veterinaria también se toca');
+  for (const t of Object.keys(MAP_SPOTS)) {
+    assert.ok(Math.abs(MAP_SPOTS[t].x - VET_SPOT.x) > 56 || Math.abs(MAP_SPOTS[t].y - VET_SPOT.y) > 56, `la Veterinaria no pisa ${t}`);
+  }
 });
 
 test('hitTest solo ve a los animales del corral de la escena', () => {

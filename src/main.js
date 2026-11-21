@@ -187,7 +187,8 @@ function setupCanvas(canvas) {
     if (app.scene === 'mapa') {
       const tipo = hitMap(app.w, lx, ly);
       if (!tipo) return;
-      if (getCorral(app.w, tipo)) app.goTo(tipo);
+      if (tipo === 'vet') ui.openPanel('vet');
+      else if (getCorral(app.w, tipo)) app.goTo(tipo);
       else ui.openPanel('shop', 'corrales');
       return;
     }

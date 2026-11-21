@@ -403,6 +403,45 @@ def stage0(browser):
     ctx.close()
 
 
+def care_flow(browser, name, viewport, dpr, mobile):
+    """Fase 2B: corazones, enfermedad forzada con ?debug, Veterinaria en el mapa y curar."""
+    print(f"\n== fase 2B (corazones y veterinaria) {name} {viewport}")
+    ctx, page, errors = new_page(browser, viewport, dpr, mobile)
+    aid = page.evaluate("farmweb.app.w.animals[0].id")
+    page.evaluate(f"farmweb.app.selectedId = {aid}; farmweb.app.goTo('pradera')")
+    page.wait_for_timeout(300)
+    check("Corazones 0 de 5" in page.locator("#selected").inner_text(), "la tarjeta muestra «Corazones 0 de 5»")
+    page.evaluate(f"farmweb.app.w.animals[0].hearts = 3; farmweb.app.goTo('pradera')")
+    page.wait_for_timeout(1200)
+    check("Corazones 3 de 5" in page.locator("#selected").inner_text(), "y se actualiza a «Corazones 3 de 5»")
+    page.evaluate(f"farmweb.sim.makeSick(farmweb.app.w, {aid}, 'resfriado'); farmweb.app.goTo('pradera')")
+    page.wait_for_timeout(1200)
+    check("Enfermo: Resfriado" in page.locator("#selected").inner_text(), "la tarjeta muestra la enfermedad con texto")
+    page.screenshot(path=f"{SHOTS}/{name}-13-enfermo.png")
+    page.click('[data-panel="animals"]')
+    page.wait_for_timeout(200)
+    txt = page.locator("#sheetBody").inner_text()
+    check("Enfermo: Resfriado" in txt and "Corazones 3 de 5" in txt, "el panel Animales muestra corazones y enfermedad")
+    page.keyboard.press("Escape")
+    page.click('[data-goto="mapa"]')
+    page.wait_for_timeout(300)
+    gbox = page.locator("#game").bounding_box()
+    page.evaluate("farmweb.app.w.coins = 100")
+    page.mouse.click(gbox["x"] + 164 * gbox["width"] / 320, gbox["y"] + 48 * gbox["height"] / 224)
+    page.wait_for_timeout(300)
+    check(page.locator("#sheetTitle").inner_text() == "Veterinaria", "tocar la Veterinaria en el mapa abre su hoja")
+    check(page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1"), "sin desbordamiento horizontal en la Veterinaria")
+    page.screenshot(path=f"{SHOTS}/{name}-14-veterinaria.png")
+    page.locator(f'[data-key="cure-{aid}"]').click()
+    page.wait_for_timeout(300)
+    check(page.evaluate(f"farmweb.app.w.animals.find(a => a.id === {aid}).sick") is None, "curar deja al animal sano")
+    check(page.evaluate("farmweb.app.w.coins") == 70, "y descuenta el costo (100 - 30 = 70)")
+    check("sanos" in page.locator("#sheetBody").inner_text(), "la hoja queda sin enfermos")
+    page.keyboard.press("Escape")
+    check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
+    ctx.close()
+
+
 def main():
     server = subprocess.Popen([sys.executable, "-m", "http.server", str(PORT), "--bind", "127.0.0.1"],
                               cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -417,6 +456,8 @@ def main():
             migration(browser)
             small_phone(browser)
             stage0(browser)
+            care_flow(browser, "movil", {"width": 360, "height": 740}, 3, True)
+            care_flow(browser, "pc", {"width": 1280, "height": 800}, 1, False)
             browser.close()
     finally:
         server.terminate()

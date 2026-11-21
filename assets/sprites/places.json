@@ -8,7 +8,8 @@
   "pradera_bloq": 4,
   "bosque_bloq": 5,
   "estanque_bloq": 6,
-  "jurasico_bloq": 7
+  "jurasico_bloq": 7,
+  "vet": 8
  },
- "version": "cc3c95a5ba"
+ "version": "1de48f767e"
 }

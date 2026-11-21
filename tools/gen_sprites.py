@@ -768,6 +768,20 @@ def pl_jurasico(c):
     c.poly([(36, 42), (40, 30), (44, 42)], hx("#69b87b"))
 
 
+def pl_vet(c):
+    """Veterinaria: casita blanca con techo rosa, cruz y un huellita en la puerta."""
+    c.ell(24, 43, 21, 4, hx("#a9d98a"))
+    c.rect(9, 22, 39, 41, hx("#fffaf0"))
+    c.poly([(5, 23), (24, 9), (43, 23)], hx("#ff9fb4"))
+    c.rect(20, 30, 28, 41, hx("#bfe4ff"))
+    c.rect(24, 30, 24, 41, hx("#9fcfee"))
+    c.rect(11, 27, 16, 32, hx("#bfe4ff"))
+    c.rect(32, 27, 37, 32, hx("#bfe4ff"))
+    c.ell(24, 17, 4, 4, hx("#fffdf8"))
+    c.rect(23, 14, 24, 20, hx("#ff6f91"))
+    c.rect(21, 16, 26, 17, hx("#ff6f91"))
+
+
 def desaturate(img):
     out = img.copy()
     px = out.load()
@@ -783,6 +797,7 @@ def desaturate(img):
 
 
 PLACES = [("pradera", pl_pradera), ("bosque", pl_bosque), ("estanque", pl_estanque), ("jurasico", pl_jurasico)]
+EXTRA_PLACES = [("vet", pl_vet)]  # lugares que no son corrales (sin versión bloqueada)
 
 
 # --------------------------------------------------------------------- salida
@@ -827,6 +842,7 @@ def build():
 
     places = [(n, _place(f)) for n, f in PLACES]
     places += [(n + "_bloq", desaturate(im)) for n, im in places[:len(PLACES)]]
+    places += [(n, _place(f)) for n, f in EXTRA_PLACES]
     psheet = Image.new("RGBA", (48 * len(places), 48), (0, 0, 0, 0))
     for i, (_, im) in enumerate(places):
         psheet.paste(im, (i * 48, 0))

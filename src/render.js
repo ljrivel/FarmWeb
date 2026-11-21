@@ -2,7 +2,7 @@
 // a un múltiplo entero de píxeles de pantalla para que el pixel art quede nítido.
 // Hay dos tipos de escena: el mapa de la granja y cada corral (según su tipo).
 
-import { SPECIES, CORRAL_TYPES, CORRAL_TYPE_ORDER, MAP_SPOTS, DISEASES, spriteKey } from './data.js';
+import { SPECIES, CORRAL_TYPES, CORRAL_TYPE_ORDER, MAP_SPOTS, VET_SPOT, DISEASES, spriteKey } from './data.js';
 import { getCorral } from './state.js';
 import { corralStatus } from './sim.js';
 
@@ -180,6 +180,15 @@ function drawMap(ctx, S, w, t) {
   road(b.x, b.y, c.x, c.y);
   road(a.x, midY, b.x, midY);
   pill(ctx, 'Mapa de la granja', W / 2, 10);
+  road(VET_SPOT.x, VET_SPOT.y + 20, VET_SPOT.x, midY);
+  {
+    const { x, y } = VET_SPOT;
+    const col = S.places.index.vet;
+    if (col != null) ctx.drawImage(S.placesImg, col * PLACE, 0, PLACE, PLACE, Math.round(x - PLACE / 2), Math.round(y - PLACE / 2), PLACE, PLACE);
+    pill(ctx, 'Veterinaria', x, y + 26);
+    const sick = w.animals.filter((a) => a.sick).length;
+    if (sick > 0) badge(ctx, String(sick), x + 24, y - 4, '#ffe3ea');
+  }
 
   CORRAL_TYPE_ORDER.forEach((tipo, i) => {
     const { x, y } = MAP_SPOTS[tipo];
@@ -266,9 +275,10 @@ export function hitTest(w, lx, ly, corralId) {
   return null;
 }
 
-/** Qué lugar del mapa está bajo el dedo (construido o no), o null. */
+/** Qué lugar del mapa está bajo el dedo (construido o no, o 'vet' para la Veterinaria), o null. */
 export function hitMap(w, lx, ly) {
   const half = MAP_HIT / 2;
+  if (Math.abs(lx - VET_SPOT.x) <= half && Math.abs(ly - VET_SPOT.y) <= half) return 'vet';
   return CORRAL_TYPE_ORDER.find((tipo) => {
     const { x, y } = MAP_SPOTS[tipo];
     return Math.abs(lx - x) <= half && Math.abs(ly - y) <= half;

@@ -68,6 +68,8 @@ export const MAX_CORRAL_LEVEL = CORRAL_COSTS.length;
 export const MAP_SPOTS = {
   pradera: { x: 96, y: 156 }, bosque: { x: 232, y: 84 }, estanque: { x: 232, y: 160 }, jurasico: { x: 96, y: 80 },
 };
+// La Veterinaria no es un corral: siempre está abierta y no cuenta para las metas de corrales.
+export const VET_SPOT = { x: 164, y: 48 };
 export const corralTypeOf = (species) => CORRAL_TYPE_ORDER.find((t) => CORRAL_TYPES[t].species.includes(species));
 
 export const SPECIES = {
