@@ -2,6 +2,7 @@
 // Todo el texto dinámico se inserta con textContent / nodos de texto (nunca innerHTML).
 
 import { TUTORIAL_STEPS, stepSkipped, nextIndex, stepDone } from './tutorial.js';
+import { chapterNow } from './story.js';
 import {
   SPECIES, ORDER, FOODS, PRODUCTS, QUESTS, SCENES, LETTERS, CHAPTERS, CHARACTERS, EPILOGUE, SECRETS, SECRET_ORDER, BALANCE, CORRAL_TYPES, corralTypeOf,
   rarityOf, rarityLabel, MAX_HEARTS, DISEASES,
@@ -395,7 +396,7 @@ export function createUI(app) {
     const w = W();
     const sick = w.animals.filter((a) => a.sick).sort((a, b) => a.id - b.id);
     return h('div', null,
-      h('p', { class: 'muted', text: 'La Dra. Pita revisa a tus animales. Curar aquí es inmediato; en casa también se curan solos, más despacio, si están bien comidos y contentos.' }),
+      h('p', { class: 'muted', text: `${chapterNow(w) >= 6 ? 'Mao Mao cuida la Veterinaria mientras la Dra. Pita está de viaje.' : 'La Dra. Pita revisa a tus animales.'} Curar aquí es inmediato; en casa también se curan solos, más despacio, si están bien comidos y contentos.` }),
       sick.length ? sick.map((a) => {
         const d = DISEASES[a.sick];
         const cost = BALANCE.cureCost[a.sick];

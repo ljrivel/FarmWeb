@@ -908,6 +908,44 @@ def chapter8(browser):
     ctx.close()
 
 
+def mao_mao(browser):
+    print("\n== Mao Mao reemplaza a la Dra. Pita")
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    page = ctx.new_page()
+    errors = []
+    page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(URL_ESCENAS)
+    page.wait_for_function("document.getElementById('loading').hidden === true", timeout=15000)
+    page.locator('[data-key="story-skip"]').click()
+    page.evaluate("""(async () => {
+      const { QUESTS, SCENES } = await import('/src/data.js');
+      const w = farmweb.app.w;
+      for (const q of QUESTS) { w.quests.claimed[q.id] = true; if (q.id === 'c5-festival') break; }
+      for (const sc of SCENES) w.story.seen[sc.id] = sc.id !== 'una-boticaria-nueva';
+      for (const t of ['bosque', 'estanque', 'jurasico']) if (!w.corrales.some((c) => c.tipo === t)) w.corrales.push({ id: t, tipo: t, nombre: t, nivel: 0 });
+    })()""")
+    page.wait_for_selector(".story", timeout=5000)
+    check(page.locator(".story").get_attribute("aria-label") == "Una boticaria nueva", "al terminar el festival sale la escena de Mao Mao")
+    for _ in range(3):
+        page.wait_for_timeout(1200)
+        page.locator('[data-key="story-next"]').click(); page.locator('[data-key="story-next"]').click()
+    page.wait_for_timeout(1500)
+    check("Mao Mao" in page.locator(".story-name").inner_text(), "Mao Mao habla en la escena con su retrato")
+    page.screenshot(path=f"{SHOTS}/movil-60-mao-mao-escena.png")
+    page.locator('[data-key="story-skip"]').click()
+    check(page.evaluate("fetch('/assets/sprites/portraits.json').then((r) => r.json()).then((j) => 'mao' in j.index)"), "el atlas de retratos incluye a Mao Mao")
+    page.click('[data-goto="mapa"]')
+    page.wait_for_timeout(300)
+    gbox = page.locator("#game").bounding_box()
+    page.mouse.click(gbox["x"] + 164 * gbox["width"] / 320, gbox["y"] + 48 * gbox["height"] / 224)
+    page.wait_for_timeout(300)
+    check("Mao Mao cuida la Veterinaria" in page.locator("#sheetBody").inner_text(), "la Veterinaria dice que Mao Mao la cuida mientras Pita viaja")
+    page.screenshot(path=f"{SHOTS}/movil-61-veterinaria-mao.png")
+    check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
+    ctx.close()
+
+
 def main():
     server = subprocess.Popen([sys.executable, "-m", "http.server", str(PORT), "--bind", "127.0.0.1"],
                               cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -935,6 +973,7 @@ def main():
             chapter7(browser)
             sheep_and_fox(browser)
             chapter8(browser)
+            mao_mao(browser)
             tutorial_flow(browser, "movil", {"width": 390, "height": 844}, 3, True)
             tutorial_flow(browser, "pc", {"width": 1280, "height": 800}, 1, False)
             tutorial_returning_player(browser)

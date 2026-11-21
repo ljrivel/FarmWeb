@@ -16,7 +16,7 @@ Juego web de granja, **tierno y familiar** (por ahora de un solo jugador; el mun
 
 - **Corazones.** Cada animal tiene de 0 a 5 corazones («Corazones 3 de 5» en la tarjeta y en *Animales*). Suben al acariciarlo y con su comida favorita (con un tope diario) y bajan muy despacio solo si lo descuidas con el juego abierto. Cada corazón acelera un 4 % su producción.
 - **Enfermedades y Veterinaria.** Resfriado, pancita, pulgas y tristeza. Un animal enfermo no produce, no crece ni cría, pero nunca muere ni pierde nada. Se cura solo si lo cuidas en casa, o al instante en la **Veterinaria** del mapa por unas pocas monedas. Mientras no juegas nadie enferma ni empeora.
-- **Historia completa.** Personajes (abuela Cosi, Tomás, Dra. Pita, Don Ramón, Lía, Mía y Bruno) y el **Capítulo 5: El festival de la granja**, con final y epílogo.
+- **Historia completa.** Personajes (abuela Cosi, Tomás, Dra. Pita, Don Ramón, Lía, Mía, Bruno, Noa y **Mao Mao**, la boticaria que cuida la Veterinaria cuando la Dra. Pita se va de viaje) y el **Capítulo 5: El festival de la granja**, con final y epílogo.
 - **Misiones secundarias** en paralelo (22), con un **Historial** aparte en *Misiones*.
 - **Secretos**: 8 easter eggs con logros (*Misiones › Secretos encontrados*).
 - **Conejo y pato**, con sus colores, brillante, voz, comida y producto.

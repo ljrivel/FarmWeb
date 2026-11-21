@@ -1692,6 +1692,7 @@ PORTRAITS = [
     ("ramon", pt_ramon, dict(skin="#f2c9a0", hair="#d8d2cc", cloth="#ffe08a", trim="#e0606a"), dict(my=22)),
     ("lia", pt_lia, dict(skin="#efc4a4", hair="#8d6fd1", cloth="#c9b6f2", trim="#7fd8c8"), {}),
     ("mia", pt_mia, dict(skin="#ffe0c8", hair="#a0643e", cloth="#ffc9dc", trim="#ff7fa8"), dict(freckles=True)),
+    ("mao", pt_maomao_gato, MAOMAO_LOOK, dict(face=_maomao_cara, gato=True)),   # Mao Mao: chibi de gato
     ("noa", pt_noa, dict(skin="#e8b994", hair="#2f7f86", cloth="#f7e08a", trim="#a6e0ec"), {}),
     ("bruno", pt_bruno, dict(skin="#f3cfae", hair="#5b4636", cloth="#ffd3a8", hat="#6aa5d8", trim="#a0643e"), {}),
 ]

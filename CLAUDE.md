@@ -22,9 +22,9 @@ El dueño es Luis Josué; **responde siempre en español**.
 | Qué | Comando |
 |---|---|
 | Jugar en local (PC y celular en la misma Wi-Fi) | doble clic a `iniciar.bat` o `npm start` |
-| Pruebas unitarias | `npm test` (deben pasar todas; hoy 145) |
+| Pruebas unitarias | `npm test` (deben pasar todas; hoy 147) |
 | Regenerar sprites | `npm run sprites` (Python + Pillow; escribe `assets/sprites/*`) |
-| Recorrido en navegador | `python tools/e2e_smoke.py <carpeta_capturas>` (Playwright + Chrome; hoy 290 comprobaciones) |
+| Recorrido en navegador | `python tools/e2e_smoke.py <carpeta_capturas>` (Playwright + Chrome; hoy 295 comprobaciones) |
 
 Tras un cambio visible, recarga con Ctrl+F5. El servidor local envía `Cache-Control: no-store`.
 Con `?debug` en la URL queda disponible `window.farmweb = { app, sim, audio }`. `?sinescenas` y `?sintutorial` apagan las
@@ -60,6 +60,9 @@ Historia hasta el Capítulo 7 («El valle escondido» y «Alas y mareas»): corr
 Estación Estelar (Capítulo 8 «Más allá del cielo»): corral `estacion` (12 lugares) por historia y 9 criaturas de Star Wars que se
 compran y crían (porg, gato loth, tauntaun, bantha, purrgil, dewback, ewok, Grogu y BB-8; los últimos 3 se conocen al
 cobrar la leche azul). Sitio privado y sin fines de lucro, según el dueño.
+Mao Mao (retrato pixel art chibi de gato, id `mao`) atiende la Veterinaria desde el Capítulo 6 mientras la Dra. Pita está de viaje:
+Pita se despide en la escena `una-boticaria-nueva` (al terminar el festival), sus visitas llevan `maxCh: 5` y las líneas de los
+capítulos 6 a 8 las dice Mao Mao.
 Tutorial guiado de Tomás, 13 pasos; los de panel abren el panel y no oscurecen encima (`src/tutorial.js` pasos, `startTutorial` en `ui.js`, marca `tutorial` en `farmweb:ui:v1`, una vez
 por dispositivo, repetible en Mundo; `?sintutorial` lo apaga y el e2e lo usa).
 `tests/historia-completa.test.mjs` recorre toda la historia: añade ahí cualquier capítulo nuevo sin tocar más.

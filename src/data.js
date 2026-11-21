@@ -318,7 +318,8 @@ export const PRODUCTS = {
 export const CHARACTERS = {
   abuela: { nombre: 'Abuela Cosi', rol: 'Dejó la granja a la familia y escribe cartas desde lejos', color: '#ff8fb0' },
   tomas: { nombre: 'Tomás', rol: 'El vecino curioso que ayuda en la granja', color: '#8fdcc0' },
-  pita: { nombre: 'Dra. Pita', rol: 'La veterinaria del pueblo', color: '#bfe4ff' },
+  pita: { nombre: 'Dra. Pita', rol: 'La veterinaria del pueblo (de viaje desde el festival)', color: '#bfe4ff' },
+  mao: { nombre: 'Mao Mao', rol: 'Boticaria que cuida la Veterinaria mientras la Dra. Pita está de viaje', color: '#86d192' },
   ramon: { nombre: 'Don Ramón', rol: 'El comerciante que compra tus productos', color: '#ffe08a' },
   lia: { nombre: 'Lía', rol: 'Guía del río perdido, amiga de la abuela de joven', color: '#c9b6f2' },
   mia: { nombre: 'Mía', rol: 'La hermanita de Tomás, coleccionista de cosas suaves', color: '#ffc9dc' },
@@ -490,10 +491,10 @@ export const SIDE_QUESTS = [
     text: 'Los niños de la escuela merecen un vaso de leche fresca. Recoge 5 leches.',
     goal: { type: 'collect', product: 'leche', n: 5 }, reward: { coins: 30, foods: { heno: 6 } } },
   { id: 's-familia', minCh: 2, who: 'pita', title: 'La familia crece',
-    text: 'Me encanta ver crías sanas. Que nazcan 3 crías en la granja.',
+    text: 'Nota de la Dra. Pita: «Me encanta ver crías sanas. Que nazcan 3 crías en la granja.»',
     goal: { type: 'born', n: 3 }, reward: { coins: 70 } },
   { id: 's-corazon', minCh: 2, who: 'pita', title: 'Un amigo de verdad',
-    text: 'La confianza se gana con mimos y su comida favorita. Consigue que un animal tenga 1 corazón.',
+    text: 'Nota de la Dra. Pita: «La confianza se gana con mimos y su comida favorita. Consigue que un animal tenga 1 corazón.»',
     goal: { type: 'hearts', n: 1 }, reward: { coins: 40 } },
   { id: 's-brillitos', minCh: 2, needs: 'mapache', who: 'tomas', title: 'Colección de brillitos',
     text: 'El mapache esconde cosas brillantes en el bosque. Recoge 3 brillitos.',
@@ -502,7 +503,7 @@ export const SIDE_QUESTS = [
     text: 'El restaurante del pueblo me pidió trufas para su menú especial. Recoge 3 trufas.',
     goal: { type: 'collect', product: 'trufa', n: 3 }, reward: { coins: 90 } },
   { id: 's-chequeo', minCh: 3, who: 'pita', title: 'Visita a la Veterinaria',
-    text: 'Si algún animal se enferma, tráelo: lo dejo como nuevo. Cura a 1 animal en la Veterinaria.',
+    text: 'Nota de la Dra. Pita: «Si algún animal se enferma, tráelo: lo dejo como nuevo.» Cura a 1 animal en la Veterinaria.',
     goal: { type: 'cured', n: 1 }, reward: { coins: 40 } },
   { id: 's-burbujas', minCh: 3, needs: 'ajolote', who: 'tomas', title: 'Burbujas de la suerte',
     text: 'Mi hermanita quiere un frasco lleno de burbujas. Recoge 3 burbujas.',
@@ -511,7 +512,7 @@ export const SIDE_QUESTS = [
     text: 'El sábado hay mercado y quiero tener de todo. Vende 25 productos.',
     goal: { type: 'sold', n: 25 }, reward: { coins: 120 } },
   { id: 's-mejores', minCh: 3, who: 'pita', title: 'Mejores amigos',
-    text: 'Dicen que un animal con 4 corazones te sigue a todas partes. Consigue que uno tenga 4 corazones.',
+    text: 'Nota de la Dra. Pita: «Dicen que un animal con 4 corazones te sigue a todas partes.» Consigue que uno tenga 4 corazones.',
     goal: { type: 'hearts', n: 4 }, reward: { coins: 150 } },
   { id: 's-escamas', minCh: 4, needs: 'carnotauro', who: 'lia', title: 'Escamas para el faro',
     text: 'Con escamas de fuego se enciende el faro del río. Recoge 3 escamas de fuego.',
@@ -585,7 +586,7 @@ export const SECRETS = {
 export const SECRET_ORDER = Object.keys(SECRETS);
 
 /** Epílogo que se muestra al terminar la historia. */
-export const EPILOGUE = 'La abuela Cosi se quedó a vivir en la casita junto al estanque. Cada tarde se sienta con Tomás, Mía, Lía, Noa, la Dra. Pita y Don Ramón a mirar jugar a los animales: los de la granja, los del valle y hasta los que llegaron de las estrellas. Bruno reparte la noticia de que todo está en calma. Dicen que es la granja más feliz que conocieron. La historia terminó, pero la granja sigue: quedan misiones secundarias, crías raras y secretos por descubrir.';
+export const EPILOGUE = 'La abuela Cosi se quedó a vivir en la casita junto al estanque. Cada tarde se sienta con Tomás, Mía, Lía, Noa, Mao Mao y Don Ramón a mirar jugar a los animales: los de la granja, los del valle y hasta los que llegaron de las estrellas. Bruno reparte la noticia de que todo está en calma, y las postales de la Dra. Pita desde su viaje. Dicen que es la granja más feliz que conocieron. La historia terminó, pero la granja sigue: quedan misiones secundarias, crías raras y secretos por descubrir.';
 
 // Escenas con diálogo (guion en docs/GUION_HISTORIA.md). `when`: `inicio:<misión>` (cuando pasa a ser la activa),
 // `fin:<misión>` (al reclamarla) o `evento:primera-enfermedad`. Si dos se cumplen a la vez sale primero la de
@@ -748,6 +749,14 @@ export const SCENES = [
     ['pita', 1, '¡Un brindis! Con leche, que hay vacas.'],
     ['abuela', 1, 'Gracias por quedarse. Esta granja es de ustedes de verdad.'],
   ] },
+  { id: 'una-boticaria-nueva', when: 'fin:c5-festival', title: 'Una boticaria nueva', lines: [
+    ['pita', 1, 'Antes de que se acabe la fiesta, tengo noticias: me voy de viaje a un congreso de veterinaria. ¡Volveré con muchas historias!'],
+    ['tomas', 2, '¿Y quién cuidará de los animales enfermos?'],
+    ['pita', 0, 'Dejo la Veterinaria en buenas manos. Ella es Mao Mao, boticaria del pueblo vecino.'],
+    ['mao', 0, 'Hola. Entiendo de hierbas, de remedios y de por qué los pacientes nunca quieren tomárselos.'],
+    ['mia', 1, '¡Tiene pecas como yo!'],
+    ['mao', 1, 'Y un gorro con orejitas de gato. Es práctico para el frío.'],
+  ] },
   { id: 'el-rio-vuelve', when: 'inicio:c6-camino', title: 'El río vuelve a cantar', lines: [
     ['lia', 1, '¿Lo oyen? El río cantó toda la noche. Desde el festival ya no se esconde.'],
     ['mia', 1, '¡Suena como un cascabel enorme!'],
@@ -774,7 +783,7 @@ export const SCENES = [
   { id: 'noa-y-el-triceratops', when: 'fin:c6-noa', title: 'Noa y el triceratops', lines: [
     ['noa', 1, 'Ya es adulto… ¡y me reconoció! ¡Me reconoció!'],
     ['noa', 0, 'Veinte años de libros sobre ellos y ninguno decía que ronronean.'],
-    ['pita', 1, 'No ronronean, Noa. Se les hincha el pecho de felicidad.'],
+    ['mao', 1, 'No ronronean, Noa. Se les hincha el pecho de felicidad. Lo comprobé… con un estetoscopio y mucha paciencia.'],
     ['noa', 1, 'Eso. Lo apunto ahora mismo.'],
   ] },
   { id: 'nombres-para-el-cuaderno', when: 'inicio:c6-nombres', title: 'Nombres para el cuaderno', lines: [
@@ -839,7 +848,7 @@ export const SCENES = [
     ['lia', 0, 'Algo se acerca al estanque. Algo con el cuello larguísimo.'],
     ['noa', 1, '¡Un plesiosaurio! ¡Pero si son de mar, no de río!'],
     ['lia', 1, 'Este es de agua dulce. Mi abuela decía que el lago de aquí los guardaba.'],
-    ['pita', 1, '¡Qué cuello! Con razón le encanta el gusanito.'],
+    ['mao', 1, '¡Qué cuello! Voy a medirlo… y a probar un gusanito. Por ciencia.'],
     ['lia', 0, 'Ahora el estanque tiene guardián. Y el río, compañía.'],
   ] },
   { id: 'noche-de-estrellas', when: 'fin:c7-marea', title: 'Noche de estrellas', lines: [
@@ -851,11 +860,11 @@ export const SCENES = [
     ['abuela', 1, 'Gracias por no irte tú.'],
   ] },
   { id: 'cinco-corazones', when: 'inicio:c7-corazones', title: 'Cinco corazones', lines: [
-    ['pita', 1, 'He medido el cariño con mi método científico. Es… un abrazo largo.'],
+    ['mao', 1, 'La Dra. Pita me dejó apuntes sobre el cariño. Mi conclusión: es un abrazo largo.'],
     ['noa', 0, 'Eso no es un método.'],
-    ['pita', 0, 'Funciona. Los animales con cinco corazones casi no se enferman.'],
+    ['mao', 0, 'Y funciona. Los animales con cinco corazones casi no se enferman.'],
     ['tomas', 1, 'Entonces el truco es quererlos mucho.'],
-    ['pita', 1, 'Eso. Escríbelo, Noa.'],
+    ['mao', 1, 'Eso. Escríbelo, Noa. Con letra clara.'],
   ] },
   { id: 'la-gran-guardia', when: 'inicio:c7-final', title: 'La gran guardia', lines: [
     ['abuela', 0, 'Está todo en orden. El valle duerme tranquilo y el río canta.'],
@@ -927,7 +936,7 @@ export const SCENES = [
   { id: 'leche-azul', when: 'fin:c8-leche', title: 'Leche azul', lines: [
     ['mia', 1, '¡Es azul de verdad! Y huele a vainilla.'],
     ['ramon', 0, 'Eso se vende… digo, se bebe. Se bebe con mucho respeto.'],
-    ['pita', 1, 'Calcio, vitaminas y cero culpa. Receta aprobada.'],
+    ['mao', 1, 'La probé primero, por seguridad. Calcio, vitaminas y cero culpa. Aprobada.'],
     ['mia', 1, 'Brindo por el bantha más peludo de la galaxia.'],
   ] },
   { id: 'tres-visitantes', when: 'fin:c8-leche', title: 'Tres visitantes', lines: [
@@ -960,9 +969,9 @@ export const VISITS = [
   { id: 'v-mia-1', who: 'mia', minCh: 2, lines: [['mia', 1, 'Te traje un dibujo. Es de la gallina que parece que sonríe.'], ['mia', 0, 'No se lo digas a Tomás: este es solo para ti.']] },
   { id: 'v-mia-2', who: 'mia', minCh: 2, lines: [['mia', 0, 'El bosque ya no me da tanto miedo. Un poquito, nada más.']] },
   { id: 'v-mia-3', who: 'mia', minCh: 4, lines: [['mia', 1, 'Mi bufanda ya tiene dos colores. Va a ser la más suave de todas.']] },
-  { id: 'v-pita-1', who: 'pita', minCh: 3, cond: 'enfermo', lines: [['pita', 0, 'Vi a un animalito con mala cara. Dale descanso, comida y mimos; si quieres, pasa por la Veterinaria.'], ['pita', 1, 'Y recuerda: no es culpa de nadie.']] },
-  { id: 'v-pita-2', who: 'pita', minCh: 3, cond: 'sano', lines: [['pita', 1, '¡Qué granja tan sana! Esto sí que es buen cuidado.'], ['pita', 0, 'Casi me quedo sin pacientes. Qué problema más bonito.']] },
-  { id: 'v-pita-3', who: 'pita', minCh: 3, lines: [['pita', 0, 'Pasé de ronda. Los dinosaurios también se resfrían, ¿sabes? Lo descubrí esta semana.']] },
+  { id: 'v-pita-1', who: 'pita', minCh: 3, maxCh: 5, cond: 'enfermo', lines: [['pita', 0, 'Vi a un animalito con mala cara. Dale descanso, comida y mimos; si quieres, pasa por la Veterinaria.'], ['pita', 1, 'Y recuerda: no es culpa de nadie.']] },
+  { id: 'v-pita-2', who: 'pita', minCh: 3, maxCh: 5, cond: 'sano', lines: [['pita', 1, '¡Qué granja tan sana! Esto sí que es buen cuidado.'], ['pita', 0, 'Casi me quedo sin pacientes. Qué problema más bonito.']] },
+  { id: 'v-pita-3', who: 'pita', minCh: 3, maxCh: 5, lines: [['pita', 0, 'Pasé de ronda. Los dinosaurios también se resfrían, ¿sabes? Lo descubrí esta semana.']] },
   { id: 'v-ramon-1', who: 'ramon', minCh: 1, lines: [['ramon', 0, 'Pasaba por aquí. Casualidad, claro.'], ['ramon', 0, 'En el pueblo todos hablan de los huevos de esta granja. Es buena señal.']] },
   { id: 'v-ramon-2', who: 'ramon', minCh: 2, lines: [['ramon', 1, 'Cuando Cosi era joven, subía al tejado a contar estrellas.'], ['ramon', 2, 'Yo le sostenía la escalera. Siempre fui bueno sosteniendo cosas.']] },
   { id: 'v-ramon-3', who: 'ramon', minCh: 4, lines: [['ramon', 0, 'Si ven a Cosi, díganle que la tienda sigue abierta.'], ['ramon', 1, 'Y que hay trufas.']] },
@@ -978,14 +987,14 @@ export const VISITS = [
   { id: 'v-tomas-5', who: 'tomas', minCh: 6, lines: [['tomas', 1, 'Noa me enseñó a dibujar huellas. Las mías parecen papas.']] },
   { id: 'v-mia-4', who: 'mia', minCh: 6, lines: [['mia', 1, 'Le dibujé un triceratops a Noa. Dijo que tiene «proporciones expresivas». No sé qué es, pero suena lindo.']] },
   { id: 'v-lia-3', who: 'lia', minCh: 6, lines: [['lia', 0, 'El valle está más tranquilo desde que Noa lo cuida con nosotras.']] },
-  { id: 'v-pita-4', who: 'pita', minCh: 6, lines: [['pita', 0, 'Noa y yo comparamos notas: ella sabe de huesos y yo de achaques. Equipo perfecto.']] },
+  { id: 'v-pita-4', who: 'mao', minCh: 6, lines: [['mao', 0, 'Noa sabe de huesos y yo de hierbas. Entre las dos curamos casi todo.']] },
   { id: 'v-ramon-4', who: 'ramon', minCh: 6, lines: [['ramon', 0, 'Cosi dice que ya no vende nada que no pueda mirar a los ojos. Yo sigo vendiendo huevos, pero con cariño.']] },
   { id: 'v-bruno-4', who: 'bruno', minCh: 7, lines: [['bruno', 1, 'Entregué una carta en lo alto del acantilado. Me la devolvió un pterodáctilo, sin sello.'], ['bruno', 0, 'Creo que es un pedido de más comida.']] },
   { id: 'v-lia-4', who: 'lia', minCh: 7, lines: [['lia', 0, 'El plesiosaurio nada despacito, como si midiera el estanque. Creo que ya lo considera suyo.']] },
   { id: 'v-noa-3', who: 'noa', minCh: 7, lines: [['noa', 0, 'Hoy dibujé nubes. Pasó un pterodáctilo y me arruinó el dibujo. Valió la pena.']] },
   { id: 'v-tomas-6', who: 'tomas', minCh: 7, lines: [['tomas', 1, '¿Sabías que el pterodáctilo duerme con una pata levantada? ¡Igual que yo!']] },
   { id: 'v-mia-5', who: 'mia', minCh: 7, lines: [['mia', 1, 'Hoy subí al mirador a dibujar al pterodáctilo. Casi me mareo, pero valió la pena.']] },
-  { id: 'v-pita-5', who: 'pita', minCh: 7, lines: [['pita', 1, 'Chequeo de rutina al plesiosaurio: cuello perfecto, aletas perfectas y mucho apetito.']] },
+  { id: 'v-pita-5', who: 'mao', minCh: 7, lines: [['mao', 1, 'Chequeo de rutina al plesiosaurio: cuello perfecto, aletas perfectas y mucho apetito. Se lo cuento por carta a la Dra. Pita.']] },
   { id: 'v-ramon-5', who: 'ramon', minCh: 7, lines: [['ramon', 0, 'Vendo huevos, lana y plumas celestes. Todo con certificado de cariño.']] },
   { id: 'v-cosi-3', who: 'abuela', minCh: 7, lines: [['abuela', 1, 'El valle respira tranquilo. Eso se oye, si uno se queda quieto.']] },
   { id: 'v-noa-4', who: 'noa', minCh: 8, lines: [['noa', 1, 'El suelo de la Estación zumba suavecito. Creo que es de contento.']] },
@@ -997,4 +1006,7 @@ export const VISITS = [
   { id: 'v-tomas-8', who: 'tomas', minCh: 8, lines: [['tomas', 1, 'El ewok me enseñó a hacer nudos. Los míos parecen espaguetis.']] },
   { id: 'v-noa-5', who: 'noa', minCh: 8, lines: [['noa', 0, 'Grogu me mira como si entendiera mis notas. Creo que corrige mi ortografía.']] },
   { id: 'v-bruno-6', who: 'bruno', minCh: 8, lines: [['bruno', 1, 'BB-8 rodó detrás de mi bicicleta y llegamos a todas las casas en la mitad de tiempo.']] },
+  { id: 'v-mao-1', who: 'mao', minCh: 6, cond: 'enfermo', lines: [['mao', 0, 'Huele a resfriado. Tranquilo: tengo hierbas. Y la Veterinaria cura rápido, por unas monedas.']] },
+  { id: 'v-mao-2', who: 'mao', minCh: 6, cond: 'sano', lines: [['mao', 0, 'Todos sanos. Qué aburrido. Si ves un animal con la nariz roja, avísame: tengo ganas de preparar un té.']] },
+  { id: 'v-mao-3', who: 'mao', minCh: 6, lines: [['mao', 0, 'Estoy catalogando las hierbas del valle. Algunas son tan amargas que… ya me entiendes.'], ['mao', 1, 'Bueno, yo no. Yo las pruebo igual.']] },
 ];

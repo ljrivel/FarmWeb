@@ -33,7 +33,7 @@ export const chapterNow = (w) => QUESTS.find((q) => !w.quests.claimed[q.id])?.ch
 export function pickVisit(w, last = null, rnd = Math.random) {
   const ch = chapterNow(w);
   const sick = w.animals.some((a) => a.sick);
-  const ok = VISITS.filter((v) => v.minCh <= ch && v.who !== last && (!v.cond || (v.cond === 'enfermo') === sick));
+  const ok = VISITS.filter((v) => v.minCh <= ch && !(ch > v.maxCh) && v.who !== last && (!v.cond || (v.cond === 'enfermo') === sick));
   let pool = ok.filter((v) => !w.story.talked[v.id]);
   if (!pool.length) { for (const v of ok) delete w.story.talked[v.id]; pool = ok; }
   return pool[Math.floor(rnd() * pool.length)] || null;

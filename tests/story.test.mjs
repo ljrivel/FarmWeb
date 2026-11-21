@@ -126,3 +126,22 @@ test('las charlas contadas sobreviven a guardar y cargar', () => {
   const v = validateWorld(JSON.parse(JSON.stringify(w)), 0);
   assert.deepEqual(v.story.talked, { 'v-tomas-1': true });
 });
+
+test('la Dra. Pita visita hasta el capítulo 5 y desde el 6 atiende Mao Mao', () => {
+  const quienes = (w) => new Set(Array.from({ length: 80 }, (_, i) => pickVisit(w, null, () => i / 80).who));
+  assert.ok(quienes(world('c4-pista')).has('pita') && !quienes(world('c4-pista')).has('mao'));
+  assert.ok(!quienes(world('c5-festival')).has('mao'), 'durante el festival (capítulo 5) todavía no está');
+  assert.ok(quienes(world('c6-camino')).has('mao'), 'llega al terminar el festival, ya en el capítulo 6');
+  const despues = quienes(world('c6-noa'));
+  assert.ok(despues.has('mao') && !despues.has('pita'), 'con Pita de viaje solo viene Mao Mao');
+});
+
+test('Mao Mao llega con una escena al terminar el festival y Pita se despide en ella', () => {
+  const sc = SCENES.find((x) => x.id === 'una-boticaria-nueva');
+  assert.equal(sc.when, 'fin:c5-festival');
+  const quien = new Set(sc.lines.map((l) => l[0]));
+  assert.ok(quien.has('pita') && quien.has('mao'));
+  for (const s of SCENES.filter((x) => /^(inicio|fin):c(6|7|8)-/.test(x.when))) {
+    assert.ok(!s.lines.some((l) => l[0] === 'pita'), `${s.id}: Pita está de viaje desde el capítulo 6`);
+  }
+});

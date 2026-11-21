@@ -175,3 +175,11 @@ arreglo: la tarjeta de un animal sano mostraba «null» desde el sub-paso 2 de l
   comida nueva). Productos: hilo peludo, chispa verde y tuerquita. Se conocen al cobrar `c8-leche` (la escena
   «Tres visitantes» los presenta) y se compran y crían como el resto. 3 secundarias y 3 charlas de visita.
 - El dueño confirmó que el sitio es privado, sin acceso externo y sin fines de lucro.
+
+## Mao Mao reemplaza a la Dra. Pita en la Veterinaria
+- Mao Mao es la boticaria del pueblo vecino (inspirada en el personaje de «Los diarios de la boticaria»; sitio privado y sin fines
+  de lucro, según el dueño). Retrato pixel art chibi de gato con 3 expresiones, id `mao`.
+- Lore: la Dra. Pita se va a un congreso de veterinaria al terminar el festival (escena `una-boticaria-nueva`, `fin:c5-festival`)
+  y deja la Veterinaria a Mao Mao. Desde el capítulo 6 solo hablan y visitan Mao Mao; Pita sigue en los capítulos 1 a 5
+  (sus visitas llevan `maxCh: 5`) y deja «notas» en sus secundarias. El panel de la Veterinaria lo dice según el capítulo.
+- Descartado a propósito: la versión humana y la versión ilustrada suave de Maomao (pruebas fuera del proyecto).
