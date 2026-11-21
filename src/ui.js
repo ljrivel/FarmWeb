@@ -2,7 +2,7 @@
 // Todo el texto dinámico se inserta con textContent / nodos de texto (nunca innerHTML).
 
 import {
-  SPECIES, ORDER, FOODS, PRODUCTS, QUESTS, CHAPTERS, CHARACTERS, EPILOGUE, SECRETS, SECRET_ORDER, BALANCE, CORRAL_TYPES, corralTypeOf,
+  SPECIES, ORDER, FOODS, PRODUCTS, QUESTS, SCENES, LETTERS, CHAPTERS, CHARACTERS, EPILOGUE, SECRETS, SECRET_ORDER, BALANCE, CORRAL_TYPES, corralTypeOf,
   rarityOf, rarityLabel, MAX_HEARTS, DISEASES,
 } from './data.js';
 import { spriteRow } from './render.js';
@@ -447,7 +447,7 @@ export function createUI(app) {
       h('div', { class: 'story-card' }, h('div', { class: 'story-head' }, portraitBox, nameEl),
         textEl, h('div', { class: 'story-actions' }, skip, next)));
     const onKey = (e) => {
-      if (e.key === 'Escape') { e.preventDefault(); end(); }
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); end(); } // sin cerrar también la hoja de debajo
       else if (e.key === 'Tab') { e.preventDefault(); (document.activeElement === next ? skip : next).focus(); }
     };
     function line() {
@@ -500,7 +500,7 @@ export function createUI(app) {
       h('p', { class: 'small', text: `Progreso: ${p.current} de ${p.target}` }),
     ];
   }
-  function panelQuests() {
+  function questsMain() {
     const w = W();
     const q = activeQuest(w);
     const card = q ? (() => {
@@ -545,6 +545,32 @@ export function createUI(app) {
         : h('p', { class: 'muted small', text: 'No hay secundarias activas ahora. Avanza en la historia para que aparezcan más.' }),
       secretsSection(),
       history);
+  }
+
+  let questsTab = 'misiones';
+  function panelQuests() {
+    const tabBar = h('div', { class: 'tabs', role: 'tablist' }, [['misiones', 'Misiones'], ['diario', 'Diario']].map(([id, label]) => h('button', {
+      class: 'tab', type: 'button', role: 'tab', 'aria-selected': String(questsTab === id), 'data-key': `tab-${id}`,
+      onclick: () => { questsTab = id; refreshSheet(); },
+    }, label)));
+    return h('div', null, tabBar, questsTab === 'diario' ? panelDiary() : questsMain());
+  }
+
+  /** Diario: las cartas de Cosi que ya llegaron y las escenas vistas, que se pueden repetir sin marcarlas de nuevo. */
+  function panelDiary() {
+    const w = W();
+    const act = activeQuest(w)?.id;
+    const letters = QUESTS.filter((q) => LETTERS.includes(q.id) && (w.quests.claimed[q.id] || q.id === act));
+    const seen = SCENES.filter((sc) => w.story.seen[sc.id]);
+    return h('div', null,
+      h('h3', { text: `Cartas de Cosi (${letters.length} de ${LETTERS.length})` }),
+      letters.length ? letters.map((q) => h('div', { class: 'quest-card side' }, h('h4', { text: q.title }), speaker(q.who, true), h('p', { class: 'small', text: q.text })))
+        : h('p', { class: 'muted small', text: 'Todavía no llegó ninguna carta.' }),
+      h('h3', { text: `Escenas vistas (${seen.length} de ${SCENES.length})` }),
+      seen.length ? h('ul', { class: 'done-list diary' }, seen.map((sc) => h('li', null,
+        h('span', { class: 'grow', text: sc.title }),
+        btn('Ver otra vez', () => playStory(sc), { cls: 'small', key: `replay-${sc.id}` }))))
+        : h('p', { class: 'muted small', text: 'Aquí podrás repetir las escenas de la historia.' }));
   }
 
   /** Logros por descubrir secretos: los encontrados con su texto, el resto como «???». */

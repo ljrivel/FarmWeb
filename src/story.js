@@ -1,6 +1,6 @@
 // Escenas con diálogo: cuál toca ahora y cuáles de una partida antigua ya pasaron. Sin interfaz ni estado propio.
 
-import { SCENES, QUESTS } from './data.js';
+import { SCENES, QUESTS, VISITS } from './data.js';
 
 const split = (when) => when.split(':');
 
@@ -21,4 +21,20 @@ export function markPastScenes(w) {
     const [kind, id] = split(s.when);
     if (kind === 'evento' ? w.stats.cured > 0 : w.quests.claimed[id]) w.story.seen[s.id] = true;
   }
+}
+
+/** Capítulo actual de la historia (6 = ya terminada). */
+export const chapterNow = (w) => QUESTS.find((q) => !w.quests.claimed[q.id])?.ch ?? 6;
+
+/**
+ * Charla de la próxima visita: de las que ya tocan por capítulo y condición, sin repetir al `last` que acaba
+ * de venir y sin repetir charlas hasta agotarlas (entonces empiezan de nuevo). `rnd` devuelve 0..1.
+ */
+export function pickVisit(w, last = null, rnd = Math.random) {
+  const ch = chapterNow(w);
+  const sick = w.animals.some((a) => a.sick);
+  const ok = VISITS.filter((v) => v.minCh <= ch && v.who !== last && (!v.cond || (v.cond === 'enfermo') === sick));
+  let pool = ok.filter((v) => !w.story.talked[v.id]);
+  if (!pool.length) { for (const v of ok) delete w.story.talked[v.id]; pool = ok; }
+  return pool[Math.floor(rnd() * pool.length)] || null;
 }

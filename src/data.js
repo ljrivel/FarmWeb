@@ -40,6 +40,10 @@ export const BALANCE = {
   cureCost: { resfriado: 60, pancita: 50, pulgas: 40, tristeza: 30 },
   cureCareFed: 50,        // se cura sola si está comida y contenta…
   cureCareHappy: 40,
+  // ---- Visitas de personajes a la granja (solo con el juego abierto y sin nada tapando el corral).
+  visitMinMs: 8 * MIN,    // cada cuánto llega una visita: entre estos dos tiempos
+  visitMaxMs: 12 * MIN,
+  visitStayMs: 90 * 1000, // cuánto espera antes de irse si no la tocas
 };
 
 export const MAX_HEARTS = 5;
@@ -514,4 +518,32 @@ export const SCENES = [
     ['pita', 1, '¡Un brindis! Con leche, que hay vacas.'],
     ['abuela', 1, 'Gracias por quedarse. Esta granja es de ustedes de verdad.'],
   ] },
+];
+
+// Cartas de Cosi: misiones cuyo texto es una carta. Se releen en el Diario cuando ya las recibiste.
+export const LETTERS = ['c1-carta', 'c1-cria', 'c2-estanque', 'c5-carta'];
+
+// Visitas ocasionales: charlas cortas de un personaje que pasa por la granja. `minCh`: capítulo desde el que salen
+// (6 = después del final). `cond`: 'enfermo' (hay un animal enfermo) o 'sano' (ninguno). Línea = [quién, ánimo, texto].
+export const VISITS = [
+  { id: 'v-tomas-1', who: 'tomas', minCh: 1, lines: [['tomas', 1, '¿Cómo van los pequeños? Pasé a saludar. ¡Es mi parte favorita del día!']] },
+  { id: 'v-tomas-2', who: 'tomas', minCh: 2, lines: [['tomas', 0, 'Estuve practicando eso de ser granjero. Ya sé distinguir un balde de un comedero.'], ['tomas', 1, '…casi siempre.']] },
+  { id: 'v-tomas-3', who: 'tomas', minCh: 3, lines: [['tomas', 1, 'Anoche soñé que el huevo gigante era una nube con cuernitos. ¡Dormí buenísimo!']] },
+  { id: 'v-tomas-4', who: 'tomas', minCh: 5, lines: [['tomas', 0, 'Antes me sentía un invitado aquí. Ahora siento que esta también es mi casa.'], ['tomas', 1, 'Gracias por dejarme.']] },
+  { id: 'v-mia-1', who: 'mia', minCh: 2, lines: [['mia', 1, 'Te traje un dibujo. Es de la gallina que parece que sonríe.'], ['mia', 0, 'No se lo digas a Tomás: este es solo para ti.']] },
+  { id: 'v-mia-2', who: 'mia', minCh: 2, lines: [['mia', 0, 'El bosque ya no me da tanto miedo. Un poquito, nada más.']] },
+  { id: 'v-mia-3', who: 'mia', minCh: 4, lines: [['mia', 1, 'Mi bufanda ya tiene dos colores. Va a ser la más suave de todas.']] },
+  { id: 'v-pita-1', who: 'pita', minCh: 3, cond: 'enfermo', lines: [['pita', 0, 'Vi a un animalito con mala cara. Dale descanso, comida y mimos; si quieres, pasa por la Veterinaria.'], ['pita', 1, 'Y recuerda: no es culpa de nadie.']] },
+  { id: 'v-pita-2', who: 'pita', minCh: 3, cond: 'sano', lines: [['pita', 1, '¡Qué granja tan sana! Esto sí que es buen cuidado.'], ['pita', 0, 'Casi me quedo sin pacientes. Qué problema más bonito.']] },
+  { id: 'v-pita-3', who: 'pita', minCh: 3, lines: [['pita', 0, 'Pasé de ronda. Los dinosaurios también se resfrían, ¿sabes? Lo descubrí esta semana.']] },
+  { id: 'v-ramon-1', who: 'ramon', minCh: 1, lines: [['ramon', 0, 'Pasaba por aquí. Casualidad, claro.'], ['ramon', 0, 'En el pueblo todos hablan de los huevos de esta granja. Es buena señal.']] },
+  { id: 'v-ramon-2', who: 'ramon', minCh: 2, lines: [['ramon', 1, 'Cuando Cosi era joven, subía al tejado a contar estrellas.'], ['ramon', 2, 'Yo le sostenía la escalera. Siempre fui bueno sosteniendo cosas.']] },
+  { id: 'v-ramon-3', who: 'ramon', minCh: 4, lines: [['ramon', 0, 'Si ven a Cosi, díganle que la tienda sigue abierta.'], ['ramon', 1, 'Y que hay trufas.']] },
+  { id: 'v-bruno-1', who: 'bruno', minCh: 1, lines: [['bruno', 1, 'Hoy no traigo cartas, pero sí noticias: ¡el panadero se cayó en un charco!'], ['bruno', 0, 'Está bien. Solo orgulloso.']] },
+  { id: 'v-bruno-2', who: 'bruno', minCh: 2, lines: [['bruno', 1, 'Ayer entregué un paquete en la casa equivocada. Los vecinos estaban encantados.'], ['bruno', 2, 'Tuve que pedirlo de vuelta.']] },
+  { id: 'v-bruno-3', who: 'bruno', minCh: 4, lines: [['bruno', 0, 'Cada vez que veo el río me acuerdo de las cartas de la señora Cosi.'], ['bruno', 1, 'Cuando vuelva, le ofrezco un sello conmemorativo.']] },
+  { id: 'v-lia-1', who: 'lia', minCh: 4, lines: [['lia', 0, 'Vine a ver cómo crece el pequeño. El río lo echa de menos.'], ['lia', 1, 'Pero creo que aquí está mejor.']] },
+  { id: 'v-lia-2', who: 'lia', minCh: 5, lines: [['lia', 0, 'El río hace un ruidito cuando está contento. Hace días que lo oigo desde aquí.'], ['lia', 1, 'Dicen que es mi imaginación. Yo creo que no.']] },
+  { id: 'v-cosi-1', who: 'abuela', minCh: 6, lines: [['abuela', 1, 'Me gusta sentarme a verlos jugar. Siempre hay uno que hace travesuras.'], ['abuela', 0, 'Y siempre es el que más cariño necesita.']] },
+  { id: 'v-cosi-2', who: 'abuela', minCh: 6, lines: [['abuela', 0, 'Hay una carta mía que nunca terminé. La estoy escribiendo despacio, para ustedes.'], ['abuela', 1, 'Sin prisa. Tengo toda la tarde.']] },
 ];

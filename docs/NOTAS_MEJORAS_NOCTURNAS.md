@@ -130,3 +130,9 @@ arreglo: la tarjeta de un animal sano mostraba «null» desde el sub-paso 2 de l
 - Escenas con diálogo (Etapa B): 23 escenas enganchadas a misiones (`inicio:`/`fin:`) y a la primera enfermedad. Se
   marcan vistas al empezar. Una partida sin `story` marca como vistas las de lo que ya ocurrió (no se repiten), pero
   sí sale la de la misión activa. Campo nuevo `story.seen` con valor por defecto, sin subir `VERSION`.
+- Visitas (Etapa C): cada 8 a 12 min con el juego abierto llega un personaje a la entrada del corral a la vista,
+  con su retrato y un «!»; se va solo a los 90 s. 20 charlas de 1 a 2 líneas, por capítulo (`minCh`) y condición
+  (Pita según haya enfermos). Lía desde el cap. 4 y Cosi solo tras el final. No repite personaje seguido ni charla
+  hasta agotarlas. `w.story.talked` con valor por defecto. Usan `Math.random`, no `w.rng` ni `w.careRng`.
+- Diario (Etapa D): pestaña en Misiones con las cartas recibidas y las escenas vistas (se repiten sin marcarlas).
+- Sin hacer: «Álbum» de personajes y ampliar el `EPILOGUE` (ver `docs/GUION_HISTORIA.md`).

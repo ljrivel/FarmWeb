@@ -2,7 +2,7 @@
 // a un múltiplo entero de píxeles de pantalla para que el pixel art quede nítido.
 // Hay dos tipos de escena: el mapa de la granja y cada corral (según su tipo).
 
-import { SPECIES, CORRAL_TYPES, CORRAL_TYPE_ORDER, MAP_SPOTS, VET_SPOT, DISEASES, spriteKey } from './data.js';
+import { BALANCE, SPECIES, CORRAL_TYPES, CORRAL_TYPE_ORDER, MAP_SPOTS, VET_SPOT, DISEASES, spriteKey } from './data.js';
 import { getCorral } from './state.js';
 import { corralStatus } from './sim.js';
 
@@ -106,6 +106,9 @@ const GROUND = {
     fence(ctx, S);
   },
 };
+
+/** Dónde espera el visitante: sobre el camino de la entrada del corral (coordenadas lógicas). */
+export const VISIT_SPOT = { x: 160, y: 190 };
 
 function shadow(ctx, x, y, big = 1) {
   ctx.fillStyle = 'rgba(91,66,86,0.2)';
@@ -212,6 +215,21 @@ function drawMap(ctx, S, w, t) {
 }
 
 // ------------------------------------------------------------------ dibujo
+/** Visitante de la granja: su retrato sube desde abajo, con un «!» que late; se desvanece antes de irse. */
+function drawVisit(ctx, S, view, corralId, t) {
+  const v = view.visit;
+  const row = v && v.corral === corralId ? S.portraits?.index[v.v.who] : null;
+  if (row == null) return;
+  const age = t - v.t0, left = BALANCE.visitStayMs - age;
+  const p = Math.min(1, age / 800);
+  const x = VISIT_SPOT.x, y = Math.round(VISIT_SPOT.y + (1 - p) * (1 - p) * 40);
+  ctx.globalAlpha = Math.max(0, Math.min(1, left / 3000));
+  shadow(ctx, x, y, 1.4);
+  ctx.drawImage(S.portraitsImg, 32, row * 32, 32, 32, x - 16, y - 30, 32, 32);
+  if (p === 1) pill(ctx, '!', x, y - 44 + Math.round(Math.sin(t / 250) * 1.5), '#ffe3ea');
+  ctx.globalAlpha = 1;
+}
+
 export function draw(ctx, S, w, view, t) {
   ctx.imageSmoothingEnabled = false;
   if (view.scene === 'mapa') { drawMap(ctx, S, w, t); return; }
@@ -243,6 +261,7 @@ export function draw(ctx, S, w, view, t) {
     }
     if (a.shiny && Math.sin(t / 180 + a.id) > -0.3) icon(ctx, S, 'destello', x + 7, y - 33 + Math.round(Math.sin(t / 400)), 9);
   }
+  drawVisit(ctx, S, view, corral.id, t);
   for (const a of sorted) {
     if (a.ready > 0) bubble(ctx, S, a.x, a.y, SPECIES[a.species].product, t, a.ready, false);
     else if (a.fed < 30) bubble(ctx, S, a.x, a.y, SPECIES[a.species].food, t, 0, true);
@@ -262,6 +281,12 @@ export function draw(ctx, S, w, view, t) {
 /** Fila del atlas para un animal; si falta el color (atlas viejo o mundo raro) usa el color 0 de su especie. */
 export function spriteRow(rows, species, variant, shiny, stage) {
   return rows[spriteKey(species, variant, shiny, stage)] ?? rows[`${species}:0:${stage}`] ?? 0;
+}
+
+/** ¿El toque cae sobre el visitante que espera en este corral? */
+export function hitVisit(view, lx, ly, corralId) {
+  const v = view.visit;
+  return !!v && v.corral === corralId && lx >= VISIT_SPOT.x - 16 && lx <= VISIT_SPOT.x + 16 && ly >= VISIT_SPOT.y - 48 && ly <= VISIT_SPOT.y + 4;
 }
 
 export function hitTest(w, lx, ly, corralId) {

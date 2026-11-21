@@ -1,16 +1,16 @@
 // Arranque y bucle principal: conecta simulación, dibujo, interfaz y guardado.
 
-import { loadSprites, fit, draw, hitTest, hitMap, W, H } from './render.js';
+import { loadSprites, fit, draw, hitTest, hitVisit, hitMap, W, H } from './render.js';
 import { createUI } from './ui.js';
 import * as sim from './sim.js';
 import { claim, claimSide, syncSide } from './quests.js';
 import { newWorld, getCorral, resolveScene } from './state.js';
 import { store, downloadWorld, readWorldFile } from './storage.js';
-import { MAX_OFFLINE_MS, SPECIES, DISEASES, SECRETS, rarityOf } from './data.js';
+import { MAX_OFFLINE_MS, SPECIES, DISEASES, SECRETS, BALANCE, CHARACTERS, rarityOf } from './data.js';
 import { createAudio } from './audio.js';
-import { nextScene } from './story.js';
+import { nextScene, pickVisit } from './story.js';
 
-const app = { w: null, sprites: null, scene: 'pradera', selectedId: null, fx: [], lastSaved: 0, k: 1, audio: null };
+const app = { w: null, sprites: null, scene: 'pradera', selectedId: null, fx: [], lastSaved: 0, k: 1, audio: null, visit: null, nextVisitAt: 0, lastVisitor: null };
 // El sonido es opcional: sin localStorage o sin AudioContext el juego sigue igual, en silencio.
 const safeStorage = () => { try { return window.localStorage; } catch { return null; } };
 app.audio = createAudio({ storage: safeStorage(), AudioContextClass: window.AudioContext || window.webkitAudioContext });
@@ -220,6 +220,7 @@ function setupCanvas(canvas) {
       else ui.openPanel('shop', 'corrales');
       return;
     }
+    if (hitVisit(app, lx, ly, app.scene)) { app.talkVisit(); return; }
     const hit = hitTest(app.w, lx, ly, app.scene);
     if (!hit) { app.selectedId = null; ui.refresh(); return; }
     if (hit.bubble) { app.collect(hit.animal.id); return; }
@@ -257,6 +258,26 @@ function checkStory() {
   app.w.story.seen[s.id] = true; // se marca al empezar: si se cierra la pestaña, no se repite
   ui.playStory(s, () => saveNow(false));
 }
+const nextVisitDelay = () => BALANCE.visitMinMs + Math.random() * (BALANCE.visitMaxMs - BALANCE.visitMinMs);
+/** Una visita llega cada 8 a 12 min a un corral a la vista, sin nada tapando; si nadie la atiende, se va sola. */
+function checkVisit() {
+  const now = performance.now();
+  if (app.visit && now - app.visit.t0 > BALANCE.visitStayMs) app.visit = null;
+  if (!STORY_ON || app.visit || document.hidden || ui.busy() || app.scene === 'mapa' || now < app.nextVisitAt) return;
+  app.nextVisitAt = now + nextVisitDelay();
+  const v = pickVisit(app.w, app.lastVisitor);
+  if (!v) return;
+  app.visit = { v, t0: now, corral: app.scene };
+  app.lastVisitor = v.who;
+  app.audio.play('tap');
+}
+app.talkVisit = () => {
+  const { v } = app.visit;
+  app.visit = null;
+  app.w.story.talked[v.id] = true;
+  ui.playStory({ id: v.id, title: `Visita de ${CHARACTERS[v.who].nombre}`, lines: v.lines }, () => saveNow(false));
+};
+
 /** Secretos que dependen del estado o de la hora (se revisan cada segundo). */
 function checkSecrets() {
   for (const id of sim.secretsByState(app.w)) app.secret(id);
@@ -297,6 +318,7 @@ async function boot() {
   layout(canvas);
   new ResizeObserver(() => layout(canvas)).observe($('stage'));
 
+  app.nextVisitAt = performance.now() + nextVisitDelay();
   advance(Date.now());
   ui.refresh();
   loading.hidden = true;
@@ -308,7 +330,7 @@ async function boot() {
     last = t;
     sim.wander(app.w, dt);
     const now = Date.now();
-    if (now - app.w.lastTick >= 1000) { advance(now); checkSecrets(); checkStory(); ui.tickLight(); }
+    if (now - app.w.lastTick >= 1000) { advance(now); checkSecrets(); checkStory(); checkVisit(); ui.tickLight(); }
     ctx.setTransform(app.k, 0, 0, app.k, 0, 0);
     draw(ctx, app.sprites, app.w, app, t);
     requestAnimationFrame(frame);

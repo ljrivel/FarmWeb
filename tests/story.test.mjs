@@ -1,9 +1,9 @@
 // Escenas con diálogo: datos bien formados y cuál toca en cada momento.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { SCENES, QUESTS, CHARACTERS } from '../src/data.js';
+import { SCENES, QUESTS, CHARACTERS, VISITS, LETTERS } from '../src/data.js';
 import { newWorld, addAnimal, validateWorld } from '../src/state.js';
-import { nextScene } from '../src/story.js';
+import { nextScene, pickVisit, chapterNow } from '../src/story.js';
 import { claim } from '../src/quests.js';
 import { makeSick } from '../src/sim.js';
 
@@ -56,4 +56,73 @@ test('una partida de antes de las escenas no repite lo que ya pasó, pero sí la
   assert.ok(!w.story.seen['cuentas-claras'], 'c1-vender aún no se reclama');
   assert.equal(nextScene(w), null, 'c1-vender es la activa pero no tiene escena de inicio');
   assert.deepEqual(validateWorld(JSON.parse(JSON.stringify(w)), 0).story.seen, w.story.seen, 'sobrevive a guardar y cargar');
+});
+
+test('las visitas y las cartas están bien formadas', () => {
+  assert.equal(new Set(VISITS.map((v) => v.id)).size, VISITS.length);
+  for (const v of VISITS) {
+    assert.ok(CHARACTERS[v.who] && v.minCh >= 1 && v.minCh <= 6, v.id);
+    assert.ok([undefined, 'enfermo', 'sano'].includes(v.cond), v.id);
+    assert.ok(v.lines.length >= 1 && v.lines.length <= 3, v.id);
+    for (const [who, mood, text] of v.lines) assert.ok(CHARACTERS[who] && [0, 1, 2].includes(mood) && text, v.id);
+  }
+  for (const id of LETTERS) assert.ok(QUESTS.some((q) => q.id === id), id);
+});
+
+const world = (claimedUpTo) => {
+  const w = newWorld('T', 1, 1);
+  for (const q of QUESTS) { if (q.id === claimedUpTo) break; w.quests.claimed[q.id] = true; }
+  return w;
+};
+
+test('las visitas respetan el capítulo: al empezar solo vienen Tomás, Don Ramón y Bruno', () => {
+  const w = world('c1-carta');
+  assert.equal(chapterNow(w), 1);
+  const quienes = new Set();
+  for (let i = 0; i < 60; i++) { delete w.story.talked['x']; quienes.add(pickVisit(w, null, () => i / 60).who); }
+  assert.deepEqual([...quienes].sort(), ['bruno', 'ramon', 'tomas']);
+});
+
+test('Lía llega desde el capítulo 4 y Cosi solo después del final', () => {
+  const quienes = (w) => new Set(Array.from({ length: 80 }, (_, i) => pickVisit(w, null, () => i / 80).who));
+  assert.ok(!quienes(world('c3-tormenta')).has('lia'));
+  assert.ok(quienes(world('c4-pista')).has('lia'));
+  assert.ok(!quienes(world('c5-festival')).has('abuela'));
+  const fin = world('nada-despues'); // todo reclamado
+  assert.equal(chapterNow(fin), 6);
+  assert.ok(quienes(fin).has('abuela'));
+});
+
+test('Pita comenta según haya o no un animal enfermo', () => {
+  const w = world('c4-pista');
+  addAnimal(w, 'gallina', 0, 'adult');
+  const pita = (rnd) => pickVisit(w, null, rnd);
+  const ids = () => new Set(Array.from({ length: 80 }, (_, i) => pickVisit(w, null, () => i / 80).id));
+  assert.ok(!ids().has('v-pita-1') && ids().has('v-pita-2'));
+  makeSick(w, w.animals[0].id, 'resfriado');
+  assert.ok(ids().has('v-pita-1') && !ids().has('v-pita-2'));
+  assert.ok(pita(() => 0));
+});
+
+test('no repite al personaje anterior ni una charla hasta agotarlas', () => {
+  const w = world('c1-carta');
+  assert.notEqual(pickVisit(w, 'tomas', () => 0).who, 'tomas');
+  const hechas = new Set();
+  for (let i = 0; i < 3; i++) { // en el capítulo 1 hay 3 charlas elegibles
+    const v = pickVisit(w, null, () => 0);
+    assert.ok(!hechas.has(v.id), `repite ${v.id} antes de agotar`);
+    hechas.add(v.id);
+    w.story.talked[v.id] = true;
+  }
+  const otra = pickVisit(w, null, () => 0); // las 3 elegibles de este capítulo ya se contaron: vuelve a empezar
+  assert.ok(otra && !w.story.talked[otra.id]);
+});
+
+test('las charlas contadas sobreviven a guardar y cargar', () => {
+  const w = newWorld('T', 1, 1);
+  addAnimal(w, 'gallina', 0, 'adult');
+  w.story.talked['v-tomas-1'] = true;
+  w.story.talked['inventada'] = true;
+  const v = validateWorld(JSON.parse(JSON.stringify(w)), 0);
+  assert.deepEqual(v.story.talked, { 'v-tomas-1': true });
 });

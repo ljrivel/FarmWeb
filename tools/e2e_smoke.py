@@ -558,6 +558,47 @@ def story_scenes(browser, name, viewport, dpr, mobile):
     ctx.close()
 
 
+def visits_and_diary(browser):
+    print("\n== visitas y Diario")
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    page = ctx.new_page()
+    errors = []
+    page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(URL_ESCENAS)
+    page.wait_for_function("document.getElementById('loading').hidden === true", timeout=15000)
+    page.locator('[data-key="story-skip"]').click()  # la escena de Bruno
+    check(page.evaluate("farmweb.app.visit") is None, "al empezar no hay visita")
+    page.evaluate("farmweb.app.nextVisitAt = 0")
+    page.wait_for_function("farmweb.app.visit !== null", timeout=4000)
+    page.wait_for_timeout(1200)
+    check(page.evaluate("farmweb.app.visit.corral") == "pradera", "la visita llega al corral a la vista")
+    page.screenshot(path=f"{SHOTS}/movil-31-visita.png")
+    gbox = page.locator("#game").bounding_box()
+    page.mouse.click(gbox["x"] + 160 * gbox["width"] / 320, gbox["y"] + 178 * gbox["height"] / 224)
+    page.wait_for_selector(".story", timeout=3000)
+    check(page.evaluate("farmweb.app.visit") is None, "tocar la visita la atiende")
+    check(page.locator(".story").get_attribute("aria-label").startswith("Visita de"), "se abre su charla")
+    check(len(page.evaluate("Object.keys(farmweb.app.w.story.talked)")) == 1, "la charla queda contada")
+    page.locator('[data-key="story-skip"]').click()
+    check(page.evaluate("farmweb.app.nextVisitAt") > 0, "la siguiente visita queda programada")
+
+    page.evaluate("farmweb.app.visit = null")
+    page.click('[data-panel="quests"]')
+    page.locator('[data-key="tab-diario"]').click()
+    check("Escenas vistas (1 de" in page.locator("#sheetBody").inner_text(), "el Diario cuenta la escena ya vista")
+    check("Cartas de Cosi (1 de" in page.locator("#sheetBody").inner_text(), "y la carta recibida")
+    page.screenshot(path=f"{SHOTS}/movil-32-diario.png")
+    page.locator('[data-key="replay-sobre-mojado"]').click()
+    page.wait_for_selector(".story", timeout=3000)
+    page.keyboard.press("Escape")
+    check(page.locator(".story").count() == 0, "Escape cierra la escena repetida")
+    check(page.locator("#backdrop").is_visible(), "sin cerrar el Diario de debajo")
+    check(page.evaluate("Object.keys(farmweb.app.w.story.seen).length") == 1, "repetirla no marca nada nuevo")
+    check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
+    ctx.close()
+
+
 def main():
     server = subprocess.Popen([sys.executable, "-m", "http.server", str(PORT), "--bind", "127.0.0.1"],
                               cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -579,6 +620,7 @@ def main():
             new_content(browser)
             story_scenes(browser, "movil", {"width": 390, "height": 844}, 3, True)
             story_scenes(browser, "pc", {"width": 1280, "height": 800}, 1, False)
+            visits_and_diary(browser)
             browser.close()
     finally:
         server.terminate()
