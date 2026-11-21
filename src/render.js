@@ -1,12 +1,18 @@
 // Dibujo en Canvas 2D. Lienzo lógico de 320x224 (20x14 tiles de 16 px) escalado
 // a un múltiplo entero de píxeles de pantalla para que el pixel art quede nítido.
+// Hay dos tipos de escena: el mapa de la granja y cada corral (según su tipo).
 
-import { SPECIES } from './data.js';
+import { SPECIES, CORRAL_TYPES, CORRAL_TYPE_ORDER, MAP_SPOTS } from './data.js';
+import { getCorral } from './state.js';
+import { corralStatus } from './sim.js';
 
 export const W = 320;
 export const H = 224;
 const COLS = 20, ROWS = 14;
 const INK = '#5b4256';
+const CREAM = '#fffdf8';
+const PLACE = 48; // tamaño de cada lugar del mapa
+const MAP_HIT = 56; // área de toque de cada lugar
 
 const loadImg = (src) => new Promise((res, rej) => {
   const i = new Image();
@@ -20,11 +26,13 @@ const loadJson = (src) => fetch(src).then((r) => {
 });
 
 export async function loadSprites() {
-  const [animalsImg, iconsImg, tilesImg, animals, icons, tiles] = await Promise.all([
-    loadImg('assets/sprites/animals.png'), loadImg('assets/sprites/icons.png'), loadImg('assets/sprites/tiles.png'),
-    loadJson('assets/sprites/animals.json'), loadJson('assets/sprites/icons.json'), loadJson('assets/sprites/tiles.json'),
+  const [animalsImg, iconsImg, tilesImg, placesImg, animals, icons, tiles, places] = await Promise.all([
+    loadImg('assets/sprites/animals.png'), loadImg('assets/sprites/icons.png'),
+    loadImg('assets/sprites/tiles.png'), loadImg('assets/sprites/places.png'),
+    loadJson('assets/sprites/animals.json'), loadJson('assets/sprites/icons.json'),
+    loadJson('assets/sprites/tiles.json'), loadJson('assets/sprites/places.json'),
   ]);
-  return { animalsImg, iconsImg, tilesImg, animals, icons, tiles };
+  return { animalsImg, iconsImg, tilesImg, placesImg, animals, icons, tiles, places };
 }
 
 /** Ajusta el lienzo al contenedor con escala entera en píxeles de dispositivo. */
@@ -46,20 +54,57 @@ function icon(ctx, S, name, x, y, size = 16) {
   ctx.drawImage(S.iconsImg, S.icons.index[name] * 16, 0, 16, 16, Math.round(x), Math.round(y), size, size);
 }
 
-function ground(ctx, S, w) {
+// ------------------------------------------------------------------ suelos
+/** Rellena todo el lienzo con tres variantes de un mismo suelo, repartidas sin patrón evidente. */
+function field(ctx, S, [plain, flowers, tufts]) {
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
       const h = (c * 37 + r * 17 + c * r * 3) % 10;
-      tile(ctx, S, h < 2 ? 'grass1' : h < 4 ? 'grass2' : 'grass0', c * 16, r * 16);
+      tile(ctx, S, h < 2 ? flowers : h < 4 ? tufts : plain, c * 16, r * 16);
     }
   }
+}
+
+function entrance(ctx, S) {
   for (let r = 11; r < ROWS; r++) { tile(ctx, S, 'path', 9 * 16, r * 16); tile(ctx, S, 'path', 10 * 16, r * 16); }
+}
+
+function fence(ctx, S, sides = true) {
   for (let c = 0; c < COLS; c++) {
     tile(ctx, S, 'fence_h', c * 16, 0);
     if (c !== 9 && c !== 10) tile(ctx, S, 'fence_h', c * 16, (ROWS - 1) * 16);
   }
+  if (!sides) return;
   for (let r = 1; r < ROWS - 1; r++) { tile(ctx, S, 'fence_v', 0, r * 16); tile(ctx, S, 'fence_v', (COLS - 1) * 16, r * 16); }
 }
+
+const GROUND = {
+  pradera(ctx, S) {
+    field(ctx, S, ['grass0', 'grass1', 'grass2']);
+    entrance(ctx, S);
+    fence(ctx, S);
+  },
+  bosque(ctx, S) {
+    field(ctx, S, ['moss', 'grass1', 'moss']);
+    entrance(ctx, S);
+    fence(ctx, S, false);
+    for (let c = 0; c < COLS; c++) { tile(ctx, S, 'tree', c * 16, 0); tile(ctx, S, 'tree', c * 16 + (c % 2 ? 6 : -6), 14); }
+    for (let r = 2; r < ROWS - 1; r++) { tile(ctx, S, 'tree', 0, r * 16); tile(ctx, S, 'tree', (COLS - 1) * 16, r * 16); }
+  },
+  estanque(ctx, S) {
+    field(ctx, S, ['grass0', 'grass1', 'grass2']);
+    for (let r = 5; r <= 13; r++) for (let c = 2; c <= 17; c++) tile(ctx, S, 'sand', c * 16, r * 16);
+    for (let r = 6; r <= 12; r++) for (let c = 3; c <= 16; c++) tile(ctx, S, 'water', c * 16, r * 16);
+    entrance(ctx, S);
+    fence(ctx, S);
+  },
+  jurasico(ctx, S) {
+    field(ctx, S, ['fern', 'fern', 'grass2']);
+    for (const [c, r] of [[2, 5], [3, 5], [16, 5], [17, 6], [2, 12], [17, 12], [1, 8]]) tile(ctx, S, 'rock', c * 16, r * 16);
+    entrance(ctx, S);
+    fence(ctx, S);
+  },
+};
 
 function shadow(ctx, x, y, big = 1) {
   ctx.fillStyle = 'rgba(91,66,86,0.2)';
@@ -85,7 +130,7 @@ function bubble(ctx, S, x, y, name, t, count, dim) {
   ctx.fillRect(bx, by + 1, 22, 20);
   ctx.fillRect(bx + 1, by, 20, 22);
   ctx.fillRect(bx + 9, by + 22, 4, 2);
-  ctx.fillStyle = dim ? '#fff0d4' : '#fffdf8';
+  ctx.fillStyle = dim ? '#fff0d4' : CREAM;
   ctx.fillRect(bx + 1, by + 2, 20, 18);
   ctx.fillRect(bx + 2, by + 1, 18, 20);
   ctx.fillRect(bx + 10, by + 21, 2, 2);
@@ -102,11 +147,69 @@ function bubble(ctx, S, x, y, name, t, count, dim) {
   }
 }
 
+// -------------------------------------------------------------------- mapa
+/** Cartelito de texto con borde, centrado en cx. `pad` deja espacio a la izquierda para un icono. */
+function pill(ctx, text, cx, y, fill = CREAM, pad = 0) {
+  ctx.font = 'bold 8px monospace';
+  ctx.textBaseline = 'top';
+  const w = Math.ceil(ctx.measureText(text).width) + 6 + pad;
+  const x = Math.round(cx - w / 2);
+  ctx.fillStyle = INK;
+  ctx.fillRect(x, y, w, 12);
+  ctx.fillStyle = fill;
+  ctx.fillRect(x + 1, y + 1, w - 2, 10);
+  ctx.fillStyle = INK;
+  ctx.fillText(text, x + 3 + pad, y + 2);
+  return x;
+}
+
+function badge(ctx, text, cx, cy, fill) {
+  pill(ctx, text, cx, Math.round(cy) - 6, fill);
+}
+
+function drawMap(ctx, S, w, t) {
+  field(ctx, S, ['grass0', 'grass1', 'grass2']);
+  const a = MAP_SPOTS.pradera, b = MAP_SPOTS.bosque, c = MAP_SPOTS.estanque, d = MAP_SPOTS.jurasico;
+  const road = (x0, y0, x1, y1) => {
+    const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) / 16;
+    for (let i = 0; i <= n; i++) tile(ctx, S, 'path', Math.round(x0 + ((x1 - x0) * i) / n) - 8, Math.round(y0 + ((y1 - y0) * i) / n) - 8);
+  };
+  const midY = Math.round((a.y + d.y) / 2);
+  road(d.x, d.y, a.x, a.y);
+  road(b.x, b.y, c.x, c.y);
+  road(a.x, midY, b.x, midY);
+  pill(ctx, 'Mapa de la granja', W / 2, 10);
+
+  CORRAL_TYPE_ORDER.forEach((tipo, i) => {
+    const { x, y } = MAP_SPOTS[tipo];
+    const type = CORRAL_TYPES[tipo];
+    const built = getCorral(w, tipo);
+    const bob = built ? Math.round(Math.sin(t / 500 + i * 1.7)) : 0;
+    const col = S.places.index[built ? tipo : `${tipo}_bloq`];
+    ctx.drawImage(S.placesImg, col * PLACE, 0, PLACE, PLACE, Math.round(x - PLACE / 2), Math.round(y - PLACE / 2) + bob, PLACE, PLACE);
+    if (built) {
+      const st = corralStatus(w, built.id);
+      pill(ctx, `${type.nombre} ${st.used}/${st.capacity}`, x, y + 26);
+      if (st.ready > 0) badge(ctx, String(st.ready), x + 18, y - 22 + bob, '#ff8fb0');
+      if (st.hungry > 0) badge(ctx, '!', x - 20, y - 22 + bob, '#ffd95e');
+    } else {
+      icon(ctx, S, 'candado', x + 8, y - 28, 16);
+      pill(ctx, type.nombre, x, y + 26);
+      if (type.cost == null) pill(ctx, 'Historia', x, y + 39, '#fff0d4');
+      else icon(ctx, S, 'coin', pill(ctx, String(type.cost), x, y + 39, '#fff0d4', 10) + 2, y + 39, 12);
+    }
+  });
+}
+
+// ------------------------------------------------------------------ dibujo
 export function draw(ctx, S, w, view, t) {
   ctx.imageSmoothingEnabled = false;
-  ground(ctx, S, w);
+  if (view.scene === 'mapa') { drawMap(ctx, S, w, t); return; }
 
-  const here = (x) => x.corral === 'pradera'; // provisional: la tarea de escenas reemplaza esto
+  const corral = getCorral(w, view.scene) || getCorral(w, 'pradera');
+  GROUND[corral.tipo](ctx, S);
+  const here = (x) => x.corral === corral.id;
+
   for (const e of w.eggs.filter(here)) {
     const wob = Math.round(Math.sin(t / 250 + e.id) * 1);
     shadow(ctx, e.x, e.y, 0.8);
@@ -139,9 +242,9 @@ export function draw(ctx, S, w, view, t) {
   }
 }
 
-/** Qué hay bajo el dedo: la burbuja de recolección tiene prioridad. */
-export function hitTest(w, lx, ly) {
-  const front = w.animals.filter((a) => a.corral === 'pradera').sort((a, b) => b.y - a.y);
+/** Qué hay bajo el dedo en un corral: la burbuja de recolección tiene prioridad. */
+export function hitTest(w, lx, ly, corralId) {
+  const front = w.animals.filter((a) => a.corral === corralId).sort((a, b) => b.y - a.y);
   for (const a of front) {
     if (a.ready > 0 && lx >= a.x - 11 && lx <= a.x + 11 && ly >= a.y - 60 && ly <= a.y - 35) return { animal: a, bubble: true };
   }
@@ -149,4 +252,13 @@ export function hitTest(w, lx, ly) {
     if (lx >= a.x - 14 && lx <= a.x + 14 && ly >= a.y - 30 && ly <= a.y + 4) return { animal: a, bubble: false };
   }
   return null;
+}
+
+/** Qué lugar del mapa está bajo el dedo (construido o no), o null. */
+export function hitMap(w, lx, ly) {
+  const half = MAP_HIT / 2;
+  return CORRAL_TYPE_ORDER.find((tipo) => {
+    const { x, y } = MAP_SPOTS[tipo];
+    return Math.abs(lx - x) <= half && Math.abs(ly - y) <= half;
+  }) || null;
 }

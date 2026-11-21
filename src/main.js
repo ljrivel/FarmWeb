@@ -1,14 +1,14 @@
 // Arranque y bucle principal: conecta simulación, dibujo, interfaz y guardado.
 
-import { loadSprites, fit, draw, hitTest, W, H } from './render.js';
+import { loadSprites, fit, draw, hitTest, hitMap, W, H } from './render.js';
 import { createUI } from './ui.js';
 import * as sim from './sim.js';
 import { claim } from './quests.js';
-import { newWorld } from './state.js';
+import { newWorld, getCorral, resolveScene } from './state.js';
 import { store, downloadWorld, readWorldFile } from './storage.js';
 import { MAX_OFFLINE_MS, SPECIES } from './data.js';
 
-const app = { w: null, sprites: null, selectedId: null, fx: [], lastSaved: 0, k: 1 };
+const app = { w: null, sprites: null, scene: 'pradera', selectedId: null, fx: [], lastSaved: 0, k: 1 };
 const ui = createUI(app);
 const $ = (id) => document.getElementById(id);
 
@@ -58,6 +58,13 @@ app.claimQuest = () => {
   if (r.ok && r.animal) app.selectedId = r.animal.id;
   report(r);
 };
+/** Cambia de escena ('mapa' o el id de un corral); una escena inválida vuelve a la Pradera. */
+app.goTo = (scene) => {
+  app.scene = resolveScene(app.w, scene);
+  const sel = app.selectedId ? sim.find(app.w, app.selectedId) : null;
+  if (!sel || sel.corral !== app.scene) app.selectedId = null;
+  ui.refresh();
+};
 app.rename = (name) => {
   const n = String(name).trim().slice(0, 40);
   if (n) app.w.name = n;
@@ -71,6 +78,7 @@ app.readFile = readWorldFile;
 app.replaceWorld = (next) => {
   next.lastTick = Date.now(); // no regalar progreso por la fecha del archivo
   app.w = next;
+  app.scene = resolveScene(next, app.scene);
   app.selectedId = null;
   saveNow(false);
   ui.closeSheet();
@@ -79,6 +87,7 @@ app.replaceWorld = (next) => {
 };
 app.newWorld = () => {
   app.w = newWorld();
+  app.scene = 'pradera';
   app.selectedId = null;
   saveNow(false);
   ui.closeSheet();
@@ -126,7 +135,15 @@ function advance(now) {
 function setupCanvas(canvas) {
   canvas.addEventListener('pointerdown', (e) => {
     const r = canvas.getBoundingClientRect();
-    const hit = hitTest(app.w, (e.clientX - r.left) * (W / r.width), (e.clientY - r.top) * (H / r.height));
+    const lx = (e.clientX - r.left) * (W / r.width), ly = (e.clientY - r.top) * (H / r.height);
+    if (app.scene === 'mapa') {
+      const tipo = hitMap(app.w, lx, ly);
+      if (!tipo) return;
+      if (getCorral(app.w, tipo)) app.goTo(tipo);
+      else ui.openPanel('shop', 'corrales');
+      return;
+    }
+    const hit = hitTest(app.w, lx, ly, app.scene);
     if (!hit) { app.selectedId = null; ui.refresh(); return; }
     if (hit.bubble) { app.collect(hit.animal.id); return; }
     if (app.selectedId === hit.animal.id) app.pet(hit.animal.id);
@@ -154,6 +171,7 @@ async function boot() {
   try {
     app.sprites = await loadSprites();
     app.w = (await store.load()) || newWorld();
+    app.scene = resolveScene(app.w, app.scene);
   } catch (err) {
     loading.textContent = 'No se pudo cargar el juego. Revisa tu conexión y recarga la página.';
     console.error(err);
