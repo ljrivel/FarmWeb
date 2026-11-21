@@ -195,6 +195,102 @@ def play(browser, name, viewport, dpr, mobile):
     ctx.close()
 
 
+def identity_and_sound(browser, name, viewport, dpr, mobile):
+    """Fase 2A: nombres, colores raros y brillantes, y sonido (estado, silencio que persiste)."""
+    print(f"\n== fase 2A (nombres, colores, sonido) {name} {viewport}")
+    ctx = browser.new_context(viewport=viewport, device_scale_factor=dpr, is_mobile=mobile, has_touch=mobile)
+    page = ctx.new_page()
+    errors = []
+    page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    alerts = []
+    page.on("dialog", lambda d: (alerts.append(d.message), d.dismiss()))
+    page.goto(URL)
+    page.wait_for_function("document.getElementById('loading').hidden === true", timeout=15000)
+    page.wait_for_timeout(400)
+
+    # sonido: no hay contexto hasta el primer toque
+    check(page.evaluate("farmweb.audio.state") == "none", "antes de tocar nada el audio no existe")
+    if mobile:
+        page.touchscreen.tap(viewport["width"] // 2, 300)
+    else:
+        page.mouse.click(viewport["width"] // 2, 300)
+    page.wait_for_timeout(600)
+    check(page.evaluate("farmweb.audio.state") == "running", "tras un toque el audio pasa a running")
+
+    # (a) comprar abre el diálogo y el nombre escrito queda
+    page.evaluate("farmweb.app.w.coins = 900")
+    page.click('[data-panel="shop"]')
+    page.locator('[data-key="buy-gato"]').click()
+    page.wait_for_timeout(300)
+    check(page.locator("#sheetTitle").inner_text() == "Ponle nombre", "comprar un gato abre «Ponle nombre»")
+    check(page.locator('label[for="animalName"]').inner_text() == "Nombre", "el campo tiene la etiqueta visible «Nombre»")
+    page.screenshot(path=f"{SHOTS}/{name}-9-dialogo-nombre.png")
+    page.locator("#animalName").fill("Bigotes")
+    page.keyboard.press("Enter")
+    page.wait_for_timeout(300)
+    check("Bigotes" in page.locator("#selected").inner_text(), "el nombre escrito queda en la tarjeta")
+    page.click('[data-panel="animals"]')
+    page.wait_for_timeout(200)
+    check("Bigotes" in page.locator("#sheetBody").inner_text(), "y en el panel Animales")
+    page.keyboard.press("Escape")
+
+    # (b) Escape conserva el sugerido y la tarjeta ofrece «Ponle nombre»
+    page.click('[data-panel="shop"]')
+    page.locator('[data-key="buy-gato"]').click()
+    page.wait_for_timeout(250)
+    suggested = page.locator("#animalName").input_value()
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(250)
+    card = page.locator("#selected").inner_text()
+    check(suggested and suggested in card, f"Escape conserva el nombre sugerido «{suggested}»")
+    check(page.locator("#selected .btn.highlight").inner_text() == "Ponle nombre", "la tarjeta ofrece «Ponle nombre» destacado")
+    page.locator("#selected .btn.highlight").click()
+    page.wait_for_timeout(200)
+    page.locator("#animalName").fill("<img src=x onerror=alert(1)>")
+    page.keyboard.press("Enter")
+    page.wait_for_timeout(250)
+    check(page.locator("#selected img").count() == 0 and not alerts, "un nombre con etiquetas se ve como texto y no ejecuta nada")
+
+    # (c) un color raro (3) y un brillante se dibujan sin errores
+    page.evaluate("""(async () => {
+        const st = await import('/src/state.js');
+        const w = farmweb.app.w;
+        st.addAnimal(w, 'gallina', 3, 'adult');
+        st.addAnimal(w, 'gallina', 0, 'adult', { shiny: true });
+    })()""")
+    page.evaluate("farmweb.app.goTo('pradera')")
+    page.wait_for_timeout(500)
+    rows = page.evaluate("[farmweb.app.sprites.animals.rows['gallina:3:adult'], farmweb.app.sprites.animals.rows['gallina:shiny:adult']]")
+    check(all(r is not None for r in rows), f"el atlas tiene las filas del color raro y del brillante {rows}")
+    page.screenshot(path=f"{SHOTS}/{name}-10-raros.png")
+    ids = page.evaluate("farmweb.app.w.animals.filter(a => a.shiny || a.variant === 3).map(a => a.id)")
+    seen = []
+    for aid in ids[-2:]:
+        page.evaluate(f"farmweb.app.selectedId = {aid}; farmweb.app.goTo(farmweb.app.scene)")
+        page.wait_for_timeout(250)
+        seen.append(page.locator("#selected").inner_text())
+    check(any("Raro" in t for t in seen) and any("Brillante" in t for t in seen), "las tarjetas muestran las etiquetas Raro y Brillante")
+    page.screenshot(path=f"{SHOTS}/{name}-11-tarjeta-brillante.png")
+
+    # (d) el silencio persiste al recargar
+    page.click('[data-panel="world"]')
+    page.wait_for_timeout(200)
+    check(page.locator('[data-key="sound-toggle"]').get_attribute("aria-pressed") == "true", "el botón de sonido empieza activado")
+    page.locator('[data-key="sound-toggle"]').click()
+    page.wait_for_timeout(150)
+    page.screenshot(path=f"{SHOTS}/{name}-12-sonido.png")
+    page.reload()
+    page.wait_for_function("document.getElementById('loading').hidden === true", timeout=15000)
+    check(page.evaluate("farmweb.audio.prefs.muted") is True, "tras recargar sigue silenciado")
+    page.click('[data-panel="world"]')
+    page.wait_for_timeout(200)
+    check(page.locator('[data-key="sound-toggle"]').get_attribute("aria-pressed") == "false", "y el botón lo muestra")
+    check(page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1"), "sin desbordamiento horizontal")
+    check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
+    ctx.close()
+
+
 def migration(browser):
     """Un guardado v1 ya existente en el navegador se migra al abrir y deja su respaldo."""
     print("\n== migración v1 -> v2 en el navegador")
@@ -250,6 +346,16 @@ def small_phone(browser):
     page.click('[data-goto="mapa"]')
     page.wait_for_timeout(300)
     page.screenshot(path=f"{SHOTS}/chico-2-mapa.png")
+    page.evaluate("farmweb.app.w.coins = 500")
+    page.click('[data-panel="shop"]')
+    page.locator('[data-key="buy-gato"]').click()
+    page.wait_for_timeout(300)
+    check(page.locator("#sheetTitle").inner_text() == "Ponle nombre", "el diálogo de nombre abre en el celular chico")
+    check(page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1"), "sin desbordamiento horizontal con el diálogo")
+    fits = page.evaluate("""[...document.querySelectorAll('#sheetBody input, #sheetBody button')].every(b => {
+        const r = b.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth && r.bottom <= innerHeight; })""")
+    check(fits, "campo y botones del diálogo caben en 360x740")
+    page.screenshot(path=f"{SHOTS}/chico-3-dialogo-nombre.png")
     check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
     ctx.close()
 
@@ -263,6 +369,8 @@ def main():
             browser = p.chromium.launch(executable_path=CHROME, args=["--no-sandbox"])
             play(browser, "movil", {"width": 390, "height": 844}, 3, True)
             play(browser, "pc", {"width": 1280, "height": 800}, 1, False)
+            identity_and_sound(browser, "movil", {"width": 390, "height": 844}, 3, True)
+            identity_and_sound(browser, "pc", {"width": 1280, "height": 800}, 1, False)
             migration(browser)
             small_phone(browser)
             browser.close()

@@ -1,6 +1,6 @@
-# FarmWeb — Documento de diseño (v0.1, con la fase 1 de la v2 ya hecha)
+# FarmWeb — Documento de diseño (v0.1, con las fases 1 y 2A de la v2 ya hechas)
 
-> **Estado de la v2.** El rumbo actual está en [`docs/superpowers/specs/2026-11-20-farmweb-v2-diseno.md`](superpowers/specs/2026-11-20-farmweb-v2-diseno.md) (mezcla de Hay Day y Stardew Valley, un jugador por ahora) y su plan por fases. **Fase 1 hecha:** varios corrales, mapa y formato de mundo v2 con migración. Este documento sigue describiendo la base; donde dice «una granja» o «ampliaciones», hoy son corrales con nivel (capacidad = base del tipo + 4 por nivel). Las secciones de multijugador y nube (5 y 8) quedan en pausa por decisión del usuario.
+> **Estado de la v2.** El rumbo actual está en [`docs/superpowers/specs/2026-11-20-farmweb-v2-diseno.md`](superpowers/specs/2026-11-20-farmweb-v2-diseno.md) (mezcla de Hay Day y Stardew Valley, un jugador por ahora) y su plan por fases. **Fase 1 hecha:** varios corrales, mapa y formato de mundo v2 con migración. **Fase 2A hecha:** nombres de animales, colores raros y brillantes, y sonido (diseño en [`docs/superpowers/specs/2026-11-20-fase-2a-identidad-y-sonido-diseno.md`](superpowers/specs/2026-11-20-fase-2a-identidad-y-sonido-diseno.md)). Este documento sigue describiendo la base; donde dice «una granja» o «ampliaciones», hoy son corrales con nivel (capacidad = base del tipo + 4 por nivel). Las secciones de multijugador y nube (5 y 8) quedan en pausa por decisión del usuario.
 
 Nombre de trabajo: **FarmWeb**. Juego de granja **familiar y tierno** (hasta 4 jugadores), en el navegador de móvil y PC, con pixel art propio.
 
@@ -24,7 +24,7 @@ Nombre de trabajo: **FarmWeb**. Juego de granja **familiar y tierno** (hasta 4 j
 | Carnotauro | Dinosaurio | Carnita | Escama de fuego | Llega por la historia (capítulo 3) |
 | Spinosaurus | Dinosaurio | Pescadito | Escama de río | Necesita estanque; llega por la historia (capítulo 4) |
 
-Cada especie tiene **2 colores** en la base (p. ej. gallina blanca/marrón, gato naranja/gris, ajolote rosa/dorado, carnotauro coral/menta).
+Cada especie tiene **4 colores** y un **brillante** aparte. El orden del color es su rareza: 0 y 1 comunes, 2 poco común, 3 raro (p. ej. gallina blanca/marrón/durazno/lavanda, gato naranja/gris/siamés/medianoche). La tienda y los premios solo dan colores comunes; los otros salen de las crías (mutación) y el brillante de un huevo con poca probabilidad. Los valores están en `BALANCE` de `src/data.js`.
 
 ## 3. Sistema de juego
 
@@ -113,7 +113,7 @@ Para empezar, el estado completo del mundo vive en `worlds.state` (jsonb). Norma
 
 ## 9. Arte
 
-- Sprites de **32×32**, animales *chibi* de frente, 4 cuadros de animación en reposo (respirar y parpadear), versión bebé y adulta, 2 colores por especie.
+- Sprites de **32×32**, animales *chibi* de frente, 4 cuadros de animación en reposo (respirar y parpadear), versión bebé y adulta, 4 colores y brillante por especie (80 filas en el atlas).
 - Iconos de **16×16** para comida, productos y monedas; tiles de 16×16.
 - Todo se genera con `tools/gen_sprites.py`, así que ajustar colores o formas es rehacer el script. Vista previa: `docs/preview-sprites.png`.
 - Paleta pastel cálida con fondo crema; contorno de cada sprite = tono oscuro de su propio color.
@@ -122,5 +122,6 @@ Para empezar, el estado completo del mundo vive en `worlds.state` (jsonb). Norma
 
 1. **Base (v0.1, hecha):** sprites, granja jugable local, guardado local y por archivo, misiones capítulos 1–4.
 2. **Fase 1 de la v2 (hecha):** corrales por tipo (Pradera, Bosque, Estanque, Jurásico), mapa para viajar, formato de mundo v2 con migración y respaldo de los guardados anteriores.
-3. **Fases siguientes de la v2** (detalle en el diseño v2; aún sin aprobar para empezar): 2 cuidado profundo (corazones, enfermedades, veterinaria) · 3 economía (puestos y pedidos) · 4 pueblo y calendario · 5 historia y misiones secundarias · 6 pulido y publicación.
-4. Más adelante: cuentas y nube con Supabase + mundo familiar, publicación en Cloudflare Pages, sonido y música suaves, instalación como PWA.
+3. **Fase 2A (hecha):** nombres, colores raros y brillantes, sonido sintetizado con volumen y silencio.
+4. **Fases siguientes de la v2** (detalle en el diseño v2; aún sin aprobar para empezar): 2B cuidado profundo (corazones, enfermedades, veterinaria) · 2C misiones simultáneas con historial aparte · 3 economía (puestos y pedidos) · 4 pueblo y calendario · 5 historia y misiones secundarias · 6 pulido y publicación.
+5. Más adelante: cuentas y nube con Supabase + mundo familiar, publicación en Cloudflare Pages, música suave, instalación como PWA.
