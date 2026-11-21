@@ -32,12 +32,12 @@ export const BALANCE = {
   loveDecayPerSec: 100 / (3 * 60 * 60),  // descuidado y con el juego abierto: −1 corazón cada ~3 h
   heartProdBonus: 0.04,                  // +4 % de producción por corazón (máx. +20 % con 5)
   // ---- Fase 2B: enfermedades. Probabilidad por hora de juego abierto (solo en vivo, nunca sin conexión).
-  sickBasePerHour: { resfriado: 0.012, pulgas: 0.012 },
+  sickBasePerHour: { resfriado: 0.03, pulgas: 0.03 },
   sadSickPerHour: 1,      // tristeza, tras `sadAfter` con felicidad < 20
   sadAfter: 10 * MIN,
   hungrySickPerHour: 1,   // pancita, tras `hungryAfter` con saciedad en 0
   hungryAfter: 15 * MIN,
-  cureCost: { resfriado: 30, pancita: 25, pulgas: 20, tristeza: 15 },
+  cureCost: { resfriado: 60, pancita: 50, pulgas: 40, tristeza: 30 },
   cureCareFed: 50,        // se cura sola si está comida y contenta…
   cureCareHappy: 40,
 };
