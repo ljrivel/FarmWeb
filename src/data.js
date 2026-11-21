@@ -304,5 +304,18 @@ export const SIDE_QUESTS = [
     goal: { type: 'owncount', n: 15 }, reward: { coins: 200 } },
 ];
 
+// Secretos (easter eggs): discretos, sin efecto en la economía; cuentan como logros en Misiones.
+export const SECRETS = {
+  cosi: { title: 'Homenaje', text: 'Le pusiste «Cosi» a un animal. Desde el río, la abuela se ríe: «¡Qué honor!».' },
+  nessie: { title: 'El monstruo del lago', text: 'Un spinosaurus llamado Nessie… dicen que vive en un lago muy, muy lejano.' },
+  cartel: { title: 'Detrás del cartel', text: 'Detrás del cartel del mapa había una nota: «Los quiero mucho. —C.»' },
+  konami: { title: 'La ola', text: '↑↑↓↓←→←→BA: ¡todos los animales hicieron la ola!' },
+  amigo: { title: 'Mejores amigos', text: 'Un animal llegó a 5 corazones. Ya no se separa de ti.' },
+  brillo: { title: '¡Qué brillo!', text: 'Tienes un animal brillante. Brilla más que los brillitos del mapache.' },
+  arcoiris: { title: 'Arcoíris', text: 'Tienes los 4 colores de una misma especie a la vez.' },
+  buho: { title: 'Búho nocturno', text: 'Jugaste de madrugada. Los animales duermen… ¡shh!' },
+};
+export const SECRET_ORDER = Object.keys(SECRETS);
+
 /** Epílogo que se muestra al terminar la historia. */
 export const EPILOGUE = 'La abuela Cosi se quedó a vivir en la casita junto al estanque. Cada tarde se sienta con Tomás, Lía y la Dra. Pita a mirar cómo juegan los animales, y dice que esta es la granja más feliz que conoció. La historia terminó, pero la granja sigue: quedan misiones secundarias, crías raras y secretos por descubrir.';

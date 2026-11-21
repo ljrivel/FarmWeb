@@ -4,7 +4,7 @@
 
 import {
   SPECIES, FOODS, PRODUCTS, BALANCE, CORRAL_COSTS, CORRAL_TYPES, CORRAL_TYPE_ORDER, MAX_CORRAL_LEVEL, corralTypeOf,
-  COMMON_VARIANTS, VARIANT_TIERS, rarityOf, MAX_HEARTS, DISEASES,
+  COMMON_VARIANTS, VARIANT_TIERS, rarityOf, MAX_HEARTS, DISEASES, SECRETS,
 } from './data.js';
 import { rand, randInt, chance } from './rng.js';
 import { addAnimal, addCorral, capacityOf, getCorral, corralOfSpecies, cleanName } from './state.js';
@@ -351,6 +351,37 @@ export function corralStatus(w, corralId) {
     ready: here.reduce((n, a) => n + a.ready, 0),
     hungry: here.filter((a) => a.fed < 30).length,
   };
+}
+
+// ------------------------------------------------------------------ secretos
+/** Marca un secreto como descubierto. Devuelve true solo la primera vez. */
+export function discover(w, id) {
+  if (!Object.hasOwn(SECRETS, id) || w.secrets[id]) return false;
+  w.secrets[id] = true;
+  return true;
+}
+
+/** Texto comparable: sin tildes, en minúsculas y sin espacios de más. */
+const plain = (s) => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
+/** Secretos que se cumplen por un nombre recién puesto. */
+export function secretsByName(a) {
+  const n = plain(a.name);
+  const out = [];
+  if (n === 'cosi' || n === 'abuela cosi') out.push('cosi');
+  if (n === 'nessie' && a.species === 'spinosaurus') out.push('nessie');
+  return out;
+}
+
+/** Secretos que se cumplen por el estado del mundo (se revisan cada segundo). */
+export function secretsByState(w) {
+  const out = [];
+  if (w.animals.some((a) => a.hearts >= MAX_HEARTS)) out.push('amigo');
+  if (w.animals.some((a) => a.shiny)) out.push('brillo');
+  const colors = {};
+  for (const a of w.animals) if (!a.shiny) (colors[a.species] ||= new Set()).add(a.variant);
+  if (Object.entries(colors).some(([s, set]) => set.size >= SPECIES[s].variants.length)) out.push('arcoiris');
+  return out.filter((id) => !w.secrets[id]);
 }
 
 // ------------------------------------------------------------------ paseo

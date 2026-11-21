@@ -2,7 +2,7 @@
 // exportación/importación con suma de verificación.
 
 import {
-  VERSION, SPECIES, FOODS, PRODUCTS, QUESTS, SIDE_QUESTS, CORRAL_TYPES, MAX_CORRAL_LEVEL, corralTypeOf,
+  VERSION, SPECIES, FOODS, PRODUCTS, QUESTS, SIDE_QUESTS, SECRETS, CORRAL_TYPES, MAX_CORRAL_LEVEL, corralTypeOf,
   MAX_ANIMALS_IMPORT, MAX_OFFLINE_MS, MAX_HEARTS, DISEASES,
 } from './data.js';
 import { rand, randInt } from './rng.js';
@@ -73,6 +73,7 @@ export function newWorld(name = 'Granja de la familia', now = Date.now(), seed =
     animals: [], eggs: [], nextId: 1,
     stats: { fed: 0, petted: 0, sold: 0, collected: {}, born: {}, bornTotal: 0, bought: {}, breedStarted: 0, cured: 0, named: 0 },
     quests: { claimed: {}, side: {}, sideBase: {} },
+    secrets: {},
     unlocked: [...INITIAL_UNLOCKED],
     players: [{ id: 'local', name: 'Jugador 1' }],
     maxPlayers: 4,
@@ -142,6 +143,7 @@ export function validateWorld(raw, now = Date.now()) {
       named: int(raw.stats?.named, 0, 1e9, 0),
     },
     quests: { claimed: {}, side: {}, sideBase: {} },
+    secrets: {},
     unlocked: [...INITIAL_UNLOCKED],
     players: [{ id: 'local', name: text(raw.players?.[0]?.name, 24, 'Jugador 1') }],
     maxPlayers: 4,
@@ -161,6 +163,7 @@ export function validateWorld(raw, now = Date.now()) {
   if (isObj(raw.quests?.claimed)) {
     for (const q of QUESTS) if (raw.quests.claimed[q.id] === true) w.quests.claimed[q.id] = true;
   }
+  for (const id of Object.keys(SECRETS)) if (raw.secrets?.[id] === true) w.secrets[id] = true;
   for (const q of SIDE_QUESTS) {
     if (raw.quests?.side?.[q.id] === true) w.quests.side[q.id] = true;
     else if (isObj(raw.quests?.sideBase) && Object.hasOwn(raw.quests.sideBase, q.id)) w.quests.sideBase[q.id] = int(raw.quests.sideBase[q.id], 0, 1e9, 0);

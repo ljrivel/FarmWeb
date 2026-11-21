@@ -388,3 +388,10 @@ input.text {
   list-style-position: inside;
 }
 .history summary::marker { color: var(--pink-d); }
+
+/* ---------- secretos ---------- */
+.secrets h3 { margin: 18px 0 6px; }
+.secret-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.secret-list li { padding: 6px 10px; border-radius: 10px; background: #fff; border: 2px solid var(--line); }
+.secret-list li.found { border-color: var(--butter-d); background: #fffaf0; }
+.secret-list li.found strong { color: var(--pink-d); }

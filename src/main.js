@@ -6,7 +6,7 @@ import * as sim from './sim.js';
 import { claim, claimSide, syncSide } from './quests.js';
 import { newWorld, getCorral, resolveScene } from './state.js';
 import { store, downloadWorld, readWorldFile } from './storage.js';
-import { MAX_OFFLINE_MS, SPECIES, DISEASES, rarityOf } from './data.js';
+import { MAX_OFFLINE_MS, SPECIES, DISEASES, SECRETS, rarityOf } from './data.js';
 import { createAudio } from './audio.js';
 
 const app = { w: null, sprites: null, scene: 'pradera', selectedId: null, fx: [], lastSaved: 0, k: 1, audio: null };
@@ -57,7 +57,22 @@ app.renameAnimal = (id, raw) => {
   const r = sim.renameAnimal(app.w, id, raw);
   report(r, undefined, 'named'); // primero se redibuja la tarjeta; así closeSheet sabe si el botón de antes sigue
   if (r.ok) ui.closeSheet();
+  if (r.ok) for (const id of sim.secretsByName(r.animal)) setTimeout(() => app.secret(id), 1200);
 };
+
+/** Descubre un secreto (la primera vez avisa con su texto). */
+app.secret = (id) => {
+  if (!sim.discover(app.w, id)) return;
+  ui.toast(`Secreto: ${SECRETS[id].title}. ${SECRETS[id].text}`, 'ok', () => ui.openPanel('quests'));
+  app.audio.play('shiny');
+  ui.refresh();
+};
+/** La ola: corazones sobre todos los animales del corral a la vista. */
+function wave() {
+  const here = app.w.animals.filter((a) => a.corral === app.scene);
+  here.forEach((a, i) => setTimeout(() => addFx(a.x, a.y, 'heart'), i * 120));
+  app.secret('konami');
+}
 app.cure = (id) => {
   const r = sim.cure(app.w, id);
   const a = sim.find(app.w, id);
@@ -196,6 +211,7 @@ function setupCanvas(canvas) {
     const r = canvas.getBoundingClientRect();
     const lx = (e.clientX - r.left) * (W / r.width), ly = (e.clientY - r.top) * (H / r.height);
     if (app.scene === 'mapa') {
+      if (Math.abs(lx - W / 2) <= 56 && ly >= 8 && ly <= 24) { tapSign(); return; } // el cartel del mapa
       const tipo = hitMap(app.w, lx, ly);
       if (!tipo) return;
       if (tipo === 'vet') ui.openPanel('vet');
@@ -214,6 +230,27 @@ function setupCanvas(canvas) {
       app.audio.voice(hit.animal.species);
     }
   });
+}
+
+// Secreto del cartel: 7 toques seguidos (con menos de 1,5 s entre uno y otro).
+let signTaps = 0, signAt = 0;
+function tapSign() {
+  const now = performance.now();
+  signTaps = now - signAt < 1500 ? signTaps + 1 : 1;
+  signAt = now;
+  if (signTaps >= 7) { signTaps = 0; app.secret('cartel'); }
+}
+const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+let konamiAt = 0;
+function konamiKey(e) {
+  const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+  konamiAt = k === KONAMI[konamiAt] ? konamiAt + 1 : (k === KONAMI[0] ? 1 : 0);
+  if (konamiAt === KONAMI.length) { konamiAt = 0; wave(); }
+}
+/** Secretos que dependen del estado o de la hora (se revisan cada segundo). */
+function checkSecrets() {
+  for (const id of sim.secretsByState(app.w)) app.secret(id);
+  if (new Date().getHours() < 5) app.secret('buho');
 }
 
 function layout(canvas) {
@@ -261,7 +298,7 @@ async function boot() {
     last = t;
     sim.wander(app.w, dt);
     const now = Date.now();
-    if (now - app.w.lastTick >= 1000) { advance(now); ui.tickLight(); }
+    if (now - app.w.lastTick >= 1000) { advance(now); checkSecrets(); ui.tickLight(); }
     ctx.setTransform(app.k, 0, 0, app.k, 0, 0);
     draw(ctx, app.sprites, app.w, app, t);
     requestAnimationFrame(frame);
@@ -280,6 +317,7 @@ async function boot() {
   for (const type of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) {
     document.addEventListener(type, () => app.audio.unlock(), { capture: true, passive: true });
   }
+  document.addEventListener('keydown', konamiKey);
   app.audio.setHidden(document.hidden);
   if (location.search.includes('debug')) window.farmweb = { app, sim, audio: app.audio };
 }

@@ -469,6 +469,33 @@ def side_quests(browser):
     ctx.close()
 
 
+def secrets(browser):
+    """Etapa c: el cartel del mapa (7 toques) y el código Konami descubren secretos."""
+    print("\n== secretos")
+    ctx, page, errors = new_page(browser, {"width": 1280, "height": 800}, 1, False)
+    page.evaluate("farmweb.app.w.secrets.buho = true")  # que la hora del equipo no cambie la prueba
+    page.click('[data-goto="mapa"]')
+    page.wait_for_timeout(300)
+    g = page.locator("#game").bounding_box()
+    for _ in range(7):
+        page.mouse.click(g["x"] + 160 * g["width"] / 320, g["y"] + 16 * g["height"] / 224)
+        page.wait_for_timeout(80)
+    page.wait_for_timeout(200)
+    check(page.evaluate("farmweb.app.w.secrets.cartel === true"), "7 toques al cartel del mapa descubren un secreto")
+    check("Detrás del cartel" in page.locator("#toast").inner_text(), "y lo avisa")
+    page.evaluate("farmweb.app.goTo('pradera')")
+    for k in ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"]:
+        page.keyboard.press(k)
+    page.wait_for_timeout(300)
+    check(page.evaluate("farmweb.app.w.secrets.konami === true"), "el código Konami descubre «La ola»")
+    page.click('[data-panel="quests"]')
+    page.wait_for_timeout(250)
+    check("Secretos encontrados: 3 de 8" in page.locator("#sheetBody").inner_text(), "Misiones cuenta los secretos (3 de 8)")
+    page.screenshot(path=f"{SHOTS}/pc-15-secretos.png")
+    check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
+    ctx.close()
+
+
 def main():
     server = subprocess.Popen([sys.executable, "-m", "http.server", str(PORT), "--bind", "127.0.0.1"],
                               cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -486,6 +513,7 @@ def main():
             care_flow(browser, "movil", {"width": 360, "height": 740}, 3, True)
             care_flow(browser, "pc", {"width": 1280, "height": 800}, 1, False)
             side_quests(browser)
+            secrets(browser)
             browser.close()
     finally:
         server.terminate()

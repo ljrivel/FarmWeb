@@ -2,7 +2,7 @@
 // Todo el texto dinámico se inserta con textContent / nodos de texto (nunca innerHTML).
 
 import {
-  SPECIES, ORDER, FOODS, PRODUCTS, QUESTS, CHAPTERS, CHARACTERS, EPILOGUE, BALANCE, CORRAL_TYPES, corralTypeOf,
+  SPECIES, ORDER, FOODS, PRODUCTS, QUESTS, CHAPTERS, CHARACTERS, EPILOGUE, SECRETS, SECRET_ORDER, BALANCE, CORRAL_TYPES, corralTypeOf,
   rarityOf, rarityLabel, MAX_HEARTS, DISEASES,
 } from './data.js';
 import { spriteRow } from './render.js';
@@ -474,7 +474,16 @@ export function createUI(app) {
       history);
   }
 
-  const secretsSection = () => null; // etapa c
+  /** Logros por descubrir secretos: los encontrados con su texto, el resto como «???». */
+  function secretsSection() {
+    const w = W();
+    const found = SECRET_ORDER.filter((id) => w.secrets[id]).length;
+    return h('section', { class: 'group secrets' },
+      h('h3', { text: `Secretos encontrados: ${found} de ${SECRET_ORDER.length}` }),
+      h('ul', { class: 'secret-list' }, SECRET_ORDER.map((id) => (w.secrets[id]
+        ? h('li', { class: 'found' }, h('strong', { text: `✦ ${SECRETS[id].title}` }), h('span', { class: 'muted small', text: ` ${SECRETS[id].text}` }))
+        : h('li', { class: 'muted' }, h('span', { 'aria-hidden': 'true', text: '??? ' }), h('span', { class: 'visually-hidden', text: 'Secreto sin descubrir' }))))));
+  }
 
   // ---- sección de sonido del panel Mundo (se guarda en este dispositivo, no en el archivo del mundo)
   function soundSection() {
