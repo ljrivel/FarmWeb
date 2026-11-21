@@ -339,3 +339,13 @@ test('wander mantiene a cada animal dentro del área de su corral', () => {
       `${a.species} fuera de ${a.corral}: ${a.x},${a.y}`);
   }
 });
+
+test('sin cría automática (ausente o sin conexión) las parejas listas no ponen huevos, y con ella sí', () => {
+  const w = fresh();
+  addAnimal(w, 'gallina', 0, 'adult');
+  for (const a of w.animals) { a.fed = 100; a.happy = 100; a.cool = 0; }
+  sim.tick(w, 1000, { noBreed: true });
+  assert.equal(w.eggs.length, 0);
+  sim.tick(w, 1000, {});
+  assert.ok(w.eggs.length >= 1);
+});

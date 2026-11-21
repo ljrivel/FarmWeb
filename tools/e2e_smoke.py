@@ -1255,6 +1255,28 @@ def arreglos_criadero_vet(browser):
     ctx.close()
 
 
+def cria_afk(browser):
+    print("\n== la cría automática se pausa si el jugador está ausente")
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    page = ctx.new_page()
+    page.goto(URL)
+    page.wait_for_function("document.getElementById('loading').hidden === true", timeout=15000)
+    page.evaluate("""(async () => {
+      const { addAnimal } = await import('/src/state.js');
+      const w = farmweb.app.w;
+      addAnimal(w, 'gallina', 0, 'adult');
+      for (const a of w.animals) { a.fed = 100; a.happy = 100; a.cool = 0; }
+      w.eggs.length = 0;
+      farmweb.app.lastInput = Date.now() - 6 * 60 * 1000;
+    })()""")
+    page.wait_for_timeout(2500)
+    check(page.evaluate("farmweb.app.w.eggs.length") == 0, "ausente más de 5 min: sus parejas no ponen huevos")
+    page.mouse.click(5, 5)
+    page.wait_for_timeout(2500)
+    check(page.evaluate("farmweb.app.w.eggs.length") >= 1, "al volver a tocar, la cría automática sigue")
+    ctx.close()
+
+
 def auto_update(browser):
     print("\n== actualización automática")
     ctx = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
@@ -1400,6 +1422,7 @@ def main():
             criadero_flow(browser)
             lab_flow(browser)
             venta_lecciones(browser)
+            cria_afk(browser)
             arreglos_criadero_vet(browser)
             auto_update(browser)
             vet_interactiva(browser)

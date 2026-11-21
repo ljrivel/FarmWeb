@@ -44,7 +44,7 @@ function careRand(w) {
  * `opts.live`: el jugador tiene el juego abierto. Solo entonces se puede enfermar, curarse solo o perder
  * corazones; en la puesta al día (sin `live`) los enfermos quedan igual y nadie empeora.
  */
-export function tick(w, dt, opts = {}) {
+export function tick(w, dt, opts = {}) { // opts.noBreed: sin cría automática (sin conexión o jugador ausente)
   const live = opts.live === true;
   const events = [];
   const s = dt / 1000;
@@ -130,7 +130,7 @@ export function tick(w, dt, opts = {}) {
   // cría: parejas de la misma especie, felices y comidas
   for (const species of Object.keys(SPECIES)) {
     const corral = corralOfSpecies(w, species);
-    if (!corral || corral.breed === 'manual' || corral.breedPause > 0) continue; // en manual solo se cría en el Criadero
+    if (!corral || corral.breed === 'manual' || corral.breedPause > 0 || opts.noBreed) continue; // en manual solo se cría en el Criadero
     const ready = w.animals.filter((a) =>
       a.species === species && a.stage === 'adult' && a.cool <= 0 && !a.sick && !a.away &&
       a.fed >= B.minFedToBreed && a.happy >= B.minHappyToBreed);

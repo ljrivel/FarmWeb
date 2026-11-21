@@ -25,7 +25,7 @@ export const BALANCE = {
   mutantTierOdds: { poco: 0.7, raro: 0.3 },
   shinyChance: 0.02,
   shinyChanceParent: 0.15,
-  maxReady: 6,
+  maxReady: 3,
   // ---- Fase 2B: corazones (afecto 0..5). 100 de cariño = 1 corazón.
   lovePerPet: 10,
   lovePerFav: 15,
@@ -59,6 +59,7 @@ export const BALANCE = {
   criaderoNestMul: 0.5,                            // el nido dura medio tiempo de cría de la especie
   criaderoEggMul: 1,                               // la incubación dura un tiempo de cría
   // ---- Venta de animales: un bebé vale el 25 % del precio de su especie y un adulto el 50 %, por la rareza del color.
+  afkMs: 5 * MIN,   // sin tocar nada por tanto tiempo, la cría automática se pausa (y también sin conexión)
   sellBabyPct: 0.25,
   sellAdultPct: 0.5,
   sellBreedPauseMs: 60 * 1000, // tras vender, ese corral no cría solo por un rato: el lugar libre no se llena al instante con un huevo
