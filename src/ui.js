@@ -3,7 +3,9 @@
 
 import {
   SPECIES, ORDER, FOODS, PRODUCTS, QUESTS, CHAPTERS, BALANCE, CORRAL_TYPES, corralTypeOf,
+  rarityOf, rarityLabel,
 } from './data.js';
+import { spriteRow } from './render.js';
 import * as sim from './sim.js';
 import { activeQuest, progress, rewardText } from './quests.js';
 
@@ -47,9 +49,9 @@ export function createUI(app) {
       `background-size:${16 * n * z}px ${16 * z}px;background-position:-${i * 16 * z}px 0;`;
     return el;
   }
-  function portrait(species, variant, stage, z = 2) {
+  function portrait(species, variant, stage, z = 2, shiny = false) {
     const rows = Object.keys(S().animals.rows).length;
-    const row = S().animals.rows[`${species}:${variant}:${stage}`];
+    const row = spriteRow(S().animals.rows, species, variant, shiny, stage);
     const el = h('span', { class: 'ico portrait', 'aria-hidden': 'true' });
     el.style.cssText = `width:${32 * z}px;height:${32 * z}px;background-image:url(assets/sprites/animals.png);` +
       `background-size:${32 * 4 * z}px ${32 * rows * z}px;background-position:0 -${row * 32 * z}px;`;
@@ -61,14 +63,22 @@ export function createUI(app) {
 
   // ----------------------------------------------------------------- toast
   let toastTimer = 0;
-  function toast(msg, kind = 'ok') {
+  function toast(msg, kind = 'ok', onTap = null) {
     if (!msg) return;
     const el = $('toast');
     el.textContent = msg;
-    el.className = `toast show ${kind}`;
+    el.className = `toast show ${kind}${onTap ? ' tap' : ''}`;
+    el.onclick = onTap ? () => { el.className = 'toast'; onTap(); } : null;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { el.className = 'toast'; }, 2800);
+    toastTimer = setTimeout(() => { el.className = 'toast'; el.onclick = null; }, onTap ? 5000 : 2800);
   }
+
+  /** «Gato naranja»; el brillante no repite su rareza aquí porque ya lleva su etiqueta. */
+  const kindName = (a) => SPECIES[a.species].nombre + (a.shiny ? '' : ` ${SPECIES[a.species].variants[a.variant].toLowerCase()}`);
+  const stageName = (a) => (a.stage === 'baby' ? 'bebé' : 'adulto');
+  /** Etiqueta de rareza; los comunes no llevan. */
+  const rarityBadge = (a) => (rarityOf(a) === 'comun' ? null
+    : h('span', { class: `rarity ${rarityOf(a)}`, text: rarityLabel(a) }));
 
   // ------------------------------------------------------------- barras vivas
   function bar(kind, a) {
@@ -146,7 +156,7 @@ export function createUI(app) {
       selectedSig = '';
       return;
     }
-    const sig = JSON.stringify([a.id, a.stage, a.ready > 0, a.petCd > 0, a.fed >= 95, w.foods, a.name]);
+    const sig = JSON.stringify([a.id, a.stage, a.ready > 0, a.petCd > 0, a.fed >= 95, w.foods, a.name, a.named]);
     root.hidden = false;
     if (sig === selectedSig) return;
     selectedSig = sig;
@@ -154,10 +164,10 @@ export function createUI(app) {
     const foods = Object.keys(FOODS).filter((f) => w.foods[f] > 0);
     root.replaceChildren(
       h('div', { class: 'sel-head' },
-        portrait(a.species, a.variant, a.stage, 2),
+        portrait(a.species, a.variant, a.stage, 2, a.shiny),
         h('div', { class: 'sel-title' },
-          h('h2', { text: a.name + (a.shiny ? ' ✦' : '') }),
-          h('p', { class: 'muted', text: `${sp.nombre} ${sp.variants[a.variant].toLowerCase()} · ${a.stage === 'baby' ? 'bebé' : 'adulto'}${a.shiny ? ' · brillante' : ''}` }),
+          h('h2', { text: a.name }),
+          h('p', { class: 'muted' }, `${kindName(a)} · ${stageName(a)} `, rarityBadge(a)),
           h('p', { class: 'small', 'data-live': 'info', 'data-id': String(a.id), text: liveInfo(a) })),
         h('button', { class: 'btn small', type: 'button', 'aria-label': 'Cerrar tarjeta', onclick: () => { app.selectedId = null; refresh(); } }, '✕')),
       h('div', { class: 'meters' }, bar('fed', a), bar('happy', a)),
@@ -165,7 +175,9 @@ export function createUI(app) {
         a.ready > 0 && h('button', { class: 'btn primary', type: 'button', onclick: () => app.collect(a.id) },
           icon(sp.product, 1), `Recoger ${PRODUCTS[sp.product].nombre.toLowerCase()}`),
         h('button', { class: 'btn', type: 'button', disabled: a.petCd > 0, onclick: () => app.pet(a.id) },
-          icon('heart', 1), a.petCd > 0 ? 'Mimado' : 'Acariciar')),
+          icon('heart', 1), a.petCd > 0 ? 'Mimado' : 'Acariciar'),
+        h('button', { class: `btn${a.named === false ? ' highlight' : ''}`, type: 'button', onclick: () => askName(a.id, false) },
+          a.named === false ? 'Ponle nombre' : 'Cambiar nombre')),
       foods.length
         ? h('div', { class: 'foods', role: 'group', 'aria-label': 'Dar de comer' },
           h('span', { class: 'meter-label', text: 'Dar de comer' }),
@@ -185,14 +197,14 @@ export function createUI(app) {
   const backdrop = () => $('backdrop');
   const body = () => $('sheetBody');
 
-  function openSheet(name, title, render) {
-    current = { name, title, render };
+  function openSheet(name, title, render, opts = {}) {
+    current = { name, title, render, keep: !!opts.keep };
     $('sheetTitle').textContent = title;
     body().replaceChildren(render());
     if (backdrop().hidden) lastFocus = document.activeElement;
     backdrop().hidden = false;
     document.body.classList.add('sheet-open');
-    $('sheetClose').focus();
+    (opts.focus ? opts.focus() : $('sheetClose').focus());
   }
   function closeSheet() {
     if (!current) return;
@@ -202,7 +214,7 @@ export function createUI(app) {
     if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
   function refreshSheet() {
-    if (!current) return;
+    if (!current || current.keep) return; // el diálogo de nombre no se redibuja: se perdería lo que se escribe
     const key = document.activeElement?.dataset?.key;
     const top = body().scrollTop;
     body().replaceChildren(current.render());
@@ -226,6 +238,30 @@ export function createUI(app) {
   const row = (...kids) => h('div', { class: 'row' }, ...kids);
   const price = (n) => h('span', { class: 'price' }, icon('coin', 1), String(n));
 
+  // ---- diálogo para ponerle o cambiarle el nombre a un animal
+  function askName(id, isNew) {
+    const a = sim.find(W(), id);
+    if (!a) return;
+    const input = h('input', {
+      type: 'text', class: 'text', id: 'animalName', maxlength: '24', value: a.name,
+      autocomplete: 'off', autocapitalize: 'words', spellcheck: 'false', 'aria-describedby': 'animalNameHint',
+    });
+    const save = () => app.renameAnimal(id, input.value);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); save(); } });
+    const content = h('div', { class: 'name-dialog' },
+      h('div', { class: 'name-head' },
+        portrait(a.species, a.variant, a.stage, 3, a.shiny),
+        h('p', { class: 'muted' }, `${kindName(a)} · ${stageName(a)} `, rarityBadge(a))),
+      h('label', { class: 'meter-label', for: 'animalName', text: 'Nombre' }), input,
+      h('p', { id: 'animalNameHint', class: 'muted small', text: 'Hasta 24 letras. Puedes cambiarlo cuando quieras.' }),
+      h('div', { class: 'actions' },
+        btn('Guardar nombre', save, { cls: 'primary', key: 'name-save' }),
+        btn('Dejar este nombre', closeSheet, { key: 'name-keep' })));
+    openSheet('name', isNew || a.named === false ? 'Ponle nombre' : 'Cambiar nombre', () => content, {
+      keep: true, focus: () => { input.focus(); input.select(); },
+    });
+  }
+
   // ---- panel: animales (agrupados por corral)
   function panelAnimals() {
     const w = W();
@@ -235,10 +271,10 @@ export function createUI(app) {
         row(h('h3', { class: 'grow', text: `${c.nombre} ${c.used}/${c.capacity}` }),
           btn('Ir al corral', () => { closeSheet(); app.goTo(c.id); }, { key: `go-${c.tipo}` })),
         list.length ? list.map((a) => row(
-          portrait(a.species, a.variant, a.stage, 2),
+          portrait(a.species, a.variant, a.stage, 2, a.shiny),
           h('div', { class: 'grow' },
-            h('strong', { text: a.name + (a.shiny ? ' ✦' : '') }),
-            h('div', { class: 'muted small', text: `${SPECIES[a.species].nombre} · ${a.stage === 'baby' ? 'bebé' : 'adulto'}${a.ready ? ` · ${a.ready} listo${a.ready > 1 ? 's' : ''}` : ''}` }),
+            h('strong', { text: a.name }),
+            h('div', { class: 'muted small', text: `${kindName(a)} · ${stageName(a)}${rarityOf(a) === 'comun' ? '' : ` · ${rarityLabel(a)}`}${a.ready ? ` · ${a.ready} listo${a.ready > 1 ? 's' : ''}` : ''}${a.named === false ? ' · sin bautizar' : ''}` }),
             h('div', { class: 'meters tight' }, bar('fed', a), bar('happy', a))),
           btn('Ver', () => { closeSheet(); app.goTo(a.corral); app.selectedId = a.id; refresh(); }, { key: `ver-${a.id}` })))
           : h('p', { class: 'muted small', text: 'Aún no hay animales aquí.' }));
@@ -438,5 +474,5 @@ export function createUI(app) {
     document.addEventListener('keydown', trapTab);
   }
 
-  return { init, refresh, tickLight, toast, openPanel, closeSheet, icon };
+  return { init, refresh, tickLight, toast, openPanel, closeSheet, icon, askName };
 }

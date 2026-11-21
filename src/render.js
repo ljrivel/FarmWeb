@@ -2,7 +2,7 @@
 // a un múltiplo entero de píxeles de pantalla para que el pixel art quede nítido.
 // Hay dos tipos de escena: el mapa de la granja y cada corral (según su tipo).
 
-import { SPECIES, CORRAL_TYPES, CORRAL_TYPE_ORDER, MAP_SPOTS } from './data.js';
+import { SPECIES, CORRAL_TYPES, CORRAL_TYPE_ORDER, MAP_SPOTS, spriteKey } from './data.js';
 import { getCorral } from './state.js';
 import { corralStatus } from './sim.js';
 
@@ -222,7 +222,7 @@ export function draw(ctx, S, w, view, t) {
     const x = Math.round(a.x), y = Math.round(a.y);
     shadow(ctx, x, y, a.stage === 'baby' ? 0.8 : 1);
     if (a.id === view.selectedId) ring(ctx, x, y, t);
-    const row = S.animals.rows[`${a.species}:${a.variant}:${a.stage}`];
+    const row = spriteRow(S.animals.rows, a.species, a.variant, a.shiny, a.stage);
     const frame = idle[(Math.floor(t / 220) + a.id * 3) % idle.length];
     ctx.drawImage(S.animalsImg, frame * 32, row * 32, 32, 32, x - 16, y - 29, 32, 32);
     if (a.shiny && Math.sin(t / 180 + a.id) > -0.3) icon(ctx, S, 'destello', x + 7, y - 33 + Math.round(Math.sin(t / 400)), 9);
@@ -243,6 +243,11 @@ export function draw(ctx, S, w, view, t) {
 }
 
 /** Qué hay bajo el dedo en un corral: la burbuja de recolección tiene prioridad. */
+/** Fila del atlas para un animal; si falta el color (atlas viejo o mundo raro) usa el color 0 de su especie. */
+export function spriteRow(rows, species, variant, shiny, stage) {
+  return rows[spriteKey(species, variant, shiny, stage)] ?? rows[`${species}:0:${stage}`] ?? 0;
+}
+
 export function hitTest(w, lx, ly, corralId) {
   const front = w.animals.filter((a) => a.corral === corralId).sort((a, b) => b.y - a.y);
   for (const a of front) {

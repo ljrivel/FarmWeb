@@ -6,7 +6,7 @@ import * as sim from './sim.js';
 import { claim } from './quests.js';
 import { newWorld, getCorral, resolveScene } from './state.js';
 import { store, downloadWorld, readWorldFile } from './storage.js';
-import { MAX_OFFLINE_MS, SPECIES } from './data.js';
+import { MAX_OFFLINE_MS, SPECIES, rarityOf } from './data.js';
 
 const app = { w: null, sprites: null, scene: 'pradera', selectedId: null, fx: [], lastSaved: 0, k: 1 };
 const ui = createUI(app);
@@ -43,6 +43,12 @@ app.buyAnimal = (s) => {
   const r = sim.buyAnimal(app.w, s);
   if (r.ok) { app.goTo(r.animal.corral); app.selectedId = r.animal.id; }
   report(r);
+  if (r.ok) ui.askName(r.animal.id, true);
+};
+app.renameAnimal = (id, raw) => {
+  const r = sim.renameAnimal(app.w, id, raw);
+  if (r.ok) ui.closeSheet();
+  report(r);
 };
 app.buyFood = (f, n) => report(sim.buyFood(app.w, f, n));
 app.buildCorral = (tipo) => report(sim.buildCorral(app.w, tipo));
@@ -57,6 +63,7 @@ app.claimQuest = () => {
   const r = claim(app.w);
   if (r.ok && r.animal) { app.goTo(r.animal.corral); app.selectedId = r.animal.id; }
   report(r);
+  if (r.ok && r.animal) ui.askName(r.animal.id, true);
 };
 /** Cambia de escena ('mapa' o el id de un corral); una escena inválida vuelve a la Pradera. */
 app.goTo = (scene) => {
@@ -122,7 +129,12 @@ function advance(now) {
     for (const e of sim.tick(w, Math.min(left, 30_000))) {
       summary[e.type] = (summary[e.type] || 0) + 1;
       if (away) continue;
-      if (e.type === 'hatch') ui.toast(`¡Nació ${e.animal.name}!`);
+      if (e.type === 'hatch') {
+        const a = e.animal, rar = rarityOf(a);
+        const kind = { poco: 'poco común', raro: 'rara', brillante: 'brillante' }[rar];
+        const goName = () => { app.goTo(a.corral); app.selectedId = a.id; ui.refresh(); ui.askName(a.id, true); };
+        ui.toast(kind ? `¡Nació ${a.name}, una cría ${kind}!` : `¡Nació ${a.name}! Toca para ponerle nombre.`, 'ok', goName);
+      }
       else if (e.type === 'egg') ui.toast(`${SPECIES[e.species].nombre} puso un huevo.`);
       else if (e.type === 'grown') ui.toast(`¡${e.animal.name} creció!`);
     }
