@@ -3,7 +3,7 @@
 
 import {
   VERSION, SPECIES, FOODS, PRODUCTS, QUESTS, CORRAL_TYPES, MAX_CORRAL_LEVEL, corralTypeOf,
-  MAX_ANIMALS_IMPORT, MAX_OFFLINE_MS,
+  MAX_ANIMALS_IMPORT, MAX_OFFLINE_MS, MAX_HEARTS, DISEASES,
 } from './data.js';
 import { rand, randInt } from './rng.js';
 import { migrateWorld } from './migrate.js';
@@ -41,6 +41,11 @@ export function randomSpot(w, species) {
   };
 }
 
+/** Campos de cuidado de la fase 2B (corazones y enfermedad) con su valor por defecto. */
+export const CARE_DEFAULTS = Object.freeze({ hearts: 0, love: 0, loveDay: 0, loveToday: 0, sick: null, sickT: 0, sadT: 0, hungryT: 0 });
+/** Segundo aleatorio con semilla, solo para enfermedades: así no cambia la secuencia de la cría. */
+const careSeed = (seed) => (seed ^ 0xa5a5a5a5) >>> 0;
+
 export function addAnimal(w, species, variant, stage = 'baby', opts = {}) {
   const sp = SPECIES[species];
   const corral = corralOfSpecies(w, species);
@@ -50,6 +55,7 @@ export function addAnimal(w, species, variant, stage = 'baby', opts = {}) {
     id: w.nextId++, species, variant, shiny: !!opts.shiny, stage, corral: corral.id,
     name: sp.names[randInt(w, sp.names.length)], named: false,
     fed: 80, happy: 70, growth: 0, prod: 0, ready: 0, cool: 0, petCd: 0,
+    ...CARE_DEFAULTS,
     x: pos.x, y: pos.y, tx: pos.x, ty: pos.y, wait: 0,
   };
   w.animals.push(a);
@@ -60,12 +66,12 @@ export function newWorld(name = 'Granja de la familia', now = Date.now(), seed =
   const w = {
     v: VERSION,
     id: 'w' + now.toString(36) + (seed % 1296).toString(36),
-    name, createdAt: now, lastTick: now, rng: seed >>> 0,
+    name, createdAt: now, lastTick: now, rng: seed >>> 0, careRng: careSeed(seed),
     coins: 100,
     foods: { grano: 10 }, products: {},
     corrales: [{ id: 'pradera', tipo: 'pradera', nombre: CORRAL_TYPES.pradera.nombre, nivel: 0 }],
     animals: [], eggs: [], nextId: 1,
-    stats: { fed: 0, petted: 0, sold: 0, collected: {}, born: {}, bornTotal: 0, bought: {}, breedStarted: 0 },
+    stats: { fed: 0, petted: 0, sold: 0, collected: {}, born: {}, bornTotal: 0, bought: {}, breedStarted: 0, cured: 0 },
     quests: { claimed: {} },
     unlocked: [...INITIAL_UNLOCKED],
     players: [{ id: 'local', name: 'Jugador 1' }],
@@ -118,6 +124,7 @@ export function validateWorld(raw, now = Date.now()) {
     createdAt: num(raw.createdAt, 0, now, now),
     lastTick: num(raw.lastTick, now - MAX_OFFLINE_MS * 1000, now, now),
     rng: int(raw.rng, 0, 4294967295, 12345) >>> 0,
+    careRng: 0,
     coins: int(raw.coins, 0, 1e9, 0),
     foods: countMap(raw.foods, FOODS),
     products: countMap(raw.products, PRODUCTS),
@@ -131,12 +138,14 @@ export function validateWorld(raw, now = Date.now()) {
       bornTotal: int(raw.stats?.bornTotal, 0, 1e9, 0),
       bought: countMap(raw.stats?.bought, SPECIES, 1e9),
       breedStarted: int(raw.stats?.breedStarted, 0, 1e9, 0),
+      cured: int(raw.stats?.cured, 0, 1e9, 0),
     },
     quests: { claimed: {} },
     unlocked: [...INITIAL_UNLOCKED],
     players: [{ id: 'local', name: text(raw.players?.[0]?.name, 24, 'Jugador 1') }],
     maxPlayers: 4,
   };
+  w.careRng = int(raw.careRng, 0, 4294967295, careSeed(w.rng)) >>> 0;
   // Un corral por tipo (gana el primero); la Pradera siempre existe.
   for (const c of (Array.isArray(raw.corrales) ? raw.corrales : [])) {
     if (!isObj(c) || !CORRAL_TYPES[c.tipo] || getCorral(w, c.tipo)) continue;
@@ -182,6 +191,10 @@ export function validateWorld(raw, now = Date.now()) {
       fed: num(a.fed, 0, 100, 50), happy: num(a.happy, 0, 100, 50),
       growth: num(a.growth, 0, 1e9, 0), prod: num(a.prod, 0, 1e9, 0),
       ready: int(a.ready, 0, 3, 0), cool: num(a.cool, 0, 1e9, 0), petCd: num(a.petCd, 0, 1e9, 0),
+      hearts: int(a.hearts, 0, MAX_HEARTS, 0), love: num(a.love, 0, 100, 0),
+      loveDay: int(a.loveDay, 0, 1e7, 0), loveToday: num(a.loveToday, 0, 1e4, 0),
+      sick: typeof a.sick === 'string' && Object.hasOwn(DISEASES, a.sick) ? a.sick : null,
+      sickT: num(a.sickT, 0, 1e9, 0), sadT: num(a.sadT, 0, 1e9, 0), hungryT: num(a.hungryT, 0, 1e9, 0),
       x, y, tx: x, ty: y, wait: 0,
     });
   }

@@ -25,7 +25,33 @@ export const BALANCE = {
   shinyChance: 0.02,
   shinyChanceParent: 0.15,
   maxReady: 3,
+  // ---- Fase 2B: corazones (afecto 0..5). 100 de cariño = 1 corazón.
+  lovePerPet: 10,
+  lovePerFav: 15,
+  loveDailyCap: 100,                     // cariño máximo por animal y día (≈ 1 corazón al día)
+  loveDecayPerSec: 100 / (3 * 60 * 60),  // descuidado y con el juego abierto: −1 corazón cada ~3 h
+  heartProdBonus: 0.04,                  // +4 % de producción por corazón (máx. +20 % con 5)
+  // ---- Fase 2B: enfermedades. Probabilidad por hora de juego abierto (solo en vivo, nunca sin conexión).
+  sickBasePerHour: { resfriado: 0.012, pulgas: 0.012 },
+  sadSickPerHour: 1,      // tristeza, tras `sadAfter` con felicidad < 20
+  sadAfter: 10 * MIN,
+  hungrySickPerHour: 1,   // pancita, tras `hungryAfter` con saciedad en 0
+  hungryAfter: 15 * MIN,
+  cureCost: { resfriado: 30, pancita: 25, pulgas: 20, tristeza: 15 },
+  cureCareFed: 50,        // se cura sola si está comida y contenta…
+  cureCareHappy: 40,
 };
+
+export const MAX_HEARTS = 5;
+// Enfermedades: ningún animal muere ni pierde nada; solo se detiene su progreso hasta curarse.
+// `selfCure`: tiempo de cuidados en casa (bien comido y contento, con el juego abierto) para curarse solo.
+export const DISEASES = {
+  resfriado: { nombre: 'Resfriado', icon: 'gota', selfCure: 25 * MIN, hint: 'Estornuda. Abrígalo con comida y mimos o llévalo a la Veterinaria.' },
+  pancita: { nombre: 'Dolor de pancita', icon: 'pancita', selfCure: 15 * MIN, hint: 'Pasó mucha hambre. Dale de comer y se repondrá.' },
+  pulgas: { nombre: 'Pulgas', icon: 'pulga', selfCure: 30 * MIN, hint: 'Le pica todo. Un baño en la Veterinaria lo arregla rápido.' },
+  tristeza: { nombre: 'Tristeza', icon: 'nube', selfCure: 12 * MIN, hint: 'Estuvo triste mucho tiempo. Necesita comida favorita y caricias.' },
+};
+export const DISEASE_ORDER = Object.keys(DISEASES);
 
 // Corrales (v2): un corral por tipo en la fase 1, así que cada especie vive en uno solo.
 // `cap` es la capacidad base; cada nivel de ampliación suma 4. `cost` null = llega por la historia.

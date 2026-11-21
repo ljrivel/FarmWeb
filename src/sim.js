@@ -4,7 +4,7 @@
 
 import {
   SPECIES, FOODS, PRODUCTS, BALANCE, CORRAL_COSTS, CORRAL_TYPES, CORRAL_TYPE_ORDER, MAX_CORRAL_LEVEL, corralTypeOf,
-  COMMON_VARIANTS, VARIANT_TIERS, rarityOf,
+  COMMON_VARIANTS, VARIANT_TIERS, rarityOf, MAX_HEARTS, DISEASES,
 } from './data.js';
 import { rand, randInt, chance } from './rng.js';
 import { addAnimal, addCorral, capacityOf, getCorral, corralOfSpecies, cleanName } from './state.js';
@@ -28,8 +28,22 @@ export function hatchToast(babies) {
   return kind ? `¡Nació ${a.name}, una cría ${kind}!` : `¡Nació ${a.name}! Toca para ponerle nombre.`;
 }
 
-/** Avanza la simulación dt milisegundos. Devuelve eventos para mostrar avisos. */
-export function tick(w, dt) {
+const DAY_MS = 24 * 60 * 60 * 1000;
+/** Aleatorio de cuidados (enfermedades): usa `w.careRng` para no alterar la secuencia de la cría en `w.rng`. */
+function careRand(w) {
+  const o = { rng: w.careRng >>> 0 };
+  const r = rand(o);
+  w.careRng = o.rng;
+  return r;
+}
+
+/**
+ * Avanza la simulación dt milisegundos. Devuelve eventos para mostrar avisos.
+ * `opts.live`: el jugador tiene el juego abierto. Solo entonces se puede enfermar, curarse solo o perder
+ * corazones; en la puesta al día (sin `live`) los enfermos quedan igual y nadie empeora.
+ */
+export function tick(w, dt, opts = {}) {
+  const live = opts.live === true;
   const events = [];
   const s = dt / 1000;
   const B = BALANCE;
@@ -43,6 +57,8 @@ export function tick(w, dt) {
     if (crowded.has(a.corral)) a.happy = Math.max(0, a.happy - B.crowdPenaltyPerSec * s);
     if (a.petCd > 0) a.petCd = Math.max(0, a.petCd - dt);
     if (a.cool > 0) a.cool = Math.max(0, a.cool - dt);
+    if (live) care(w, a, dt, events);
+    if (a.sick) continue; // enfermo: no crece ni produce hasta curarse
 
     if (a.stage === 'baby') {
       if (a.fed > 0) a.growth += dt;
@@ -52,7 +68,7 @@ export function tick(w, dt) {
         events.push({ type: 'grown', animal: a });
       }
     } else if (a.ready < B.maxReady && a.fed > 0 && a.happy >= 30) {
-      a.prod += dt * (a.happy >= 60 ? 1 : 0.5);
+      a.prod += dt * (a.happy >= 60 ? 1 : 0.5) * heartBonus(a);
       while (a.prod >= sp.prod && a.ready < B.maxReady) {
         a.prod -= sp.prod;
         a.ready++;
@@ -80,7 +96,7 @@ export function tick(w, dt) {
     const corral = corralOfSpecies(w, species);
     if (!corral) continue;
     const ready = w.animals.filter((a) =>
-      a.species === species && a.stage === 'adult' && a.cool <= 0 &&
+      a.species === species && a.stage === 'adult' && a.cool <= 0 && !a.sick &&
       a.fed >= B.minFedToBreed && a.happy >= B.minHappyToBreed);
     while (ready.length >= 2 && hasSpace(w, corral.id)) {
       const a = ready.shift();
@@ -98,6 +114,81 @@ export function tick(w, dt) {
     }
   }
   return events;
+}
+
+/** Multiplicador de producción por corazones (1 a 1 + 5 × heartProdBonus). */
+export const heartBonus = (a) => 1 + Math.min(MAX_HEARTS, a.hearts || 0) * BALANCE.heartProdBonus;
+
+/** Cuidados en vivo de un animal: perder cariño si está descuidado, enfermar o curarse solo. */
+function care(w, a, dt, events) {
+  const B = BALANCE;
+  const s = dt / 1000;
+  // corazones: bajan muy despacio solo si está descuidado
+  if (a.fed < 25 || a.happy < 30) {
+    a.love -= B.loveDecayPerSec * s;
+    while (a.love < 0 && a.hearts > 0) { a.hearts--; a.love += 100; }
+    if (a.love < 0) a.love = 0;
+  }
+  a.sadT = a.happy < 20 ? a.sadT + dt : 0;
+  a.hungryT = a.fed <= 0 ? a.hungryT + dt : 0;
+  if (a.sick) {
+    if (a.fed >= B.cureCareFed && a.happy >= B.cureCareHappy) a.sickT += dt;
+    if (a.sickT >= DISEASES[a.sick].selfCure) {
+      const was = a.sick;
+      a.sick = null; a.sickT = 0;
+      events.push({ type: 'healed', animal: a, disease: was });
+    }
+    return;
+  }
+  // riesgo por hora de cada enfermedad en este momento
+  const rates = { ...B.sickBasePerHour };
+  if (a.sadT >= B.sadAfter) rates.tristeza = B.sadSickPerHour;
+  if (a.hungryT >= B.hungryAfter) rates.pancita = B.hungrySickPerHour;
+  const total = Object.values(rates).reduce((t, r) => t + r, 0);
+  if (!(total > 0)) return;
+  if (careRand(w) >= 1 - Math.exp(-total * s / 3600)) return;
+  let pick = careRand(w) * total;
+  const disease = Object.keys(rates).find((d) => (pick -= rates[d]) < 0) || Object.keys(rates)[0];
+  makeSick(w, a.id, disease);
+  events.push({ type: 'sick', animal: a, disease });
+}
+
+/** Enferma a un animal (lo usan las reglas y el modo ?debug). Devuelve el animal o null. */
+export function makeSick(w, id, disease) {
+  const a = find(w, id);
+  if (!a || !Object.hasOwn(DISEASES, disease)) return null;
+  a.sick = disease;
+  a.sickT = 0;
+  return a;
+}
+
+/** Suma cariño con tope diario. Devuelve true si ganó un corazón. */
+function addLove(w, a, n) {
+  const day = Math.floor(w.lastTick / DAY_MS);
+  if (a.loveDay !== day) { a.loveDay = day; a.loveToday = 0; }
+  if (a.hearts >= MAX_HEARTS) return false;
+  const gain = Math.min(n, BALANCE.loveDailyCap - a.loveToday);
+  if (gain <= 0) return false;
+  a.loveToday += gain;
+  a.love += gain;
+  let up = false;
+  while (a.love >= 100 && a.hearts < MAX_HEARTS) { a.love -= 100; a.hearts++; up = true; }
+  if (a.hearts >= MAX_HEARTS) a.love = 0;
+  return up;
+}
+
+/** Cura a un animal en la Veterinaria, por monedas. */
+export function cure(w, id) {
+  const a = find(w, id);
+  if (!a) return no('No encuentro a ese animal.');
+  if (!a.sick) return no(`${a.name} está sanito.`);
+  const cost = BALANCE.cureCost[a.sick];
+  if (w.coins < cost) return no(`Te faltan monedas: curar cuesta ${cost}. También se cura solo si lo cuidas en casa.`);
+  const was = DISEASES[a.sick].nombre.toLowerCase();
+  w.coins -= cost;
+  a.sick = null; a.sickT = 0; a.sadT = 0; a.hungryT = 0;
+  w.stats.cured = (w.stats.cured || 0) + 1;
+  return ok(`¡${a.name} ya no tiene ${was}!`, { animal: a, cost });
 }
 
 /**
@@ -135,7 +226,9 @@ export function feed(w, id, food) {
   a.fed = Math.min(100, a.fed + (fav ? BALANCE.favFeed : BALANCE.otherFeed));
   a.happy = Math.min(100, a.happy + (fav ? BALANCE.favHappy : BALANCE.otherHappy));
   w.stats.fed++;
-  return ok(fav ? `¡${a.name} amó ${FOODS[food].nombre.toLowerCase()}!` : `${a.name} comió ${FOODS[food].nombre.toLowerCase()}.`, { fav });
+  const heartUp = fav && addLove(w, a, BALANCE.lovePerFav);
+  return ok(fav ? `¡${a.name} amó ${FOODS[food].nombre.toLowerCase()}!${heartUp ? ` ¡Ya tiene ${a.hearts} ${a.hearts === 1 ? 'corazón' : 'corazones'}!` : ''}`
+    : `${a.name} comió ${FOODS[food].nombre.toLowerCase()}.`, { fav, heartUp });
 }
 
 export function pet(w, id) {
@@ -145,7 +238,8 @@ export function pet(w, id) {
   a.happy = Math.min(100, a.happy + BALANCE.petHappy);
   a.petCd = BALANCE.petCooldown;
   w.stats.petted++;
-  return ok(`${a.name} está feliz.`);
+  const heartUp = addLove(w, a, BALANCE.lovePerPet);
+  return ok(heartUp ? `¡${a.name} te quiere más! Ya tiene ${a.hearts} ${a.hearts === 1 ? 'corazón' : 'corazones'}.` : `${a.name} está feliz.`, { heartUp });
 }
 
 export function collect(w, id) {
