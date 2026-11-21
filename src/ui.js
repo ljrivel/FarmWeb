@@ -87,12 +87,12 @@ export function createUI(app) {
     h('span', { 'aria-hidden': 'true', text: '♥'.repeat(a.hearts) + '♡'.repeat(MAX_HEARTS - a.hearts) }),
     h('span', { class: 'visually-hidden', text: heartsText(a) }));
   /** Aviso de enfermedad con icono y texto. */
-  const sickNote = (a, full) => a.sick && h('div', { class: 'sick-note', role: 'status' },
+  const sickNote = (a, full) => (!a.sick ? '' : h('div', { class: 'sick-note', role: 'status' },
     icon(DISEASES[a.sick].icon, 1),
     h('div', { class: 'grow' },
       h('strong', { text: `Enfermo: ${DISEASES[a.sick].nombre}` }),
       full && h('div', { class: 'small', text: `${DISEASES[a.sick].hint} No produce ni crece hasta curarse.` })),
-    full && btn('Veterinaria', () => openPanel('vet'), { key: `vet-${a.id}`, icon: icon('vet', 1) }));
+    full && btn('Veterinaria', () => openPanel('vet'), { key: `vet-${a.id}`, icon: icon('vet', 1) })));
 
   // ------------------------------------------------------------- barras vivas
   function bar(kind, a) {
@@ -146,6 +146,7 @@ export function createUI(app) {
     }
     const sideReady = activeSide(w).filter((x) => sideProgress(w, x).done).length;
     if (sideReady) $('questProg').textContent += ` · ${sideReady} ${plural(sideReady, 'secundaria lista', 'secundarias listas')}`;
+    document.querySelector('[data-goto="mapa"]')?.classList.toggle('on', app.scene === 'mapa');
     const ready = w.animals.reduce((n, a) => n + a.ready, 0);
     $('collectAll').hidden = ready === 0;
     $('readyCount').textContent = String(ready);

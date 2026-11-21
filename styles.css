@@ -395,3 +395,34 @@ input.text {
 .secret-list li { padding: 6px 10px; border-radius: 10px; background: #fff; border: 2px solid var(--line); }
 .secret-list li.found { border-color: var(--butter-d); background: #fffaf0; }
 .secret-list li.found strong { color: var(--pink-d); }
+
+/* ---------- pulido visual (etapa e): feedback sutil, sin cambiar la identidad ---------- */
+:root { --ease: cubic-bezier(.2, .7, .3, 1); }
+#coins, #readyCount, #spaceInfo, #questProg, .price, .bar + .small { font-variant-numeric: tabular-nums; }
+.btn { transition: background-color .15s var(--ease), border-color .15s var(--ease), transform .08s var(--ease); }
+@media (hover: hover) {
+  .btn:hover:not(:disabled) { background-color: #fff4e2; }
+  .btn.primary:hover:not(:disabled) { background-color: #ff9fbb; }
+  .btn.mint:hover:not(:disabled) { background-color: #a2e4cc; }
+  .chip-btn:hover { border-color: var(--butter-d); }
+  .row:hover { border-color: #e2c6a8; }
+}
+.row { transition: border-color .15s var(--ease); }
+/* misión lista para reclamar: un latido suave que invita a tocar */
+.chip-btn.done, #collectAll:not([hidden]) { animation: nudge 2.4s var(--ease) infinite; }
+@keyframes nudge { 0%, 80%, 100% { transform: none; } 88% { transform: translateY(-2px); } }
+/* el botón del lugar donde estás queda marcado en la barra */
+#dock button.on { background: #fff1d8; border-color: var(--line); }
+.quest-card { box-shadow: 0 2px 0 var(--line); }
+.quest-card h3 { font-size: 1.1rem; }
+.sheet-body > div > h3:first-child { margin-top: 4px; }
+.toast.show { animation: toast-in .22s var(--ease); }
+@keyframes toast-in { from { transform: translate(-50%, 8px) scale(.97); } }
+body.sheet-open .toast.show { animation: none; }
+#selected { animation: card-in .18s var(--ease); }
+@keyframes card-in { from { opacity: 0; transform: translateY(6px); } }
+@media (prefers-reduced-motion: reduce) {
+  .btn, .row { transition: none; }
+  .chip-btn.done, #collectAll:not([hidden]), .toast.show, #selected { animation: none; }
+}
+#collectAll { gap: 0; } /* el número va pegado a los paréntesis */

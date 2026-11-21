@@ -411,6 +411,7 @@ def care_flow(browser, name, viewport, dpr, mobile):
     page.evaluate(f"farmweb.app.selectedId = {aid}; farmweb.app.goTo('pradera')")
     page.wait_for_timeout(300)
     check("Corazones 0 de 5" in page.locator("#selected").inner_text(), "la tarjeta muestra «Corazones 0 de 5»")
+    check("null" not in page.locator("#selected").inner_text(), "la tarjeta de un animal sano no muestra texto suelto")
     page.evaluate(f"farmweb.app.w.animals[0].hearts = 3; farmweb.app.goTo('pradera')")
     page.wait_for_timeout(1200)
     check("Corazones 3 de 5" in page.locator("#selected").inner_text(), "y se actualiza a «Corazones 3 de 5»")
