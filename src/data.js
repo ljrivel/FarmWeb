@@ -60,6 +60,14 @@ export const BALANCE = {
   heatCut: 0.2,                                    // «Darle calor» adelanta un 20 % del tiempo total…
   heatMax: 3,                                      // …hasta 3 veces por huevo…
   heatCooldown: 30 * 1000,                         // …con este enfriamiento entre una y otra
+  // ---- Veterinaria interactiva (la doctora de turno cambia con la historia)
+  vetMaoFromCh: 6,                       // desde este capítulo atiende Mao Mao (antes, la Dra. Pita)
+  vetTrustPerLevel: 4, vetMaxTrustLevel: 4, vetDiscountPerLevel: 0.05,   // confianza: −5 % en curas por nivel
+  vetConsultsPerDay: 2,                  // consultas que suben la confianza cada día
+  vetCheckupCost: 20,
+  vetRounds: 3, vetRefund: [0, 0, 0.25, 0.5],    // «Ayudar a la doctora»: reembolso según aciertos (0 = se pierde la consulta)
+  vetVitaminCost: 60, vetTonicProducts: 4, vetShieldMs: 30 * MIN,         // Pita: vitaminas con monedas; Mao Mao: tónico con productos
+  vetRequestMul: 1.5,
 };
 
 export const MAX_HEARTS = 5;
@@ -1024,3 +1032,33 @@ export const VISITS = [
   { id: 'v-mao-2', who: 'mao', minCh: 6, cond: 'sano', lines: [['mao', 0, 'Todos sanos. Qué aburrido. Si ves un animal con la nariz roja, avísame: tengo ganas de preparar un té.']] },
   { id: 'v-mao-3', who: 'mao', minCh: 6, lines: [['mao', 0, 'Estoy catalogando las hierbas del valle. Algunas son tan amargas que… ya me entiendes.'], ['mao', 1, 'Bueno, yo no. Yo las pruebo igual.']] },
 ];
+
+// Frases de la doctora de turno en la Veterinaria. {nombre}, {producto} y {n} se reemplazan al decirlas.
+export const VET_LINES = {
+  pita: {
+    saludo: ['¡Hola! Todo tranquilo por aquí. Si ves a alguien decaído, tráelo.', 'Buen día. Mi consejo de siempre: comida, mimos y descanso.'],
+    enfermos: ['Veo pacientes. Tranquilo: con cuidado se recuperan.', 'Hay animalitos que no se sienten bien. Vamos paso a paso.'],
+    hambre: ['{nombre} tiene la pancita vacía. Dale de comer antes de que se enferme.', 'Cuidado con {nombre}: la saciedad está muy baja.'],
+    triste: ['{nombre} anda decaído. Unos mimos le harían muy bien.', 'A {nombre} le falta ánimo. Acarícialo y dale su comida favorita.'],
+    criadero: ['Tienes una pareja lista para el Criadero. ¡Qué ilusión una cría sana!', 'Dos de tus animales están listos para el nido: elige bien los padres.'],
+    bien: ['Todos están estupendos. Se nota que los cuidas con cariño.', 'Ni una queja. Así se hace.'],
+    curaOk: ['Listo: {nombre} ya está mejor. Tienes buena mano.', '¡Curado! {nombre} te lo agradece.'],
+    curaMal: ['Esta vez no salió… pierdes la consulta. Con calma, la próxima sale.', 'No pasa nada: se pierde la consulta, pero se aprende.'],
+    escudo: ['Vitaminas listas. Nadie se resfriará en un buen rato.'],
+    pedido: ['Gracias por el pedido de {producto} (×{n}). Eso me ayuda muchísimo.'],
+    diag: { resfriado: 'Un resfriado común. Abrigo, comida y un poco de paciencia.', pancita: 'Pasó mucha hambre: el estómago se queja.', pulgas: 'Pulgas. Un buen baño y listo.', tristeza: 'Estuvo triste demasiado tiempo. Necesita cariño.' },
+  },
+  mao: {
+    saludo: ['Si nadie está enfermo, tengo tiempo para mis hierbas. No me interrumpas mucho.', 'Hoy huele a paz. Qué raro.'],
+    enfermos: ['Hay pacientes. Qué bien… digo, qué mal. Veamos.', 'Alguien se siente mal. Siempre pasa cuando preparo el té.'],
+    hambre: ['{nombre} tiene hambre. No necesito probar nada para saberlo.', '{nombre} está casi vacío de comida. Eso no es ciencia, es sentido común.'],
+    triste: ['{nombre} está de bajón. Un rato contigo y se arregla. Gratis, además.', 'A {nombre} le falta compañía. Las hierbas no curan eso.'],
+    criadero: ['Hay una pareja lista para el Criadero. Elige bien a los padres: la genética no perdona.', 'Dos de tus animales pueden ir al nido. Yo que tú, aprovecho.'],
+    bien: ['Todos sanos. Qué aburrido… pero está bien.', 'Sin problemas. Aprovecharé para probar una hierba nueva.'],
+    curaOk: ['Curado. Y no, no me comí la medicina… esta vez.', 'Listo. {nombre} me debe un favor.'],
+    curaMal: ['Eso salió mal. La consulta se pierde; así es el oficio.', 'Fallamos. Pierdes la consulta, pero no el ánimo.'],
+    escudo: ['Tónico hecho con tus productos. Sabe horrible, así que seguro funciona.'],
+    pedido: ['Gracias por el pedido de {producto} (×{n}). Servirá… para algo que no te contaré.'],
+    diag: { resfriado: 'Resfriado. Una infusión caliente y descanso.', pancita: 'Hambre prolongada. El estómago protesta, normal.', pulgas: 'Pulgas. Lo normal en granjas felices.', tristeza: 'Tristeza. Esto no se cura con hierbas, se cura con ratos juntos.' },
+  },
+};

@@ -22,7 +22,7 @@ El dueño es Luis Josué; **responde siempre en español**.
 | Qué | Comando |
 |---|---|
 | Jugar en local (PC y celular en la misma Wi-Fi) | doble clic a `iniciar.bat` o `npm start` |
-| Pruebas unitarias | `npm test` (deben pasar todas; hoy 162) |
+| Pruebas unitarias | `npm test` (deben pasar todas; hoy 172) |
 | Regenerar sprites | `npm run sprites` (Python + Pillow; escribe `assets/sprites/*`) |
 | Recorrido en navegador | `python tools/e2e_smoke.py <carpeta_capturas>` (Playwright + Chrome; hoy 313 comprobaciones) |
 
@@ -67,6 +67,11 @@ tienen precio y se compran en la Tienda cuando se desbloquean (antes `price: nul
 Mao Mao (retrato pixel art chibi de gato, id `mao`) atiende la Veterinaria desde el Capítulo 6 mientras la Dra. Pita está de viaje:
 Pita se despide en la escena `una-boticaria-nueva` (al terminar el festival), sus visitas llevan `maxCh: 5` y las líneas de los
 capítulos 6 a 8 las dice Mao Mao.
+Veterinaria interactiva (siempre, con la doctora de turno: Pita hasta el cap. 5 y Mao Mao desde el 6; `vetDoctor` en `sim.js`,
+`w.vet`, `BALANCE.vet*`, frases en `VET_LINES`, minijuegos puros en `src/vetgames.js`): diagnóstico con su voz, Consulta (gratis,
+sube la confianza), Chequeo, protección (Pita: vitaminas con monedas; Mao Mao: tónico con productos), pedido diario y
+«Ayudar a la doctora» (Pita: ritmo «Latidos»; Mao Mao: «Mezcla de hierbas»; el precio de la cura se devuelve según los aciertos y
+sin aciertos se pierde la consulta). La confianza da hasta −20 % en curas. `farmweb.app.mgEasy` facilita los minijuegos en pruebas.
 Actualización automática (`src/update.js`): `npm run build` escribe `dist/version.json` (commit de Cloudflare o la hora) y el juego lo
 consulta cada 5 min y al volver a la pestaña; si cambió, guarda y se recarga solo cuando no hay panel, escena ni tutorial abiertos
 (la raíz trae un `version.json` de desarrollo con `dev` para que en local no haya 404).

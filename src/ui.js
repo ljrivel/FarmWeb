@@ -3,6 +3,7 @@
 
 import { TUTORIAL_STEPS, stepSkipped, nextIndex, stepDone } from './tutorial.js';
 import { chapterNow } from './story.js';
+import { LATIDO, latidoPos, latidoHit, HERBS, herbRound, herbOk } from './vetgames.js';
 import {
   SPECIES, ORDER, FOODS, PRODUCTS, QUESTS, SCENES, LETTERS, CHAPTERS, CHARACTERS, EPILOGUE, SECRETS, SECRET_ORDER, BALANCE, CORRAL_TYPES, corralTypeOf,
   rarityOf, rarityLabel, MAX_HEARTS, DISEASES,
@@ -459,25 +460,105 @@ export function createUI(app) {
       h('p', { class: 'muted small', text: 'En «Animales» puedes poner un corral en cría manual para que solo críe aquí.' }));
   }
 
+  // ---- panel: Veterinaria interactiva (la doctora de turno, sus minijuegos, chequeo y pedido)
+  let vetGame = null, vetReport = null, vetRaf = 0;
+  const vetStop = () => { cancelAnimationFrame(vetRaf); vetRaf = 0; };
+  function vetFinish() {
+    const g = vetGame;
+    vetGame = null;
+    vetStop();
+    app.cureHelping(g.animalId, g.wins);
+    refreshSheet();
+  }
+  function vetNext(ok) {
+    vetGame.wins += ok ? 1 : 0;
+    vetGame.round++;
+    vetGame.note = ok ? '¡Bien!' : 'No salió…';
+    vetGame.sel = [];
+    vetGame.herb = herbRound();
+    if (vetGame.round >= BALANCE.vetRounds) vetFinish(); else refreshSheet();
+  }
+  function vetGameView() {
+    const g = vetGame, doc = CHARACTERS[g.doc];
+    const out = btn('Salir (no cuesta nada)', () => { vetGame = null; vetStop(); refreshSheet(); }, { cls: 'small', key: 'vet-exit' });
+    const head = row(face(g.doc, 2, 0), h('div', { class: 'grow' },
+      h('strong', { text: `${doc.nombre} te pide ayuda` }),
+      h('div', { class: 'muted small', text: `Ronda ${g.round + 1} de ${BALANCE.vetRounds} · aciertos ${g.wins}${g.note ? ` · ${g.note}` : ''}` })));
+    if (g.kind === 'latido') {
+      const zone = app.mgEasy ? [0, 1] : LATIDO.zone;
+      const marker = h('i', { class: 'vet-marker' });
+      const zoneEl = h('i', { class: 'vet-zone' });
+      zoneEl.style.left = `${zone[0] * 100}%`;
+      zoneEl.style.width = `${(zone[1] - zone[0]) * 100}%`;
+      vetStop();
+      const move = () => { if (!marker.isConnected) return; marker.style.left = `${latidoPos(performance.now() - g.t0) * 100}%`; vetRaf = requestAnimationFrame(move); };
+      move();
+      return h('div', null, head, h('p', { class: 'muted', text: 'Toca «¡Ahora!» cuando la marca pase por la zona verde.' }),
+        h('div', { class: 'vet-bar', 'aria-hidden': 'true' }, zoneEl, marker),
+        btn('¡Ahora!', () => vetNext(latidoHit(latidoPos(performance.now() - g.t0), zone)), { cls: 'primary', key: 'vet-hit' }), out);
+    }
+    const ok = herbOk(g.herb, g.sel) || (app.mgEasy && g.sel.length === 2);
+    return h('div', null, head, h('p', { class: 'quest-text-body', text: `${g.herb.clue} Elige dos hierbas.` }),
+      h('div', { class: 'herbs' }, HERBS.map((hb) => h('button', {
+        class: `btn herb${g.sel.includes(hb.id) ? ' mint' : ''}`, type: 'button', 'aria-pressed': String(g.sel.includes(hb.id)), 'data-key': `herb-${hb.id}`,
+        onclick: () => { g.sel = g.sel.includes(hb.id) ? g.sel.filter((x) => x !== hb.id) : [...g.sel, hb.id].slice(-2); refreshSheet(); },
+      }, icon(hb.id, 2), h('span', { text: hb.nombre }), h('span', { class: 'muted small', text: hb.tags.join(' · ') })))),
+      btn('Preparar', () => vetNext(ok), { cls: 'primary', disabled: g.sel.length !== 2, key: 'vet-prepare' }), out);
+  }
   function panelVet() {
     const w = W();
+    if (vetGame) return vetGameView();
+    const doctor = sim.vetDoctor(w), doc = CHARACTERS[doctor];
     const sick = w.animals.filter((a) => a.sick).sort((a, b) => a.id - b.id);
+    const level = sim.vetTrustLevel(w);
+    const req = sim.vetRequest(w);
+    const shield = w.vet.shield;
+    const say = w.vet.say || sim.vetGreeting(w);
+    const pita = doctor === 'pita';
+    const reqItem = PRODUCTS[req.product];
+    const have = w.products[req.product] || 0;
+    const checkups = w.animals.filter((a) => !a.away);
     return h('div', null,
-      h('p', { class: 'muted', text: `${chapterNow(w) >= 6 ? 'Mao Mao cuida la Veterinaria mientras la Dra. Pita está de viaje.' : 'La Dra. Pita revisa a tus animales.'} Curar aquí es inmediato; en casa también se curan solos, más despacio, si están bien comidos y contentos.` }),
+      row(face(doctor, 2, sick.length ? 2 : 1), h('div', { class: 'grow' },
+        h('strong', { text: doc.nombre }),
+        h('div', { class: 'small muted', text: `Confianza ${'♥'.repeat(level)}${'♡'.repeat(BALANCE.vetMaxTrustLevel - level)}${level ? ` · curas −${Math.round(BALANCE.vetDiscountPerLevel * level * 100)} %` : ''}` }),
+        h('p', { class: 'speech', 'data-key': 'vet-say', text: `«${say}»` }))),
+      row(btn('Consulta (gratis)', () => { app.vetConsult(); refreshSheet(); }, { key: 'vet-consult' }),
+        shield > 0 ? h('span', { class: 'small muted grow', text: `Protegidos ${fmtTime(shield)}` })
+          : btn(pita ? 'Vitaminas' : 'Tónico', () => app.vetShield(), { key: 'vet-shield', disabled: pita ? w.coins < BALANCE.vetVitaminCost : Object.values(w.products).reduce((t, n) => t + n, 0) < BALANCE.vetTonicProducts }),
+        shield > 0 ? null : h('span', { class: 'small muted grow', text: pita ? `${BALANCE.vetVitaminCost} monedas · 30 min sin resfriados ni pulgas` : `${BALANCE.vetTonicProducts} productos · 30 min sin resfriados ni pulgas` })),
+      h('h3', { text: 'Pacientes' }),
       sick.length ? sick.map((a) => {
         const d = DISEASES[a.sick];
-        const cost = BALANCE.cureCost[a.sick];
-        return row(
+        const cost = sim.vetCureCost(w, a);
+        return h('div', { class: 'vet-case' }, row(
           portrait(a.species, a.variant, a.stage, 2, a.shiny),
           h('div', { class: 'grow' },
             h('strong', { text: a.name }),
             h('div', { class: 'small sick-line' }, icon(d.icon, 1), d.nombre),
-            h('div', { class: 'muted small', text: `En ${getCorralName(a)} · ${d.hint}` })),
-          price(cost),
-          btn('Curar', () => app.cure(a.id), { cls: 'primary', disabled: w.coins < cost, key: `cure-${a.id}` }));
-      }) : h('div', { class: 'empty' },
-        icon('vet', 3),
-        h('p', { text: 'Todos tus animales están sanos. ¡Buen trabajo!' })));
+            h('div', { class: 'muted small', text: `En ${getCorralName(a)}` }),
+            h('div', { class: 'small speech', text: `${doc.nombre}: «${sim.vetDiag(w, a.sick)}»` })),
+          price(cost)),
+        row(btn('Curar ahora', () => app.cure(a.id), { cls: 'primary', disabled: w.coins < cost, key: `cure-${a.id}` }),
+          btn('Ayudar a la doctora', () => { vetGame = { animalId: a.id, doc: doctor, kind: pita ? 'latido' : 'hierbas', round: 0, wins: 0, t0: performance.now(), sel: [], herb: herbRound(), note: '' }; refreshSheet(); },
+            { disabled: w.coins < cost, key: `help-${a.id}` }),
+          h('span', { class: 'small muted grow', text: 'Si sale bien te devuelven monedas; si sale muy mal pierdes la consulta.' })));
+      }) : h('div', { class: 'empty' }, icon('vet', 3), h('p', { text: 'Todos tus animales están sanos. ¡Buen trabajo!' })),
+      h('h3', { text: 'Chequeo' }),
+      h('p', { class: 'muted small', text: `${sim.vetCheckupPrice(w)} monedas: ${doc.nombre} te cuenta cómo está un animal y qué riesgo tiene de enfermar.` }),
+      h('div', { class: 'tabs', role: 'group', 'aria-label': 'Animal a revisar' }, checkups.slice(0, 24).map((a) => h('button', {
+        class: 'tab', type: 'button', 'data-key': `chk-${a.id}`, 'aria-pressed': String(vetReport?.id === a.id),
+        onclick: () => { const r = app.vetCheckup(a.id); vetReport = r.ok ? r.report : null; refreshSheet(); },
+      }, a.name))),
+      vetReport && h('div', { class: 'quest-card side', 'data-key': 'vet-report' },
+        h('h4', { text: `Informe de ${vetReport.name}` }),
+        h('p', { class: 'small', text: `Saciedad ${vetReport.fed} · Felicidad ${vetReport.happy} · Corazones ${vetReport.hearts} de ${MAX_HEARTS}` }),
+        h('p', { class: 'small', text: vetReport.sick ? `Está enfermo: ${DISEASES[vetReport.sick].nombre.toLowerCase()}.` : `Riesgo de enfermar: ${vetReport.risk} % por hora.` })),
+      h('h3', { text: 'Pedido de hoy' }),
+      row(icon(req.product, 2), h('div', { class: 'grow' },
+        h('strong', { text: `${reqItem.nombre} ×${req.n}` }),
+        h('div', { class: 'muted small', text: req.done ? 'Ya lo entregaste hoy. Mañana habrá otro.' : `Tienes ${have}. Pagan ${req.coins} monedas y suben la confianza.` })),
+        btn(req.done ? 'Entregado' : 'Entregar', () => app.vetDeliver(), { cls: 'primary', disabled: req.done || have < req.n, key: 'vet-deliver' })));
   }
   const getCorralName = (a) => W().corrales.find((c) => c.id === a.corral)?.nombre || '';
 
@@ -896,6 +977,7 @@ export function createUI(app) {
   function openPanel(name, tab) {
     if (name === 'shop' && tab) shopTab = tab;
     if (name === 'world') worldView = 'main';
+    if (name === 'vet') { vetGame = null; vetReport = null; vetStop(); W().vet.say = ''; }
     const [title, render] = PANELS[name];
     openSheet(name, title, render);
   }

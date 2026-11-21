@@ -77,6 +77,11 @@ app.pair = (a, b) => {
 };
 app.heat = (id) => report(sim.heatEgg(app.w, id), undefined, 'pet');
 app.setBreed = (corralId, mode) => report(sim.setCorralBreed(app.w, corralId, mode), undefined, 'tap');
+app.cureHelping = (id, wins) => report(sim.cureHelping(app.w, id, wins), undefined, 'heal');
+app.vetConsult = () => { const r = sim.vetConsult(app.w); report(r, undefined, 'tap'); return r; };
+app.vetCheckup = (id) => { const r = sim.vetCheckup(app.w, id); report(r, undefined, 'tap'); return r; };
+app.vetShield = () => report(sim.vetShield(app.w), undefined, 'heal');
+app.vetDeliver = () => report(sim.vetDeliver(app.w), undefined, 'collect');
 app.collectAll = () => report(sim.collectAll(app.w), undefined, 'collect');
 app.buyAnimal = (s) => {
   const r = sim.buyAnimal(app.w, s);

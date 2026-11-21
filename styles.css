@@ -456,3 +456,12 @@ body.sheet-open .toast.show { animation: none; }
 /* con el tutorial y un panel abierto, el panel se acorta y se pega abajo para dejar sitio a la tarjeta de Tomás */
 body.tuto-sheet .backdrop { align-items: flex-end; }
 body.tuto-sheet .sheet { max-height: calc(100dvh - 275px); border-radius: 22px 22px 0 0; border-bottom: 0; }
+
+/* ---------- Veterinaria interactiva ---------- */
+.speech { margin: 4px 0 0; font-style: italic; line-height: 1.4; }
+.vet-case { border: 2px solid var(--line); border-radius: 14px; padding: 8px; margin: 8px 0; background: #fff; }
+.vet-bar { position: relative; height: 28px; margin: 14px 0; border-radius: 14px; background: #f3e6d6; border: 2px solid var(--line); overflow: hidden; }
+.vet-zone { position: absolute; top: 0; bottom: 0; background: #9be0b0; }
+.vet-marker { position: absolute; top: 2px; bottom: 2px; width: 6px; margin-left: -3px; border-radius: 3px; background: var(--pink-d); }
+.herbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; }
+.btn.herb { display: grid; justify-items: center; gap: 2px; padding: 8px 4px; }

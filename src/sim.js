@@ -4,7 +4,7 @@
 
 import {
   SPECIES, FOODS, PRODUCTS, BALANCE, CORRAL_COSTS, CORRAL_TYPES, CORRAL_TYPE_ORDER, MAX_CORRAL_LEVEL, corralTypeOf,
-  COMMON_VARIANTS, VARIANT_TIERS, rarityOf, MAX_HEARTS, DISEASES, SECRETS, QUESTS,
+  COMMON_VARIANTS, VARIANT_TIERS, rarityOf, MAX_HEARTS, DISEASES, SECRETS, QUESTS, VET_LINES,
 } from './data.js';
 import { rand, randInt, chance } from './rng.js';
 import { addAnimal, addCorral, capacityOf, getCorral, corralOfSpecies, cleanName, randomSpot } from './state.js';
@@ -48,6 +48,7 @@ export function tick(w, dt, opts = {}) {
   const events = [];
   const s = dt / 1000;
   const B = BALANCE;
+  if (live && w.vet?.shield > 0) w.vet.shield = Math.max(0, w.vet.shield - dt);
   const crowded = new Set(w.corrales.filter((c) => spaceUsed(w, c.id) > capacityOf(w, c.id)).map((c) => c.id));
 
   for (const a of w.animals) {
@@ -174,6 +175,7 @@ function care(w, a, dt, events) {
   }
   // riesgo por hora de cada enfermedad en este momento
   const rates = { ...B.sickBasePerHour };
+  if (w.vet?.shield > 0) for (const k of Object.keys(B.sickBasePerHour)) delete rates[k]; // vitaminas o tónico
   if (a.sadT >= B.sadAfter) rates.tristeza = B.sadSickPerHour;
   if (a.hungryT >= B.hungryAfter) rates.pancita = B.hungrySickPerHour;
   const total = Object.values(rates).reduce((t, r) => t + r, 0);
@@ -219,6 +221,127 @@ export function claimGift(w, day = dayKey()) {
   return ok(reward.big ? '¡Cesta grande de Bruno!' : 'Cesta de Bruno', { reward });
 }
 
+// ------------------------------------------------------------ Veterinaria interactiva
+/** La doctora de turno: la Dra. Pita hasta que se va de viaje y, desde entonces, Mao Mao. */
+export const vetDoctor = (w) => (chapterOf(w) >= BALANCE.vetMaoFromCh ? 'mao' : 'pita');
+export const vetTrustLevel = (w, doc = vetDoctor(w)) =>
+  Math.min(BALANCE.vetMaxTrustLevel, Math.floor((w.vet.trust[doc] || 0) / BALANCE.vetTrustPerLevel));
+const vetPrice = (w, base) => Math.max(1, Math.round(base * (1 - BALANCE.vetDiscountPerLevel * vetTrustLevel(w))));
+export const vetCureCost = (w, a) => vetPrice(w, BALANCE.cureCost[a.sick]);
+export const vetCheckupPrice = (w) => vetPrice(w, BALANCE.vetCheckupCost);
+const addTrust = (w, n = 1) => { const d = vetDoctor(w); w.vet.trust[d] = (w.vet.trust[d] || 0) + n; };
+const daySeed = (day) => [...day].reduce((t, c) => t + c.charCodeAt(0), 0);
+
+/** Una frase de la doctora (varía de forma estable con lo que ha pasado, sin tocar el aleatorio del mundo). */
+export function vetLine(w, kind, vars = {}) {
+  const lines = VET_LINES[vetDoctor(w)][kind];
+  const seed = (w.stats.cured || 0) + (w.stats.petted || 0) + w.vet.consultN + w.vet.trust.pita + w.vet.trust.mao;
+  return lines[seed % lines.length].replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
+}
+export const vetDiag = (w, disease) => VET_LINES[vetDoctor(w)].diag[disease];
+/** Lo primero que la doctora te aconsejaría según cómo está la granja. */
+export function vetGreeting(w) {
+  const home = w.animals.filter((a) => !a.away);
+  if (home.some((a) => a.sick)) return vetLine(w, 'enfermos');
+  const hungry = home.filter((a) => a.fed < 40).sort((a, b) => a.fed - b.fed)[0];
+  if (hungry) return vetLine(w, 'hambre', { nombre: hungry.name });
+  const sad = home.filter((a) => a.happy < 40).sort((a, b) => a.happy - b.happy)[0];
+  if (sad) return vetLine(w, 'triste', { nombre: sad.name });
+  if (w.criadero.built && w.criadero.lanes.length < BALANCE.criaderoSlots[w.criadero.level]
+    && Object.keys(SPECIES).some((s) => eligibleParents(w, s).length >= 2)) return vetLine(w, 'criadero');
+  return vetLine(w, 'bien');
+}
+/** «Consulta»: gratis; la doctora te aconseja y, hasta cierto tope al día, sube la confianza. */
+export function vetConsult(w, day = dayKey()) {
+  const v = w.vet;
+  if (v.consultDay !== day) { v.consultDay = day; v.consultN = 0; }
+  const gained = v.consultN < BALANCE.vetConsultsPerDay;
+  if (gained) { v.consultN++; addTrust(w, 1); }
+  v.say = vetGreeting(w);
+  return ok(v.say, { gained });
+}
+/** «Chequeo»: por unas monedas, un informe de un animal (hambre, ánimo, corazones y riesgo de enfermar por hora). */
+export function vetCheckup(w, id) {
+  const a = find(w, id);
+  if (!a) return no('No encuentro a ese animal.');
+  if (a.away) return no(`${a.name} está en el Criadero.`);
+  const cost = vetCheckupPrice(w);
+  if (w.coins < cost) return no('Te faltan monedas para el chequeo.');
+  w.coins -= cost;
+  const B = BALANCE;
+  let total = w.vet.shield > 0 ? 0 : Object.values(B.sickBasePerHour).reduce((t, r) => t + r, 0);
+  if (a.happy < 20) total += B.sadSickPerHour;
+  if (a.fed <= 0) total += B.hungrySickPerHour;
+  const report = { id: a.id, name: a.name, fed: Math.round(a.fed), happy: Math.round(a.happy), hearts: a.hearts, sick: a.sick, risk: a.sick ? null : Math.round((1 - Math.exp(-total)) * 100), cost };
+  w.vet.say = report.sick ? vetLine(w, 'enfermos') : report.risk > 30 ? vetLine(w, a.fed < a.happy ? 'hambre' : 'triste', { nombre: a.name }) : vetLine(w, 'bien');
+  return ok(`Chequeo de ${a.name}: listo.`, { report });
+}
+/** Protección contra resfriados y pulgas: Pita con vitaminas (monedas) y Mao Mao con un tónico (productos). */
+export function vetShield(w) {
+  if (w.vet.shield > 0) return no('La protección todavía dura.');
+  if (vetDoctor(w) === 'pita') {
+    const cost = vetPrice(w, BALANCE.vetVitaminCost);
+    if (w.coins < cost) return no('Te faltan monedas para las vitaminas.');
+    w.coins -= cost;
+  } else {
+    const have = Object.values(w.products).reduce((t, n) => t + n, 0);
+    if (have < BALANCE.vetTonicProducts) return no(`Mao Mao necesita ${BALANCE.vetTonicProducts} productos para el tónico.`);
+    for (let n = 0; n < BALANCE.vetTonicProducts; n++) {
+      const p = Object.keys(w.products).sort((x, y) => w.products[y] - w.products[x])[0];
+      if (!--w.products[p]) delete w.products[p];
+    }
+  }
+  w.vet.shield = BALANCE.vetShieldMs;
+  w.vet.say = vetLine(w, 'escudo');
+  return ok(w.vet.say);
+}
+/** El pedido de hoy de la doctora (uno por día, con un producto que ya has recogido). */
+export function vetRequest(w, day = dayKey()) {
+  const v = w.vet;
+  if (!v.request || (v.request.done && v.request.day !== day)) {
+    const owned = Object.keys(PRODUCTS).filter((p) => (w.stats.collected[p] || 0) > 0);
+    const pool = owned.length ? owned : ['huevo'];
+    const seed = daySeed(day) + (w.stats.cured || 0);
+    const product = pool[seed % pool.length];
+    const n = 2 + (seed % 3);
+    v.request = { day, product, n, coins: Math.round(n * PRODUCTS[product].price * BALANCE.vetRequestMul), done: false };
+  }
+  return v.request;
+}
+export function vetDeliver(w) {
+  const r = vetRequest(w);
+  if (r.done) return no('Ya entregaste el pedido de hoy.');
+  if ((w.products[r.product] || 0) < r.n) return no(`Te faltan ${PRODUCTS[r.product].nombre.toLowerCase()}.`);
+  if (!(w.products[r.product] -= r.n)) delete w.products[r.product];
+  w.coins += r.coins;
+  r.done = true;
+  addTrust(w, 1);
+  w.vet.say = vetLine(w, 'pedido', { n: r.n, producto: PRODUCTS[r.product].nombre.toLowerCase() });
+  return ok(`Entregaste el pedido: +${r.coins} monedas.`);
+}
+/** «Ayudar a la doctora» (minijuego): el precio de la cura se devuelve en parte según los aciertos; sin aciertos se pierde la consulta. */
+export function cureHelping(w, id, wins) {
+  const a = find(w, id);
+  if (!a) return no('No encuentro a ese animal.');
+  if (!a.sick) return no(`${a.name} está sanito.`);
+  const cost = vetCureCost(w, a);
+  if (w.coins < cost) return no(`Te faltan monedas: la consulta cuesta ${cost}.`);
+  const n = Math.max(0, Math.min(BALANCE.vetRounds, Math.floor(wins) || 0));
+  if (n === 0) {
+    w.coins -= cost;
+    w.vet.say = vetLine(w, 'curaMal', { nombre: a.name });
+    return no(`Salió mal: pierdes la consulta (−${cost}) y ${a.name} sigue enfermo.`);
+  }
+  const back = Math.round(cost * BALANCE.vetRefund[n]);
+  w.coins -= cost - back;
+  const was = DISEASES[a.sick].nombre.toLowerCase();
+  a.sick = null; a.sickT = 0; a.sadT = 0; a.hungryT = 0;
+  w.stats.cured = (w.stats.cured || 0) + 1;
+  if (n >= BALANCE.vetRounds - 1) addTrust(w, 1);
+  w.vet.say = vetLine(w, 'curaOk', { nombre: a.name });
+  return ok(`¡${a.name} ya no tiene ${was}!${back ? ` Te devuelven ${back} monedas.` : ''}`, { animal: a, cost: cost - back });
+}
+
 /** Suma cariño con tope diario. Devuelve true si ganó un corazón. */
 function addLove(w, a, n) {
   const day = Math.floor(w.lastTick / DAY_MS);
@@ -239,7 +362,7 @@ export function cure(w, id) {
   const a = find(w, id);
   if (!a) return no('No encuentro a ese animal.');
   if (!a.sick) return no(`${a.name} está sanito.`);
-  const cost = BALANCE.cureCost[a.sick];
+  const cost = vetCureCost(w, a);
   if (w.coins < cost) return no(`Te faltan monedas: curar cuesta ${cost}. También se cura solo si lo cuidas en casa.`);
   const was = DISEASES[a.sick].nombre.toLowerCase();
   w.coins -= cost;

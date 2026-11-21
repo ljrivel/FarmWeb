@@ -205,3 +205,16 @@ arreglo: la tarjeta de un animal sano mostraba «null» desde el sub-paso 2 de l
   espera un momento tranquilo (`ui.busy()` falso), guarda y recarga. Una marca en `sessionStorage` evita recargar en bucle.
 - Límite: un dispositivo que ya tenga abierta una versión anterior a esta necesita **una** recarga manual para recibir el
   actualizador; desde ahí se actualiza solo.
+
+## Veterinaria interactiva
+- Siempre interactiva, sea cual sea la doctora (`sim.vetDoctor`: Pita hasta el capítulo 5; Mao Mao desde el 6). Cambian su voz
+  (`VET_LINES`), su minijuego y su protección. Frases y diagnósticos estables, sin tocar `w.rng` ni `w.careRng`.
+- Minijuegos (`src/vetgames.js`, sin interfaz): Pita, «Latidos» (tocar cuando la marca está en la zona verde); Mao Mao, «Mezcla de
+  hierbas» (dos hierbas que cubran lo que pide; cada ronda tiene solución). 3 rondas.
+- «Ayudar a la doctora»: se paga la cura y se devuelve según los aciertos (0 % / 0 % / 25 % / 50 %). Con 0 aciertos se pierde la
+  consulta y el animal sigue enfermo; con 2 o más aciertos sube la confianza. Salir a mitad no cuesta nada.
+- Confianza por doctora: −5 % en curas por nivel (máx. 4 niveles). La suben las consultas (2 al día), los pedidos y ganar minijuegos.
+- Chequeo (20): saciedad, felicidad, corazones y riesgo de enfermar por hora. Protección 30 min contra resfriados y pulgas (solo corre
+  con el juego abierto). Pedido diario con un producto ya recogido.
+- Guardado: `w.vet` con valores por defecto y validación; sin subir `VERSION`.
+- Pendiente de esta línea: la reforma de la historia del viaje al pasado y el Laboratorio con el minijuego de genética (plan aparte).

@@ -1053,6 +1053,87 @@ def auto_update(browser):
     ctx.close()
 
 
+def vet_interactiva(browser):
+    print("\n== Veterinaria interactiva: Pita, Mao Mao y sus minijuegos")
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    page = ctx.new_page()
+    errors = []
+    page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(URL)
+    page.wait_for_function("document.getElementById('loading').hidden === true", timeout=15000)
+
+    def abrir_vet():
+        page.keyboard.press("Escape")  # por si el panel quedó abierto
+        page.click('[data-goto="mapa"]')
+        page.wait_for_timeout(300)
+        gbox = page.locator("#game").bounding_box()
+        page.mouse.click(gbox["x"] + 164 * gbox["width"] / 320, gbox["y"] + 48 * gbox["height"] / 224)
+        page.wait_for_selector('[data-key="vet-consult"]', timeout=3000)
+
+    def enfermar():
+        page.evaluate("""(() => { const w = farmweb.app.w; w.coins = 500; const a = w.animals[0]; a.sick = 'resfriado'; farmweb.app.mgEasy = true; return a.id; })()""")
+        return page.evaluate("farmweb.app.w.animals[0].id")
+
+    aid = enfermar()
+    abrir_vet()
+    check("Dra. Pita" in page.locator("#sheetBody").inner_text(), "al principio atiende la Dra. Pita")
+    check(page.locator('[data-key="vet-shield"]').inner_text() == "Vitaminas", "Pita ofrece vitaminas")
+    check("Resfriado" in page.locator("#sheetBody").inner_text() and "«" in page.locator('[data-key^="vet-say"]').inner_text(), "ella diagnostica al enfermo y habla")
+    page.locator('[data-key="vet-consult"]').click()
+    check(page.evaluate("farmweb.app.w.vet.trust.pita") == 1, "la consulta sube la confianza")
+    page.locator(f'[data-key="help-{aid}"]').click()
+    page.wait_for_selector('[data-key="vet-hit"]', timeout=3000)
+    page.screenshot(path=f"{SHOTS}/movil-80-vet-latidos.png")
+    for _ in range(3):
+        page.locator('[data-key="vet-hit"]').click()
+        page.wait_for_timeout(150)
+    page.wait_for_selector(f'[data-key="cure-{aid}"], .empty', timeout=3000)
+    check(page.evaluate("farmweb.app.w.animals[0].sick") is None, "ganar el minijuego de Pita cura al animal")
+    check(page.evaluate("farmweb.app.w.coins") == 500 - 30, "y le devuelven la mitad del precio (60 − 30)")
+
+    # el chequeo
+    page.locator(f'[data-key="chk-{aid}"]').click()
+    check("Informe de" in page.locator("#sheetBody").inner_text(), "el chequeo muestra el informe del animal")
+    page.keyboard.press("Escape")
+
+    # desde el capítulo 6 atiende Mao Mao, con otro minijuego
+    page.evaluate("""(async () => {
+      const { QUESTS } = await import('/src/data.js');
+      for (const q of QUESTS) { farmweb.app.w.quests.claimed[q.id] = true; if (q.id === 'c5-festival') break; }
+    })()""")
+    enfermar()
+    page.evaluate("farmweb.app.mgEasy = true")
+    abrir_vet()
+    check("Mao Mao" in page.locator("#sheetBody").inner_text(), "tras el festival atiende Mao Mao")
+    check(page.locator('[data-key="vet-shield"]').inner_text() == "Tónico", "Mao Mao ofrece un tónico, no vitaminas")
+    page.locator(f'[data-key="help-{aid}"]').click()
+    page.wait_for_selector('[data-key="herb-bayas"]', timeout=3000)
+    check(page.locator('[data-key="vet-hit"]').count() == 0, "su minijuego no es el de ritmo")
+    page.screenshot(path=f"{SHOTS}/movil-81-vet-hierbas.png")
+    for _ in range(3):
+        page.locator('[data-key="herb-bayas"]').click()
+        page.locator('[data-key="herb-grano"]').click()
+        page.locator('[data-key="vet-prepare"]').click()
+        page.wait_for_timeout(150)
+    page.wait_for_selector('.empty', timeout=3000)
+    check(page.evaluate("farmweb.app.w.animals[0].sick") is None, "ganar el minijuego de Mao Mao también cura")
+
+    # tónico (productos) y pedido del día
+    page.evaluate("farmweb.app.w.products = { huevo: 8 }; farmweb.app.w.stats.collected.huevo = 5;")
+    abrir_vet()
+    page.locator('[data-key="vet-shield"]').click()
+    check(page.evaluate("farmweb.app.w.vet.shield") > 0 and page.evaluate("farmweb.app.w.products.huevo") == 4, "el tónico gasta 4 productos y protege")
+    page.screenshot(path=f"{SHOTS}/movil-82-vet-mao.png")
+    monedas = page.evaluate("farmweb.app.w.coins")
+    page.evaluate("farmweb.app.w.products = { huevo: 9 }")
+    abrir_vet()
+    page.locator('[data-key="vet-deliver"]').click()
+    check(page.evaluate("farmweb.app.w.coins") > monedas, "entregar el pedido de hoy paga monedas")
+    check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
+    ctx.close()
+
+
 def main():
     server = subprocess.Popen([sys.executable, "-m", "http.server", str(PORT), "--bind", "127.0.0.1"],
                               cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -1083,6 +1164,7 @@ def main():
             mao_mao(browser)
             criadero_flow(browser)
             auto_update(browser)
+            vet_interactiva(browser)
             tutorial_flow(browser, "movil", {"width": 390, "height": 844}, 3, True)
             tutorial_flow(browser, "pc", {"width": 1280, "height": 800}, 1, False)
             tutorial_returning_player(browser)

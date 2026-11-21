@@ -78,6 +78,7 @@ export function newWorld(name = 'Granja de la familia', now = Date.now(), seed =
     story: { seen: {}, talked: {} },
     gift: { day: '', n: 0 },
     criadero: { built: false, level: 0, lanes: [] },
+    vet: { trust: { pita: 0, mao: 0 }, shield: 0, consultDay: '', consultN: 0, say: '', request: null },
     unlocked: [...INITIAL_UNLOCKED],
     players: [{ id: 'local', name: 'Jugador 1' }],
     maxPlayers: 4,
@@ -230,6 +231,18 @@ export function validateWorld(raw, now = Date.now()) {
       left: num(e.left, 0, sp.breed, sp.breed),
       ...spot(corral, e.x, e.y),
     });
+  }
+  // Veterinaria: confianza con cada doctora, protección activa, consultas del día, última frase y pedido actual.
+  const vt = isObj(raw.vet) ? raw.vet : {};
+  const dayOk = (d) => (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : '');
+  w.vet = {
+    trust: { pita: int(vt.trust?.pita, 0, 1e6, 0), mao: int(vt.trust?.mao, 0, 1e6, 0) },
+    shield: num(vt.shield, 0, BALANCE.vetShieldMs, 0), consultDay: dayOk(vt.consultDay), consultN: int(vt.consultN, 0, 99, 0),
+    say: typeof vt.say === 'string' ? vt.say.slice(0, 200) : '', request: null,
+  };
+  if (isObj(vt.request) && PRODUCTS[vt.request.product]) {
+    const r = vt.request;
+    w.vet.request = { day: dayOk(r.day), product: r.product, n: int(r.n, 1, 9, 2), coins: int(r.coins, 0, 1e6, 10), done: r.done === true };
   }
   // Criadero: cupos con su pareja (nido) o su huevo; los padres de un nido quedan «ausentes» del corral.
   const cr = isObj(raw.criadero) ? raw.criadero : {};
