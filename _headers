@@ -1,0 +1,19 @@
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: same-origin
+
+# El código y los datos se revalidan siempre: una versión nueva llega al instante.
+/index.html
+  Cache-Control: no-cache
+/styles.css
+  Cache-Control: no-cache
+/src/*
+  Cache-Control: no-cache
+/assets/sprites/*.json
+  Cache-Control: no-cache
+
+# Las imágenes se piden con ?v=<hash>, así que pueden guardarse un rato.
+/assets/*.png
+  Cache-Control: public, max-age=3600
+/assets/sprites/*.png
+  Cache-Control: public, max-age=3600
