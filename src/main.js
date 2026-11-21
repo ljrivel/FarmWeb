@@ -70,6 +70,14 @@ app.claimGift = () => {
 };
 app.buildCriadero = () => report(sim.buildCriadero(app.w), undefined, 'buy');
 app.upgradeCriadero = () => report(sim.upgradeCriadero(app.w), undefined, 'buy');
+app.upgradeLab = () => report(sim.upgradeLab(app.w), undefined, 'buy');
+/** Cierra una réplica del Laboratorio con los errores del minijuego. */
+app.replicate = (species, errors) => {
+  const r = sim.replicate(app.w, species, errors);
+  report(r, undefined, r.animal ? 'buy' : 'sick');
+  if (r.animal) { app.selectedId = r.animal.id; ui.askName(r.animal.id, true); }
+  return r;
+};
 app.pair = (a, b) => {
   const r = sim.pairAnimals(app.w, a, b);
   if (r.ok && [a, b].includes(app.selectedId)) app.selectedId = null; // un animal en el nido ya no está en el corral
@@ -252,6 +260,7 @@ function setupCanvas(canvas) {
       if (!tipo) return;
       if (tipo === 'vet') ui.openPanel('vet');
       else if (tipo === 'criadero') ui.openPanel('criadero');
+      else if (tipo === 'lab') ui.openPanel('lab');
       else if (getCorral(app.w, tipo)) app.goTo(tipo);
       else ui.openPanel('shop', 'corrales');
       return;

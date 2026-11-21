@@ -78,6 +78,7 @@ export function newWorld(name = 'Granja de la familia', now = Date.now(), seed =
     story: { seen: {}, talked: {} },
     gift: { day: '', n: 0 },
     criadero: { built: false, level: 0, lanes: [] },
+    lab: { built: false, level: 0 },
     vet: { trust: { pita: 0, mao: 0 }, shield: 0, consultDay: '', consultN: 0, say: '', request: null },
     unlocked: [...INITIAL_UNLOCKED],
     players: [{ id: 'local', name: 'Jugador 1' }],
@@ -268,6 +269,20 @@ export function validateWorld(raw, now = Date.now()) {
         A.away = B.away = true;
       }
       w.criadero.lanes.push(lane);
+    }
+  }
+  // Laboratorio: una partida de antes de la grieta que ya pasó el capítulo 4 recibe esas misiones como hechas (sin premio), el Laboratorio abierto y las muestras del viaje.
+  const lb = isObj(raw.lab) ? raw.lab : null;
+  w.lab = { built: lb?.built === true, level: lb?.built === true ? int(lb.level, 0, BALANCE.labUpgradeCosts.length, 0) : 0 };
+  if (!lb) {
+    const i = QUESTS.findIndex((q) => q.id === 'c4-grieta');
+    const j = QUESTS.findIndex((q) => q.id === 'c5-invitacion');
+    if (QUESTS.slice(j).some((q) => w.quests.claimed[q.id])) {
+      for (const q of QUESTS.slice(i, j)) {
+        w.quests.claimed[q.id] = true;
+        for (const s of q.reward.unlock || []) if (!w.unlocked.includes(s)) w.unlocked.push(s);
+      }
+      w.lab.built = true;
     }
   }
   // Un corral nunca queda más chico que sus habitantes: sube de nivel lo necesario.

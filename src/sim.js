@@ -7,6 +7,7 @@ import {
   COMMON_VARIANTS, VARIANT_TIERS, rarityOf, MAX_HEARTS, DISEASES, SECRETS, QUESTS, VET_LINES,
 } from './data.js';
 import { rand, randInt, chance } from './rng.js';
+import { allowedErrors, grade } from './genetica.js';
 import { addAnimal, addCorral, capacityOf, getCorral, corralOfSpecies, cleanName, randomSpot } from './state.js';
 
 const ok = (msg, extra = {}) => ({ ok: true, msg, ...extra });
@@ -378,9 +379,10 @@ export function cure(w, id) {
 export function pickBabyVariant(w, a, b, bonus = 0) {
   const inherited = chance(w, 0.5) ? a.variant : b.variant;
   if (!chance(w, BALANCE.mutationChance + bonus)) return inherited;
-  const tier = chance(w, BALANCE.mutantTierOdds.poco) ? 'poco' : 'raro';
-  return VARIANT_TIERS.indexOf(tier);
+  return mutantVariant(w);
 }
+/** Un color poco común o raro al azar. */
+const mutantVariant = (w) => VARIANT_TIERS.indexOf(chance(w, BALANCE.mutantTierOdds.poco) ? 'poco' : 'raro');
 
 // ------------------------------------------------------------------ acciones
 /** Cambia el nombre de un animal. Siempre deja `named` en true. */
@@ -538,11 +540,60 @@ export function setCorralBreed(w, corralId, mode) {
   return ok(mode === 'manual' ? `En ${c.nombre} ahora solo se cría en el Criadero.` : `En ${c.nombre} la cría vuelve a ser automática.`);
 }
 
+// ------------------------------------------------------------------ Laboratorio
+const labLevel = (w) => w.lab.level;
+export function labInfo(w) {
+  const max = BALANCE.labUpgradeCosts.length;
+  return { built: w.lab.built, level: w.lab.level, maxLevel: max, upgradeCost: w.lab.level < max ? BALANCE.labUpgradeCosts[w.lab.level] : null };
+}
+export function upgradeLab(w) {
+  const info = labInfo(w);
+  if (!info.built) return no('El Laboratorio se abre con la historia.');
+  if (info.upgradeCost == null) return no('El equipo ya es lo mejor posible.');
+  if (w.coins < info.upgradeCost) return no('Te faltan monedas.');
+  w.coins -= info.upgradeCost;
+  w.lab.level++;
+  return ok(`¡Equipo nivel ${w.lab.level + 1}! Cada réplica cuesta menos y perdona más errores.`);
+}
+/** Dinosaurios con muestra en el Banco de ADN: los que ya conoces por la historia. */
+export const labSamples = (w) => Object.keys(SPECIES).filter((s) => SPECIES[s].dna && w.unlocked.includes(s));
+export const labCost = (w, species) => Math.round(SPECIES[species].price * (1 - BALANCE.labCostCut * labLevel(w)));
+export const labAllowed = (w, species) => allowedErrors(SPECIES[species].dna, BALANCE.labExtraErrors * labLevel(w));
+export function canReplicate(w, species) {
+  const sp = SPECIES[species];
+  if (!w.lab.built) return no('El Laboratorio todavía no está abierto.');
+  if (!sp?.dna || !w.unlocked.includes(species)) return no('Todavía no tienes su muestra de ADN.');
+  const corral = corralOfSpecies(w, species);
+  if (!corral) return no(`Necesita el corral ${CORRAL_TYPES[corralTypeOf(species)].nombre}: llega con la historia.`);
+  if (!hasSpace(w, corral.id)) return no(`No hay espacio en ${corral.nombre}: amplíalo.`);
+  if (w.coins < labCost(w, species)) return no('Te faltan monedas.');
+  return ok('');
+}
+/**
+ * Cierra una réplica con los errores que cometió el jugador (el costo se cobra aquí: salir antes no cuesta nada).
+ * perfecta: devuelven el 25 % y hay más probabilidad de color raro; buena: nace la cría; inestable: devuelven el 50 %; fallida: se pierde.
+ */
+export function replicate(w, species, errors) {
+  const c = canReplicate(w, species);
+  if (!c.ok) return c;
+  const result = grade(errors, labAllowed(w, species));
+  const cost = labCost(w, species);
+  const refund = result === 'perfecta' ? BALANCE.labRefundPerfect : result === 'inestable' ? BALANCE.labRefundUnstable : 0;
+  w.coins -= cost - Math.round(cost * refund);
+  if (result === 'inestable') return ok('La réplica quedó inestable y se deshizo. Te devolvemos la mitad.', { result });
+  if (result === 'fallida') return ok('La réplica falló y se perdió la muestra.', { result });
+  const rare = result === 'perfecta' && chance(w, BALANCE.labPerfectRareBonus);
+  const a = addAnimal(w, species, rare ? mutantVariant(w) : randInt(w, COMMON_VARIANTS), 'baby');
+  w.stats.bought[species] = (w.stats.bought[species] || 0) + 1;
+  return ok(result === 'perfecta' ? `¡Réplica perfecta! ${a.name} nació y te devolvieron monedas.` : `¡${a.name} se unió a la granja!`, { result, animal: a });
+}
+
 export function canBuyAnimal(w, species) {
   const sp = SPECIES[species];
   if (!sp) return no('Esa especie no existe.');
   if (!w.unlocked.includes(species)) return no('Todavía no la conoces: avanza en la historia.');
   if (sp.price == null) return no('No se vende: llega por la historia.');
+  if (sp.dna) return no('Se replica en el Laboratorio.');
   const corral = corralOfSpecies(w, species);
   if (!corral) return no(`Necesita el corral ${CORRAL_TYPES[corralTypeOf(species)].nombre}: constrúyelo en el mapa.`);
   if (!hasSpace(w, corral.id)) return no(`No hay espacio en ${corral.nombre}: amplíalo.`);

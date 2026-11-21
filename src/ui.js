@@ -4,6 +4,7 @@
 import { TUTORIAL_STEPS, stepSkipped, nextIndex, stepDone } from './tutorial.js';
 import { chapterNow } from './story.js';
 import { LATIDO, latidoPos, latidoHit, HERBS, herbRound, herbOk } from './vetgames.js';
+import { BASES, PAIR, makeStrand } from './genetica.js';
 import {
   SPECIES, ORDER, FOODS, PRODUCTS, QUESTS, SCENES, LETTERS, CHAPTERS, CHARACTERS, EPILOGUE, SECRETS, SECRET_ORDER, BALANCE, CORRAL_TYPES, corralTypeOf,
   rarityOf, rarityLabel, MAX_HEARTS, DISEASES,
@@ -359,9 +360,11 @@ export function createUI(app) {
           h('div', { class: 'grow' },
             h('strong', { text: locked ? '???' : sp.nombre }),
             h('div', { class: 'muted small', text: locked ? 'Avanza en la historia para conocerlo.' : `Vive en ${CORRAL_TYPES[corralTypeOf(s)].nombre} · le gusta ${FOODS[sp.food].nombre.toLowerCase()} · produce ${PRODUCTS[sp.product].nombre.toLowerCase()}` }),
-            !c.ok && !locked && h('div', { class: 'warn small', text: c.msg })),
+            !c.ok && !locked && (sp.dna ? !w.lab.built : true) && h('div', { class: 'warn small', text: sp.dna ? 'Se replica en el Laboratorio Hélice (capítulo 4).' : c.msg })),
           price(sp.price),
-          btn('Comprar', () => app.buyAnimal(s), { cls: 'primary', disabled: !c.ok, key: `buy-${s}` }));
+          sp.dna
+            ? btn('Replicar', () => { labTab = 'banco'; openPanel('lab'); }, { cls: 'primary', disabled: locked || !w.lab.built, key: `buy-${s}` })
+            : btn('Comprar', () => app.buyAnimal(s), { cls: 'primary', disabled: !c.ok, key: `buy-${s}` }));
       });
     } else if (shopTab === 'food') {
       content = Object.keys(FOODS).map((f) => {
@@ -458,6 +461,75 @@ export function createUI(app) {
       h('h3', { text: 'Nueva pareja' }),
       pairing,
       h('p', { class: 'muted small', text: 'En «Animales» puedes poner un corral en cría manual para que solo críe aquí.' }));
+  }
+
+  // ---- panel: Laboratorio Hélice (Banco de ADN, minijuego de la hebra y equipo)
+  let labTab = 'banco', labGame = null;
+  function labFinish() {
+    const g = labGame;
+    labGame = null;
+    app.replicate(g.species, g.errors);
+    refreshSheet();
+  }
+  function labPick(base) {
+    const g = labGame;
+    if (PAIR[g.top[g.i]] === base) { g.i++; g.note = '¡Cuadra!'; } else { g.errors++; g.note = '¡Ah, ah, ah! Esa base no cuadra.'; }
+    if (g.i >= g.top.length || g.errors > g.allowed + 1) labFinish(); else refreshSheet();
+  }
+  const baseCell = (b, extra = '') => h('span', { class: `base${extra}`, 'data-base': b, style: `background:${BASES[b].color}`, title: BASES[b].nombre, text: BASES[b].forma });
+  function labGameView() {
+    const g = labGame, left = g.allowed - g.errors;
+    const head = row(face('helice', 2, g.errors > g.allowed ? 2 : 1), h('div', { class: 'grow' },
+      h('strong', { text: `Réplica de ${SPECIES[g.species].nombre.toLowerCase()}` }),
+      h('div', { class: 'muted small', text: `Base ${Math.min(g.i + 1, g.top.length)} de ${g.top.length} · ${left >= 0 ? `errores que aguanta: ${left}` : '¡inestable! Un error más y se pierde'}${g.note ? ` · ${g.note}` : ''}` })));
+    return h('div', null, head,
+      h('p', { class: 'muted', text: 'Completa la hebra de abajo con la pareja de cada base de arriba. Parejas: ♥–★ y ●–◆.' }),
+      h('div', { class: 'strand', 'aria-label': 'Hebra de arriba' }, g.top.map((b) => baseCell(b))),
+      h('div', { class: 'strand', 'aria-label': 'Tu hebra' }, g.top.map((b, k) => (k < g.i ? baseCell(PAIR[b], ' done') : h('span', { class: `base hole${k === g.i ? ' now' : ''}`, text: '?' })))),
+      h('div', { class: 'herbs bases' }, Object.keys(BASES).map((b) => h('button', {
+        class: 'btn herb', type: 'button', 'data-key': `base-${b}`, style: `background:${BASES[b].color}`, onclick: () => labPick(b),
+      }, h('span', { class: 'base-shape', text: BASES[b].forma }), h('span', { class: 'small', text: BASES[b].nombre })))),
+      btn('Salir (no cuesta nada)', () => { labGame = null; refreshSheet(); }, { cls: 'small', key: 'lab-exit' }));
+  }
+  function panelLab() {
+    const w = W();
+    if (labGame) return labGameView();
+    const info = sim.labInfo(w), doctor = sim.vetDoctor(w), doc = CHARACTERS[doctor];
+    if (!info.built) {
+      return h('div', { class: 'empty' }, face('helice', 3, 0),
+        h('p', { text: 'El Laboratorio Hélice recrea dinosaurios a partir de muestras de ADN. Se abre con la historia, en el capítulo 4.' }));
+    }
+    const tabs = [['banco', 'Banco de ADN'], ['equipo', 'Equipo']];
+    const tabBar = h('div', { class: 'tabs', role: 'tablist' }, tabs.map(([id, label]) => h('button', {
+      class: 'tab', type: 'button', role: 'tab', 'aria-selected': String(labTab === id), 'data-key': `lab-tab-${id}`,
+      onclick: () => { labTab = id; refreshSheet(); },
+    }, label)));
+    let content;
+    if (labTab === 'banco') {
+      const samples = sim.labSamples(w);
+      content = [
+        row(face(doctor, 2, 1), h('div', { class: 'grow small muted', text: `${doc.nombre} atiende el laboratorio. Elige una muestra y completa su hebra: sin errores te devuelven el 25 % y hay más chance de color raro; si fallas mucho, se pierde.` })),
+        ...(samples.length ? samples.map((s) => {
+          const sp = SPECIES[s], c = sim.canReplicate(w, s);
+          return row(portrait(s, 0, 'baby', 2),
+            h('div', { class: 'grow' }, h('strong', { text: sp.nombre }),
+              h('div', { class: 'muted small', text: `${sp.dna} bases · aguanta ${sim.labAllowed(w, s)} errores` }),
+              !c.ok && h('div', { class: 'warn small', text: c.msg })),
+            price(sim.labCost(w, s)),
+            btn('Replicar', () => { labGame = { species: s, top: makeStrand(sp.dna), i: 0, errors: 0, allowed: sim.labAllowed(w, s), note: '' }; refreshSheet(); },
+              { cls: 'primary', disabled: !c.ok, key: `rep-${s}` }));
+        }) : [h('p', { class: 'muted', text: 'Todavía no hay muestras: llegan con el viaje al pasado.' })]),
+      ];
+    } else {
+      content = [
+        h('p', { class: 'muted', text: `Equipo nivel ${info.level + 1} de ${info.maxLevel + 1} · −${Math.round(BALANCE.labCostCut * info.level * 100)} % de costo y +${BALANCE.labExtraErrors * info.level} errores permitidos.` }),
+        info.upgradeCost != null
+          ? row(h('div', { class: 'grow small muted', text: 'Cada nivel: −10 % de costo y un error más permitido.' }), price(info.upgradeCost),
+            btn('Mejorar', () => app.upgradeLab(), { cls: 'primary', disabled: w.coins < info.upgradeCost, key: 'lab-upgrade' }))
+          : h('p', { class: 'muted small', text: 'El equipo ya es lo mejor posible.' }),
+      ];
+    }
+    return h('div', null, tabBar, h('div', { class: 'tabpanel', role: 'tabpanel' }, content));
   }
 
   // ---- panel: Veterinaria interactiva (la doctora de turno, sus minijuegos, chequeo y pedido)
@@ -972,11 +1044,13 @@ export function createUI(app) {
     quests: ['Misiones', panelQuests],
     vet: ['Veterinaria', panelVet],
     criadero: ['Criadero', panelCriadero],
+    lab: ['Laboratorio Hélice', panelLab],
     world: ['Mundo', panelWorld],
   };
   function openPanel(name, tab) {
     if (name === 'shop' && tab) shopTab = tab;
     if (name === 'world') worldView = 'main';
+    if (name === 'lab') labGame = null;
     if (name === 'vet') { vetGame = null; vetReport = null; vetStop(); W().vet.say = ''; }
     const [title, render] = PANELS[name];
     openSheet(name, title, render);

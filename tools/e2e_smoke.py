@@ -651,6 +651,7 @@ def chapter6(browser):
       const w = farmweb.app.w;
       for (const q of QUESTS) { if (q.id === 'c6-camino') break; w.quests.claimed[q.id] = true; }
       for (const t of ['bosque', 'estanque', 'jurasico']) if (!w.corrales.some((c) => c.tipo === t)) w.corrales.push({ id: t, tipo: t, nombre: t, nivel: 0 });
+      for (const s of ['triceratops', 'estegosaurio', 'plesiosaurio']) if (!w.unlocked.includes(s)) w.unlocked.push(s); // las muestras del viaje al pasado
       w.animals[0].hearts = 3;
       farmweb.app.ui?.refresh?.();
     })()""")
@@ -659,7 +660,6 @@ def chapter6(browser):
     page.locator('[data-key="claim"]').click()
     page.wait_for_timeout(300)
     check(page.evaluate("farmweb.app.w.corrales.some((c) => c.tipo === 'valle')"), "reclamarla abre el Valle")
-    check(page.evaluate("farmweb.app.w.unlocked.includes('triceratops') && farmweb.app.w.unlocked.includes('estegosaurio')"), "y desbloquea los dos dinosaurios")
     check(page.evaluate("farmweb.app.w.animals.some((a) => a.species === 'triceratops' && a.corral === 'valle')"), "el triceratops bebé llega al Valle")
     page.keyboard.press("Escape")
     page.wait_for_timeout(200)
@@ -696,6 +696,7 @@ def chapter7(browser):
       const w = farmweb.app.w;
       for (const q of QUESTS) { if (q.id === 'c7-cielo') break; w.quests.claimed[q.id] = true; }
       for (const t of ['bosque', 'estanque', 'jurasico', 'valle']) if (!w.corrales.some((c) => c.tipo === t)) w.corrales.push({ id: t, tipo: t, nombre: t, nivel: 0 });
+      for (const s of ['triceratops', 'estegosaurio', 'plesiosaurio']) if (!w.unlocked.includes(s)) w.unlocked.push(s);
       w.stats.sold = 60;
     })()""")
     page.click('[data-panel="quests"]')
@@ -703,7 +704,7 @@ def chapter7(browser):
     page.locator('[data-key="claim"]').click()
     page.wait_for_timeout(300)
     check(page.evaluate("farmweb.app.w.animals.some((a) => a.species === 'pterodactilo' && a.corral === 'valle')"), "el pterodáctilo bebé llega al Valle")
-    check(page.evaluate("farmweb.app.w.unlocked.includes('plesiosaurio')"), "y se conoce al plesiosaurio")
+    check(page.evaluate("farmweb.app.w.unlocked.includes('pterodactilo')"), "y su ADN entra al Laboratorio")
     page.keyboard.press("Escape")
     page.evaluate("farmweb.app.w.animals.filter((a) => a.species === 'pterodactilo').forEach((a) => { a.stage = 'adult'; })")
     page.click('[data-panel="quests"]')
@@ -940,7 +941,7 @@ def mao_mao(browser):
     gbox = page.locator("#game").bounding_box()
     page.mouse.click(gbox["x"] + 164 * gbox["width"] / 320, gbox["y"] + 48 * gbox["height"] / 224)
     page.wait_for_timeout(300)
-    check("Mao Mao cuida la Veterinaria" in page.locator("#sheetBody").inner_text(), "la Veterinaria dice que Mao Mao la cuida mientras Pita viaja")
+    check("Mao Mao" in page.locator("#sheetBody").inner_text() and "Pita" not in page.locator("#sheetBody").inner_text(), "la Veterinaria la atiende Mao Mao mientras Pita viaja")
     page.screenshot(path=f"{SHOTS}/movil-61-veterinaria-mao.png")
     check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
     ctx.close()
@@ -1001,21 +1002,108 @@ def criadero_flow(browser):
     page.wait_for_function("farmweb.app.w.criadero.lanes.length === 0", timeout=4000)
     check(page.evaluate("farmweb.app.w.animals.filter((a) => a.stage === 'baby').length") >= 1, "el huevo nace y la cría aparece en su corral")
 
-    # dinosaurios: una vez desbloqueados se ven y se compran en la tienda
+    # dinosaurios: una vez desbloqueados se ven en la tienda y se replican en el Laboratorio
     page.evaluate("""(() => {
       const w = farmweb.app.w;
       for (const t of ['bosque', 'estanque', 'jurasico', 'valle']) if (!w.corrales.some((c) => c.tipo === t)) w.corrales.push({ id: t, tipo: t, nombre: t, nivel: 0, breed: 'auto' });
       for (const s of ['carnotauro', 'spinosaurus', 'triceratops', 'estegosaurio', 'pterodactilo', 'plesiosaurio']) if (!w.unlocked.includes(s)) w.unlocked.push(s);
+      w.lab.built = true;
       w.coins = 20000;
     })()""")
     page.click('[data-panel="shop"]')
     texto = page.locator("#sheetBody").inner_text()
     check(all(n in texto for n in ("Carnotauro", "Spinosaurus", "Triceratops", "Estegosaurio", "Pterodáctilo", "Plesiosaurio")), "la tienda lista los 6 dinosaurios")
-    check(page.locator('[data-key="buy-triceratops"]').is_enabled(), "el botón Comprar del triceratops está activo")
+    check(page.locator('[data-key="buy-triceratops"]').is_enabled(), "el botón Replicar del triceratops está activo")
     page.screenshot(path=f"{SHOTS}/movil-73-tienda-dinosaurios.png", full_page=False)
     page.locator('[data-key="buy-triceratops"]').click()
     page.wait_for_timeout(300)
-    check(page.evaluate("farmweb.app.w.animals.some((a) => a.species === 'triceratops')"), "comprar el triceratops lo trae al Valle")
+    check("Banco de ADN" in page.locator("#sheetBody").inner_text(), "«Replicar» abre el Laboratorio")
+    check(page.locator('[data-key="rep-triceratops"]').is_enabled(), "y la réplica del triceratops está lista")
+    check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
+    ctx.close()
+
+
+def lab_flow(browser):
+    print("\n== Laboratorio Hélice y minijuego de la hebra")
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    page = ctx.new_page()
+    errors = []
+    page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(URL)
+    page.wait_for_function("document.getElementById('loading').hidden === true", timeout=15000)
+    page.evaluate("""(async () => {
+      const { QUESTS } = await import('/src/data.js');
+      const w = farmweb.app.w;
+      for (const q of QUESTS) { if (q.id === 'c4-grieta') break; w.quests.claimed[q.id] = true; }
+      for (const t of ['jurasico', 'estanque']) if (!w.corrales.some((c) => c.tipo === t)) w.corrales.push({ id: t, tipo: t, nombre: t, nivel: 0 });
+      w.coins = 5000;
+      farmweb.app.goTo('mapa');
+    })()""")
+    page.wait_for_timeout(400)
+    page.screenshot(path=f"{SHOTS}/movil-80-mapa-laboratorio-cerrado.png")
+    def abrir_lab():
+        page.keyboard.press("Escape")
+        page.click('[data-goto="mapa"]')
+        page.wait_for_timeout(300)
+        gbox = page.locator("#game").bounding_box()
+        page.mouse.click(gbox["x"] + 214 * gbox["width"] / 320, gbox["y"] + 30 * gbox["height"] / 224)
+        page.wait_for_selector("#sheetTitle", timeout=3000)
+
+    page.click('[data-panel="quests"]')
+    check("Algo brilla en el río" in page.locator("#sheetBody").inner_text(), "tras «Un gigante tierno» sigue la grieta del tiempo")
+    page.keyboard.press("Escape")
+    page.evaluate("""(async () => {
+      const { QUESTS } = await import('/src/data.js');
+      const w = farmweb.app.w;
+      for (const q of QUESTS) { if (q.id === 'c4-laboratorio') break; w.quests.claimed[q.id] = true; }
+      for (const s of ['carnotauro', 'spinosaurus', 'triceratops', 'estegosaurio', 'plesiosaurio']) if (!w.unlocked.includes(s)) w.unlocked.push(s);
+      w.stats.sold = 99;
+    })()""")
+    page.click('[data-panel="quests"]')
+    check("El Laboratorio Hélice" in page.locator("#sheetBody").inner_text(), "la misión del Laboratorio es la activa")
+    page.locator('[data-key="claim"]').click()
+    page.wait_for_timeout(300)
+    check(page.evaluate("farmweb.app.w.lab.built"), "reclamarla abre el Laboratorio")
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(300)
+    page.screenshot(path=f"{SHOTS}/movil-81-mapa-laboratorio.png")
+    abrir_lab()
+    page.wait_for_timeout(200)
+    check("Banco de ADN" in page.locator("#sheetBody").inner_text() and "Triceratops" not in page.locator('[data-key="rep-triceratops"]').inner_text(), "el Banco de ADN muestra las muestras")
+    check(page.locator('[data-key="rep-plesiosaurio"]').is_enabled(), "el plesiosaurio se puede replicar (vive en el Estanque)")
+    check(not page.locator('[data-key="rep-triceratops"]').is_enabled(), "el triceratops espera al Valle")
+    page.screenshot(path=f"{SHOTS}/movil-82-banco-de-adn.png")
+    # una hebra con errores: la primera base falla a propósito, luego se completa bien
+    page.locator('[data-key="rep-carnotauro"]').click()
+    page.wait_for_timeout(200)
+    page.screenshot(path=f"{SHOTS}/movil-83-hebra.png")
+    pares = {"A": "T", "T": "A", "C": "G", "G": "C"}
+    for k in range(6):
+        top = page.evaluate("[...document.querySelectorAll('.strand')[0].children].map((e) => e.dataset.base)")
+        if k == 0:
+            mal = next(b for b in "ATCG" if b != pares[top[0]])
+            page.locator(f'[data-key="base-{mal}"]').click()
+            check("Esa base no cuadra" in page.locator("#sheetBody").inner_text(), "una base equivocada avisa «Esa base no cuadra»")
+        page.locator(f'[data-key="base-{pares[top[k]]}"]').click()
+    page.wait_for_timeout(300)
+    check(page.evaluate("farmweb.app.w.animals.some((a) => a.species === 'carnotauro' && a.stage === 'baby')"), "con un error la réplica sale y nace el carnotauro")
+    page.keyboard.press("Escape")
+    abrir_lab()
+    page.locator('[data-key="rep-plesiosaurio"]').click()
+    antes = page.evaluate("farmweb.app.w.coins")
+    for _ in range(4):
+        top = page.evaluate("[...document.querySelectorAll('.strand')[0].children].map((e) => e.dataset.base)")
+        if not top:
+            break
+        mal = next(b for b in "ATCG" if b != pares[top[0]])
+        page.locator(f'[data-key="base-{mal}"]').click()
+    page.wait_for_timeout(300)
+    check(not page.evaluate("farmweb.app.w.animals.some((a) => a.species === 'plesiosaurio')"), "demasiados errores: la réplica falla y no nace nadie")
+    check(page.evaluate("farmweb.app.w.coins") < antes, "y se pierde el costo")
+    abrir_lab()
+    page.locator('[data-key="lab-tab-equipo"]').click()
+    check(page.locator('[data-key="lab-upgrade"]').is_enabled(), "el equipo se puede mejorar")
     check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
     ctx.close()
 
@@ -1163,6 +1251,7 @@ def main():
             chapter8(browser)
             mao_mao(browser)
             criadero_flow(browser)
+            lab_flow(browser)
             auto_update(browser)
             vet_interactiva(browser)
             tutorial_flow(browser, "movil", {"width": 390, "height": 844}, 3, True)

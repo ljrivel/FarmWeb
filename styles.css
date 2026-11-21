@@ -465,3 +465,11 @@ body.tuto-sheet .sheet { max-height: calc(100dvh - 275px); border-radius: 22px 2
 .vet-marker { position: absolute; top: 2px; bottom: 2px; width: 6px; margin-left: -3px; border-radius: 3px; background: var(--pink-d); }
 .herbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; }
 .btn.herb { display: grid; justify-items: center; gap: 2px; padding: 8px 4px; }
+
+/* Minijuego «Completa la hebra» del Laboratorio */
+.strand { display: flex; gap: 6px; justify-content: center; margin: 8px 0; }
+.base { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; border: 2px solid var(--line); font-size: 20px; line-height: 1; }
+.base.hole { background: #f3e6d6; color: var(--ink-soft); }
+.base.hole.now { border-style: dashed; background: #fff6cf; }
+.herbs.bases { grid-template-columns: repeat(4, 1fr); }
+.base-shape { font-size: 24px; line-height: 1; }

@@ -2,9 +2,9 @@
 // a un múltiplo entero de píxeles de pantalla para que el pixel art quede nítido.
 // Hay dos tipos de escena: el mapa de la granja y cada corral (según su tipo).
 
-import { BALANCE, SPECIES, CORRAL_TYPES, CORRAL_TYPE_ORDER, MAP_SPOTS, VET_SPOT, CRIADERO_SPOT, DISEASES, spriteKey } from './data.js';
+import { BALANCE, SPECIES, CORRAL_TYPES, CORRAL_TYPE_ORDER, MAP_SPOTS, VET_SPOT, CRIADERO_SPOT, LAB_SPOT, DISEASES, spriteKey } from './data.js';
 import { getCorral } from './state.js';
-import { corralStatus, criaderoInfo } from './sim.js';
+import { corralStatus, criaderoInfo, labInfo } from './sim.js';
 
 export const W = 320;
 export const H = 224;
@@ -218,6 +218,15 @@ function drawMap(ctx, S, w, t) {
     }
   }
 
+  {
+    const { x, y } = LAB_SPOT;
+    const built = labInfo(w).built;
+    const col = S.places.index[built ? 'lab' : 'lab_bloq'];
+    if (col != null) ctx.drawImage(S.placesImg, col * PLACE, 0, PLACE, PLACE, Math.round(x - PLACE / 2), Math.round(y - PLACE / 2), PLACE, PLACE);
+    pill(ctx, built ? 'Laboratorio' : 'Laboratorio · cap. 4', x, y + 26);
+    if (!built) icon(ctx, S, 'candado', x + 8, y - 28, 16);
+  }
+
   CORRAL_TYPE_ORDER.forEach((tipo, i) => {
     const { x, y } = MAP_SPOTS[tipo];
     const type = CORRAL_TYPES[tipo];
@@ -336,6 +345,7 @@ export function hitMap(w, lx, ly) {
   const half = MAP_HIT / 2;
   if (Math.abs(lx - VET_SPOT.x) <= half && Math.abs(ly - VET_SPOT.y) <= half) return 'vet';
   if (Math.abs(lx - CRIADERO_SPOT.x) <= half && Math.abs(ly - CRIADERO_SPOT.y) <= half) return 'criadero';
+  if (Math.abs(lx - LAB_SPOT.x) <= half && Math.abs(ly - LAB_SPOT.y) <= half) return 'lab';
   return CORRAL_TYPE_ORDER.find((tipo) => {
     const { x, y } = MAP_SPOTS[tipo];
     return Math.abs(lx - x) <= half && Math.abs(ly - y) <= half;

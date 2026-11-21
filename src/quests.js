@@ -50,6 +50,7 @@ export function rewardText(r) {
   if (r.coins) parts.push(`${r.coins} monedas`);
   for (const [f, n] of Object.entries(r.foods || {})) parts.push(`${n} ${FOODS[f].nombre.toLowerCase()}`);
   if (r.corral) parts.push(`el corral ${CORRAL_TYPES[r.corral].nombre}`);
+  if (r.lab) parts.push('el Laboratorio Hélice');
   if (r.gift) parts.push(`un ${SPECIES[r.gift].nombre.toLowerCase()} bebé`);
   for (const s of r.unlock || []) parts.push(`conoces al ${SPECIES[s].nombre.toLowerCase()}`);
   return parts.join(', ');
@@ -70,6 +71,7 @@ export function claim(w) {
   }
   w.quests.claimed[q.id] = true;
   if (r.corral) addCorral(w, r.corral);
+  if (r.lab) w.lab.built = true;
   giveReward(w, r);
   let animal = null;
   if (r.gift) {

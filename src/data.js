@@ -57,6 +57,13 @@ export const BALANCE = {
   criaderoMutationBonus: 0.015,                    // +1,5 % de mutación de color por nivel
   criaderoNestMul: 0.5,                            // el nido dura medio tiempo de cría de la especie
   criaderoEggMul: 1,                               // la incubación dura un tiempo de cría
+  // ---- Laboratorio Hélice (lugar único del mapa, se abre en el capítulo 4): los dinosaurios se «replican» con el minijuego de la hebra.
+  labUpgradeCosts: [600, 1200, 2200],              // costo de pasar al nivel 1, 2 y 3
+  labCostCut: 0.1,                                 // −10 % en el costo de cada réplica por nivel
+  labExtraErrors: 1,                               // +1 error permitido por nivel
+  labRefundPerfect: 0.25,                          // réplica perfecta: te devuelven el 25 %
+  labRefundUnstable: 0.5,                          // réplica inestable: te devuelven el 50 %
+  labPerfectRareBonus: 0.15,                       // réplica perfecta: probabilidad extra de color poco común o raro
   heatCut: 0.2,                                    // «Darle calor» adelanta un 20 % del tiempo total…
   heatMax: 3,                                      // …hasta 3 veces por huevo…
   heatCooldown: 30 * 1000,                         // …con este enfriamiento entre una y otra
@@ -102,6 +109,8 @@ export const MAP_SPOTS = {
 export const VET_SPOT = { x: 164, y: 48 };
 // El Criadero tampoco es un corral: lugar único del mapa que se construye con monedas y se mejora.
 export const CRIADERO_SPOT = { x: 36, y: 34 };
+// El Laboratorio Hélice (capítulo 4) tampoco es un corral: los dinosaurios se replican allí.
+export const LAB_SPOT = { x: 214, y: 30 };
 export const corralTypeOf = (species) => CORRAL_TYPE_ORDER.find((t) => CORRAL_TYPES[t].species.includes(species));
 
 export const SPECIES = {
@@ -148,14 +157,14 @@ export const SPECIES = {
     names: ['Axi', 'Burbuja', 'Coral', 'Luna', 'Gominola'],
   },
   carnotauro: {
-    nombre: 'Carnotauro', food: 'carnita', product: 'escama_fuego', price: 700,
+    nombre: 'Carnotauro', food: 'carnita', product: 'escama_fuego', price: 700, dna: 6,
     dato: 'Tiene cuernitos y es muy tierno con quien lo cuida.',
     grow: 10 * MIN, prod: 360 * 1000, breed: 8 * MIN, aquatic: false,
     variants: ['Coral', 'Menta', 'Lavanda', 'Medianoche'],
     names: ['Rawr', 'Cuernitos', 'Brasa', 'Dino', 'Pelusa'],
   },
   spinosaurus: {
-    nombre: 'Spinosaurus', food: 'pescadito', product: 'escama_rio', price: 750,
+    nombre: 'Spinosaurus', food: 'pescadito', product: 'escama_rio', price: 750, dna: 6,
     dato: 'Nada como un pez y le gusta el pescadito.',
     grow: 10 * MIN, prod: 360 * 1000, breed: 8 * MIN, aquatic: true,
     variants: ['Azul', 'Verde', 'Naranja', 'Violeta'],
@@ -177,28 +186,28 @@ export const SPECIES = {
     names: ['Cuac', 'Patito', 'Plumón', 'Charco', 'Lulú'],
   },
   triceratops: {
-    nombre: 'Triceratops', food: 'helecho', product: 'cuerno_cristal', price: 800,
+    nombre: 'Triceratops', food: 'helecho', product: 'cuerno_cristal', price: 800, dna: 6,
     dato: 'Sus cuernos brillan como cristal cuando está contento.',
     grow: 10 * MIN, prod: 360 * 1000, breed: 8 * MIN, aquatic: false,
     variants: ['Verde', 'Arena', 'Cielo', 'Atardecer'],
     names: ['Tri', 'Cuernito', 'Frill', 'Rocky', 'Bambú'],
   },
   estegosaurio: {
-    nombre: 'Estegosaurio', food: 'helecho', product: 'placa_dorada', price: 800,
+    nombre: 'Estegosaurio', food: 'helecho', product: 'placa_dorada', price: 800, dna: 8,
     dato: 'Deja placas doradas cuando duerme bien.',
     grow: 10 * MIN, prod: 360 * 1000, breed: 8 * MIN, aquatic: false,
     variants: ['Oliva', 'Lila', 'Coral', 'Turquesa'],
     names: ['Placas', 'Estego', 'Lomito', 'Rocío', 'Púas'],
   },
   pterodactilo: {
-    nombre: 'Pterodáctilo', food: 'pescadito', product: 'pluma_celeste', price: 850,
+    nombre: 'Pterodáctilo', food: 'pescadito', product: 'pluma_celeste', price: 850, dna: 8,
     dato: 'Planea sobre el valle y deja plumas celestes al volar.',
     grow: 10 * MIN, prod: 360 * 1000, breed: 8 * MIN, aquatic: false,
     variants: ['Cielo', 'Menta', 'Rosado', 'Medianoche'],
     names: ['Alita', 'Nube', 'Vuelo', 'Pío', 'Brisa'],
   },
   plesiosaurio: {
-    nombre: 'Plesiosaurio', food: 'gusanito', product: 'perla_marina', price: 900,
+    nombre: 'Plesiosaurio', food: 'gusanito', product: 'perla_marina', price: 900, dna: 8,
     dato: 'Con su cuello largo saluda a los patos desde el estanque.',
     grow: 10 * MIN, prod: 360 * 1000, breed: 8 * MIN, aquatic: true,
     variants: ['Marino', 'Coral', 'Violeta', 'Dorado'],
@@ -346,6 +355,7 @@ export const CHARACTERS = {
   lia: { nombre: 'Lía', rol: 'Guía del río perdido, amiga de la abuela de joven', color: '#c9b6f2' },
   mia: { nombre: 'Mía', rol: 'La hermanita de Tomás, coleccionista de cosas suaves', color: '#ffc9dc' },
   noa: { nombre: 'Noa', rol: 'Paleontóloga joven que llega a estudiar el valle', color: '#a6e0ec' },
+  helice: { nombre: 'Señor Hélice', rol: 'La hebra de ADN con ojitos que guía las réplicas del Laboratorio', color: '#b9a7ff' },
   bruno: { nombre: 'Bruno', rol: 'El cartero del pueblo, que trae las cartas de la abuela', color: '#ffd3a8' },
 };
 
@@ -407,6 +417,29 @@ export const QUESTS = [
     text: 'Me llamo Lía y cuido el río. Este spinosaurus bebé los siguió hasta casa… y lleva una cinta rosa atada a la cola: ¡es la cinta de Cosi! Necesita el estanque y mucho pescadito para crecer.',
     goal: { type: 'own', species: 'spinosaurus', stage: 'adult', n: 1 }, reward: { coins: 300 } },
 
+  // Capítulo 4 (parte 2) — La grieta del tiempo: un viaje corto al pasado y el Laboratorio Hélice
+  { id: 'c4-grieta', ch: 4, who: 'lia', title: 'Algo brilla en el río',
+    text: 'En la curva del río el aire brilla como una cortina de agua que no cae. Es una grieta en el tiempo: se abre cuando los animales tienen miedo. Calma a tus animales: que la granja tenga 8 y todos estén tranquilos.',
+    goal: { type: 'owncount', n: 8 }, reward: { coins: 150 } },
+  { id: 'c4-fondos', ch: 4, who: 'ramon', title: 'Fondos para la expedición',
+    text: 'Si van a cruzar esa grieta, que sea con presupuesto. El pueblo contribuye, yo pongo la cuenta: véndeme 25 productos en total. (No he escatimado en gastos… ni en redondeos.)',
+    goal: { type: 'sold', n: 25 }, reward: { coins: 200 } },
+  { id: 'c4-estabilizador', ch: 4, who: 'pita', title: 'El estabilizador',
+    text: 'Para que la grieta se quede abierta lo justo necesito un aparato de cobre con escamas de fuego. Reúne 4 escamas de fuego y lo armo.',
+    goal: { type: 'collect', product: 'escama_fuego', n: 4 }, reward: { coins: 150, foods: { carnita: 5 } } },
+  { id: 'c4-viaje', ch: 4, who: 'lia', title: 'Cruzar la grieta',
+    text: 'Todo listo. Cruzaremos de la mano y volveremos con muestras, no con huevos: nada vivo que no deba. Que un animal te tenga 2 corazones de confianza y te guiará el paso.',
+    goal: { type: 'hearts', n: 2 }, reward: { coins: 250, unlock: ['triceratops', 'estegosaurio', 'plesiosaurio'] } },
+  { id: 'c4-cierre', ch: 4, who: 'tomas', title: 'Cerrar la grieta',
+    text: 'Volvimos con muestras de la manada, de las placas y del lago. Ahora hay que sellar el paso: reúne 3 escamas de río y Lía cierra la grieta.',
+    goal: { type: 'collect', product: 'escama_rio', n: 3 }, reward: { coins: 200 } },
+  { id: 'c4-laboratorio', ch: 4, who: 'pita', title: 'El Laboratorio Hélice',
+    text: 'Con las muestras podemos recrear a los dinosaurios… con mucho cuidado. Ramón puso el edificio; falta pagar el equipo: véndele 35 productos en total y se abre el Laboratorio.',
+    goal: { type: 'sold', n: 35 }, reward: { coins: 150, lab: true } },
+  { id: 'c4-primera-replica', ch: 4, who: 'pita', title: 'La primera réplica',
+    text: 'Ahora sí: en el Laboratorio completa la hebra de ADN de un carnotauro y nace el primero de laboratorio. Se hace así: entra al Laboratorio del mapa y elige «Replicar».',
+    goal: { type: 'bought', species: 'carnotauro', n: 1 }, reward: { coins: 300 } },
+
   // Capítulo 5 — El festival de la granja (final)
   { id: 'c5-invitacion', ch: 5, who: 'ramon', title: 'Una invitación especial',
     text: 'El pueblo quiere celebrar el Festival de la Cosecha… ¡en esta granja! Hace años que no se hace. Para recibir a todos, la granja tiene que estar llena de vida: cuida a 10 animales.',
@@ -427,7 +460,7 @@ export const QUESTS = [
   // Capítulo 6 — El valle escondido
   { id: 'c6-camino', ch: 6, who: 'lia', title: 'El camino del río',
     text: 'El río volvió a abrirse: pasó por el festival y se quedó cantando. Para que el valle los acepte, los animales tienen que confiar en ustedes. Consigue que uno tenga 3 corazones y te llevo.',
-    goal: { type: 'hearts', n: 3 }, reward: { coins: 200, corral: 'valle', unlock: ['triceratops', 'estegosaurio'], gift: 'triceratops' } },
+    goal: { type: 'hearts', n: 3 }, reward: { coins: 200, corral: 'valle', gift: 'triceratops' } },
   { id: 'c6-noa', ch: 6, who: 'noa', title: 'Una visitante con lupa',
     text: '¡Hola! Soy Noa, paleontóloga. Seguí unas huellas imposibles hasta aquí… ¡y encontré un triceratops bebé! Prometo no asustarlo. Cuídalo hasta que sea adulto y déjame verlo crecer.',
     goal: { type: 'own', species: 'triceratops', stage: 'adult', n: 1 }, reward: { coins: 150, foods: { helecho: 6 }, gift: 'estegosaurio' } },
@@ -446,8 +479,8 @@ export const QUESTS = [
 
   // Capítulo 7 — Alas y mareas
   { id: 'c7-cielo', ch: 7, who: 'bruno', title: 'Plumas en el cielo',
-    text: 'Cada mañana caen plumas azules del cielo, ¡y todas apuntan hacia el acantilado! Una expedición necesita provisiones: véndeme 60 productos en total y la preparo. (Si no me distraigo con una gallina.)',
-    goal: { type: 'sold', n: 60 }, reward: { coins: 200, unlock: ['pterodactilo', 'plesiosaurio'], gift: 'pterodactilo' } },
+    text: 'Cada mañana caen plumas azules del cielo, ¡y todas apuntan hacia el acantilado! Noa dice que traen ADN nuevo para el Laboratorio. Una expedición necesita provisiones: véndeme 60 productos en total y la preparo. (Si no me distraigo con una gallina.)',
+    goal: { type: 'sold', n: 60 }, reward: { coins: 200, unlock: ['pterodactilo'], gift: 'pterodactilo' } },
   { id: 'c7-alas', ch: 7, who: 'noa', title: 'Alas de verdad',
     text: '¡Es un pterodáctilo, el primero vivo en cien millones de años! No lo atosigues: cuídalo hasta que sea adulto y vuele con confianza.',
     goal: { type: 'own', species: 'pterodactilo', stage: 'adult', n: 1 }, reward: { coins: 150, foods: { pescadito: 8 }, gift: 'plesiosaurio' } },
@@ -676,6 +709,7 @@ export const SCENES = [
   { id: 'noche-de-tormenta', when: 'inicio:c3-tormenta', title: 'La noche de la tormenta', lines: [
     ['tomas', 2, '¡La tormenta! Los animales no paraban de temblar.'],
     ['tomas', 0, 'Y al amanecer… esto. Un huevo gigante, calentito, brillando.'],
+    ['tomas', 2, 'Y justo antes del trueno, el cielo se abrió un segundito. Como una costura.'],
     ['mia', 1, 'Le traje mi manta más suave. Para que no tenga frío.'],
     ['tomas', 1, 'Me quedé toda la noche despierto vigilándolo. No se lo digas a nadie.'],
     ['tomas', 0, 'Bueno… ya lo sabes. Cuídalo conmigo.'],
@@ -684,6 +718,7 @@ export const SCENES = [
     ['pita', 2, '¡Perdón, perdón! Me avisaron y corrí. Se me cayó la libreta dos veces.'],
     ['pita', 1, 'Soy la Dra. Pita. Estudié veinte años para atender gatos…'],
     ['pita', 0, '…y ahora tengo un dinosaurio delante. Respiremos.'],
+    ['pita', 2, 'Interesante. Muy interesante… Mi taza de té tiembla en círculos cada vez que da un paso. Y un poco aterrador.'],
     ['pita', 0, 'Reglas: buena comida, mimos y descanso. Si se enferma, estoy en la Veterinaria del mapa.'],
     ['pita', 1, 'Y no se asusten: mira esos cuernitos. ¡Es adorable!'],
   ] },
@@ -725,6 +760,77 @@ export const SCENES = [
     ['lia', 1, '…pero esta manta huele a casa. Gracias.'],
     ['tomas', 0, 'Entonces, ¿el huevo de la tormenta lo mandó Cosi?'],
     ['lia', 0, 'Es lo que más me pregunto. Pronto lo sabremos.'],
+  ] },
+  { id: 'algo-brilla-en-el-rio', when: 'inicio:c4-grieta', title: 'Algo brilla en el río', lines: [
+    ['lia', 2, 'Esto empezó la noche de la tormenta. Siempre empieza con una tormenta.'],
+    ['mia', 2, 'Yo veo una puerta. ¿Es una puerta?'],
+    ['lia', 0, 'Es una grieta. El río se perdió porque no está perdido: está… antes. En otro tiempo.'],
+    ['tomas', 1, 'O sea que mis dos hobbies, el río y los dinosaurios, eran el mismo hobby.'],
+    ['lia', 0, 'Calma a tus animales. Cuando tienen miedo, la grieta se abre más.'],
+  ] },
+  { id: 'fondos-para-la-expedicion', when: 'inicio:c4-fondos', title: 'Fondos para la expedición', lines: [
+    ['ramon', 1, 'Me lo vendió un viajero. Dice que dentro de este ámbar hay sangre de hace millones de años.'],
+    ['pita', 0, 'Ramón, eso no es sangre. Es resina. Y el mosquito está muy muerto.'],
+    ['ramon', 0, 'Pues yo ya hablé con el pueblo: el que quiera ver dinosaurios, que contribuya. No he escatimado en gastos…'],
+    ['pita', 1, '…ni en redondeos.'],
+    ['ramon', 2, 'Eso no lo tenía que decir en voz alta.'],
+  ] },
+  { id: 'el-estabilizador', when: 'inicio:c4-estabilizador', title: 'El estabilizador', lines: [
+    ['pita', 1, 'Si cruzamos, la grieta tiene que quedarse abierta lo justo. Para eso necesito escamas de fuego.'],
+    ['bruno', 2, '¿Y si se queda abierta de más?'],
+    ['pita', 0, 'Entonces tendremos muchos más huéspedes y mucha menos granja.'],
+    ['bruno', 1, '¡Sujétense los sombreros!'],
+    ['mia', 1, 'Yo me sujeto el cuaderno, que es más importante.'],
+  ] },
+  { id: 'al-otro-lado', when: 'inicio:c4-viaje', title: 'Al otro lado', lines: [
+    ['mia', 1, 'Los helechos… ¡son gigantes!'],
+    ['pita', 2, 'Mi taza. Mi taza está temblando otra vez.'],
+    ['tomas', 2, 'Pita… algo viene. ¿Y si no es amistoso?'],
+    ['lia', 0, 'Es una manada de herbívoros. Si no los asustamos, ni nos miran.'],
+    ['pita', 1, 'Recojan muestras. Escamas sueltas, cáscaras, nada vivo. Y por favor: no toquen nada que se mueva.'],
+    ['bruno', 2, 'Entendido. No toco nada que se… oh. Se movía una mariposa.'],
+  ] },
+  { id: 'el-campamento', when: 'fin:c4-viaje', title: 'El campamento', lines: [
+    ['mia', 1, '¡Es la página que faltaba! Es de la señora Cosi.'],
+    ['lia', 2, 'Estuvo aquí. Hace poco. Se le enfrió el té.'],
+    ['tomas', 0, '¿Qué dice la nota?'],
+    ['lia', 0, 'Dice: «Si leen esto, ya cruzaron. Cierren la grieta detrás de ustedes. Yo sé cómo volver.»'],
+    ['bruno', 2, 'Yo pisé una mariposa, pero eso seguro no cambia nada.'],
+  ] },
+  { id: 'cerrar-la-grieta', when: 'inicio:c4-cierre', title: 'Cerrar la grieta', lines: [
+    ['pita', 0, 'Nos llevamos muestras y nada vivo. Si cruza uno más, la historia se enreda.'],
+    ['tomas', 1, '¿Y la mariposa de Bruno?'],
+    ['pita', 2, 'No quiero hablar de la mariposa.'],
+    ['lia', 0, 'Ahora, con las escamas del río, sellamos el paso. Quien tenga que volver, volverá por el agua.'],
+    ['tomas', 1, 'Es decir, Cosi.'],
+  ] },
+  { id: 'se-cierra', when: 'fin:c4-cierre', title: 'Se cierra', lines: [
+    ['lia', 1, 'Ya está. El río sigue donde debe.'],
+    ['bruno', 1, 'Qué raro: acabo de recibir una carta que yo escribí mañana.'],
+    ['pita', 2, 'No la abras. No la abras nunca.'],
+    ['mia', 1, 'Tengo dibujado todo el viaje. Hasta la mariposa.'],
+    ['pita', 1, 'Con eso y las muestras tendremos suficiente para el siguiente paso: recrearlos.'],
+  ] },
+  { id: 'el-laboratorio-helice', when: 'inicio:c4-laboratorio', title: 'El Laboratorio Hélice', lines: [
+    ['ramon', 1, 'Bienvenidos al Laboratorio Hélice. Cosi & Ramón, Sociedad… Casi Anónima.'],
+    ['tomas', 2, '¿Esa cerca es eléctrica?'],
+    ['pita', 0, 'No. Es de madera. Y de buena voluntad.'],
+    ['mia', 1, 'El letrero dice que no se debe alimentar a los dinosaurios sin permiso.'],
+    ['ramon', 1, 'Es por el seguro. Si algo sale mal… pagamos en cuotas.'],
+  ] },
+  { id: 'el-senor-helice', when: 'fin:c4-laboratorio', title: 'El Señor Hélice', lines: [
+    ['pita', 1, 'Les presento a nuestro asistente. Señor Hélice, explíquenos la réplica.'],
+    ['helice', 1, '¡Hola, amiguitos! El ADN es una escalera de cuatro bases. Cada una tiene una pareja fija.'],
+    ['tomas', 2, 'Pita, ¿por qué habla como programa infantil?'],
+    ['pita', 0, 'Porque funciona. Atento, que vienen las reglas.'],
+    ['helice', 1, '¡Completa la hebra y la vida se abre camino!'],
+  ] },
+  { id: 'la-primera-replica', when: 'fin:c4-primera-replica', title: 'La primera réplica', lines: [
+    ['pita', 1, 'Tiene los cuernitos de su mamá… que técnicamente no es su mamá.'],
+    ['mia', 1, 'Yo le haré su ficha: ficha número uno.'],
+    ['ramon', 1, 'Y yo, el presupuesto del número dos.'],
+    ['pita', 0, 'Recuerden: cada réplica es una responsabilidad. Aquí no hacemos cosas porque podamos. Las hacemos porque las cuidaremos.'],
+    ['ramon', 2, 'Qué bonito. Qué caro. Qué bonito.'],
   ] },
   { id: 'el-pueblo-entero', when: 'inicio:c5-invitacion', title: 'El pueblo entero', lines: [
     ['ramon', 1, '¡Habrá Festival de la Cosecha! Aquí, en esta granja, como antes.'],
@@ -807,6 +913,7 @@ export const SCENES = [
     ['noa', 0, 'Veinte años de libros sobre ellos y ninguno decía que ronronean.'],
     ['mao', 1, 'No ronronean, Noa. Se les hincha el pecho de felicidad. Lo comprobé… con un estetoscopio y mucha paciencia.'],
     ['noa', 1, 'Eso. Lo apunto ahora mismo.'],
+    ['mao', 0, 'Y si me traes sus placas y cuernos, comparo su ADN con las muestras del viaje. Es receta, no magia.'],
   ] },
   { id: 'nombres-para-el-cuaderno', when: 'inicio:c6-nombres', title: 'Nombres para el cuaderno', lines: [
     ['noa', 0, 'Cada animal merece su ficha: nombre, especie, qué come y qué le gusta.'],
@@ -849,7 +956,7 @@ export const SCENES = [
     ['bruno', 1, '¡Atención! Hoy llovieron plumas azules. Una me cayó en el sombrero.'],
     ['noa', 1, '¡Déjame ver! No es de ninguna ave que conozca.'],
     ['tomas', 0, 'Todas apuntan hacia el acantilado, como flechas.'],
-    ['noa', 0, 'Algo vive allá arriba. Algo que vuela.'],
+    ['noa', 0, 'Algo vive allá arriba. Algo que vuela. Y estas plumas traen ADN nuevo: el Laboratorio sabrá qué hacer con él.'],
     ['bruno', 2, 'Yo prefiero lo que no vuela. Es más fácil de entregarle las cartas.'],
   ] },
   { id: 'el-acantilado', when: 'fin:c7-cielo', title: 'El acantilado', lines: [

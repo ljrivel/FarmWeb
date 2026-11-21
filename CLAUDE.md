@@ -22,9 +22,9 @@ El dueño es Luis Josué; **responde siempre en español**.
 | Qué | Comando |
 |---|---|
 | Jugar en local (PC y celular en la misma Wi-Fi) | doble clic a `iniciar.bat` o `npm start` |
-| Pruebas unitarias | `npm test` (deben pasar todas; hoy 172) |
+| Pruebas unitarias | `npm test` (deben pasar todas; hoy 179) |
 | Regenerar sprites | `npm run sprites` (Python + Pillow; escribe `assets/sprites/*`) |
-| Recorrido en navegador | `python tools/e2e_smoke.py <carpeta_capturas>` (Playwright + Chrome; hoy 313 comprobaciones) |
+| Recorrido en navegador | `python tools/e2e_smoke.py <carpeta_capturas>` (Playwright + Chrome; hoy 339 comprobaciones) |
 
 Tras un cambio visible, recarga con Ctrl+F5. El servidor local envía `Cache-Control: no-store`.
 Con `?debug` en la URL queda disponible `window.farmweb = { app, sim, audio }`. `?sinescenas` y `?sintutorial` apagan las
@@ -77,6 +77,13 @@ consulta cada 5 min y al volver a la pestaña; si cambió, guarda y se recarga s
 (la raíz trae un `version.json` de desarrollo con `dev` para que en local no haya 404).
 Tutorial guiado de Tomás, 13 pasos; los de panel abren el panel y no oscurecen encima (`src/tutorial.js` pasos, `startTutorial` en `ui.js`, marca `tutorial` en `farmweb:ui:v1`, una vez
 por dispositivo, repetible en Mundo; `?sintutorial` lo apaga y el e2e lo usa).
+La grieta del tiempo (capítulo 4, tras `c4-spino`; guion en `docs/GUION_VIAJE_EN_EL_TIEMPO.md`): 7 misiones nuevas (`c4-grieta` a `c4-primera-replica`) y
+10 escenas. El viaje da las muestras de triceratops, estegosaurio y plesiosaurio (`unlock`); el pterodáctilo llega por las plumas del capítulo 7. Cosi no aparece:
+solo su nota. Laboratorio Hélice (lugar único, `LAB_SPOT`, `w.lab = { built, level }`, se abre con la misión `c4-laboratorio` por `reward.lab`; atiende la
+doctora de turno): los dinosaurios ya no se compran, se **replican** (`replicate` en `sim.js`, hebra de 6 u 8 bases `SPECIES[s].dna`, reglas puras en
+`src/genetica.js`, panel `lab` en `ui.js`, `BALANCE.lab*`). Resultado por errores: perfecta (−25 % de costo, más color raro), buena, inestable (devuelven 50 %), fallida
+(se pierde); el cobro es al terminar, salir antes es gratis. Partidas viejas que ya pasaron el capítulo 4 reciben esas misiones hechas y el Laboratorio abierto
+(migración en `validateWorld`, sin subir `VERSION`). Personaje nuevo `helice` (Señor Hélice). Sin hacer: las «lagunas de ADN de rana» del guion.
 `tests/historia-completa.test.mjs` recorre toda la historia: añade ahí cualquier capítulo nuevo sin tocar más.
 
 ## Pendiente

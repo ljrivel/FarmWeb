@@ -201,17 +201,19 @@ test('guardar y cargar conserva el Criadero y limpia lo que no cuadra', () => {
   assert.ok(c && d);
 });
 
-test('los 6 dinosaurios se compran una vez desbloqueados, y se ven en la tienda', () => {
+test('los 6 dinosaurios se replican en el Laboratorio una vez desbloqueados, y no se compran sueltos', () => {
   const dinos = ['carnotauro', 'spinosaurus', 'triceratops', 'estegosaurio', 'pterodactilo', 'plesiosaurio'];
   const w = newWorld('T', 1, 1);
   w.coins = 100_000;
+  w.lab.built = true;
   for (const t of ['bosque', 'estanque', 'jurasico', 'valle']) addCorral(w, t);
   for (const s of dinos) {
-    assert.ok(SPECIES[s].price > 0, `${s} tiene precio y entra en la tienda`);
-    assert.equal(sim.canBuyAnimal(w, s).ok, false, `${s} bloqueado hasta conocerlo`);
+    assert.ok(SPECIES[s].price > 0 && SPECIES[s].dna > 0, `${s} tiene precio y hebra y entra en la tienda`);
+    assert.equal(sim.canReplicate(w, s).ok, false, `${s} bloqueado hasta tener su muestra`);
     w.unlocked.push(s);
-    const r = sim.buyAnimal(w, s);
-    assert.ok(r.ok, `${s}: ${r.msg}`);
+    assert.equal(sim.canBuyAnimal(w, s).ok, false, `${s} ya no se compra suelto`);
+    const r = sim.replicate(w, s, 0);
+    assert.ok(r.animal, `${s}: ${r.msg}`);
   }
   assert.equal(w.animals.filter((a) => dinos.includes(a.species)).length, 6);
 });

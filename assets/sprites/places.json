@@ -8,14 +8,16 @@
   "valle": 4,
   "estacion": 5,
   "criadero": 6,
-  "pradera_bloq": 7,
-  "bosque_bloq": 8,
-  "estanque_bloq": 9,
-  "jurasico_bloq": 10,
-  "valle_bloq": 11,
-  "estacion_bloq": 12,
-  "criadero_bloq": 13,
-  "vet": 14
+  "lab": 7,
+  "pradera_bloq": 8,
+  "bosque_bloq": 9,
+  "estanque_bloq": 10,
+  "jurasico_bloq": 11,
+  "valle_bloq": 12,
+  "estacion_bloq": 13,
+  "criadero_bloq": 14,
+  "lab_bloq": 15,
+  "vet": 16
  },
- "version": "dad1b22705"
+ "version": "ce8f87078b"
 }

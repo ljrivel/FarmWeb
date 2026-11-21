@@ -1472,6 +1472,25 @@ def pl_criadero(c):
     c.px(23, 36, hx("#ffd0dc"))
 
 
+def pl_lab(c):
+    """Laboratorio Hélice: edificio blanco con cúpula de cristal azul y una hélice de ADN en el letrero."""
+    c.ell(24, 43, 21, 4, hx("#a9d98a"))
+    c.rect(7, 24, 41, 41, hx("#fffaf0"))
+    c.rect(7, 38, 41, 41, hx("#d9e6f2"))                     # zócalo
+    c.ell(24, 24, 14, 12, hx("#8fc6f0"))                     # cúpula de cristal
+    c.rect(7, 24, 41, 27, hx("#fffaf0"))
+    c.ell(20, 19, 4, 3, hx("#d6efff"))                       # brillo de la cúpula
+    c.rect(11, 29, 16, 34, hx("#bfe4ff"))                    # ventanas
+    c.rect(32, 29, 37, 34, hx("#bfe4ff"))
+    c.rect(20, 31, 28, 41, hx("#b9a7ff"))                    # puerta lila
+    for k, y in enumerate(range(6, 15, 2)):                  # hélice de ADN sobre la cúpula
+        x = [2, 1, -1, -2, -1][k % 5]
+        c.px(24 + x, y, hx("#ff8fa8"))
+        c.px(24 - x, y, hx("#7fb8ff"))
+        if k % 2 == 0:
+            c.rect(24 - abs(x), y, 24 + abs(x), y, hx("#fff3a8"))
+
+
 def pl_vet(c):
     """Veterinaria: casita blanca con techo rosa, cruz y un huellita en la puerta."""
     c.ell(24, 43, 21, 4, hx("#a9d98a"))
@@ -1500,7 +1519,7 @@ def desaturate(img):
     return out
 
 
-PLACES = [("pradera", pl_pradera), ("bosque", pl_bosque), ("estanque", pl_estanque), ("jurasico", pl_jurasico), ("valle", pl_valle), ("estacion", pl_estacion), ("criadero", pl_criadero)]
+PLACES = [("pradera", pl_pradera), ("bosque", pl_bosque), ("estanque", pl_estanque), ("jurasico", pl_jurasico), ("valle", pl_valle), ("estacion", pl_estacion), ("criadero", pl_criadero), ("lab", pl_lab)]
 EXTRA_PLACES = [("vet", pl_vet)]  # lugares que no son corrales (sin versión bloqueada)
 
 
@@ -1698,6 +1717,37 @@ MAOMAO_CANDIDATOS = {
     "maomao_gato": (pt_maomao_gato, MAOMAO_LOOK, dict(face=_maomao_cara, gato=True)),
 }
 
+def pt_helice(c, p):
+    """Señor Hélice: una hebra de ADN con cabeza redonda y ojitos."""
+    import math
+    for y in range(14, 31):                                  # el cuerpo es una hélice que baja de la cabeza
+        x = round(6 * math.sin((y - 14) * 0.65))
+        c.ell(x, y, 1.6, 1.2, p["cloth"])
+        c.ell(-x, y, 1.6, 1.2, p["trim"])
+        if y % 3 == 0:
+            c.rect(-abs(x), y, abs(x), y, p["rung"])
+    c.ell(0, 12, 10, 10, p["cloth"])                         # cabeza
+
+
+def _helice_cara(c, expr, opts):
+    for sx in (-1, 1):
+        c.ell(sx * 4, 11, 3.2, 3.6, WHITE)                   # ojos de dibujos animados
+        c.ell(sx * 4 + (0 if expr != 2 else sx * -1), 12, 1.4, 1.6, EYE)
+        if expr == 2:                                        # triste: cejas caídas
+            for x, y in ((5, 6), (4, 6), (3, 7)):
+                c.px(sx * x, y, EYE)
+        c.rect(sx * 7, 15, sx * 8, 16, BLUSH)
+    if expr == 1:                                            # contento: sonrisa abierta
+        c.rect(-3, 16, 3, 18, MOUTH)
+        c.rect(-1, 18, 1, 18, BLUSH)
+    elif expr == 2:
+        for x, y in ((-3, 18), (-2, 17), (-1, 17), (0, 17), (1, 17), (2, 17), (3, 18)):
+            c.px(x, y, MOUTH)
+    else:
+        for x, y in ((-3, 16), (-2, 17), (-1, 18), (0, 18), (1, 18), (2, 17), (3, 16)):
+            c.px(x, y, MOUTH)
+
+
 PORTRAITS = [
     ("abuela", pt_abuela, dict(skin="#ffe0c8", hair="#e8e2f2", cloth="#ff8fb0", trim="#ffc4d6"), dict(glasses=True)),
     ("tomas", pt_tomas, dict(skin="#ffd9b8", hair="#8a5a3c", cloth="#8fdcc0", hat="#f3d27a", trim="#d9a85a"), dict(freckles=True)),
@@ -1706,6 +1756,7 @@ PORTRAITS = [
     ("lia", pt_lia, dict(skin="#efc4a4", hair="#8d6fd1", cloth="#c9b6f2", trim="#7fd8c8"), {}),
     ("mia", pt_mia, dict(skin="#ffe0c8", hair="#a0643e", cloth="#ffc9dc", trim="#ff7fa8"), dict(freckles=True)),
     ("mao", pt_maomao_gato, MAOMAO_LOOK, dict(face=_maomao_cara, gato=True)),   # Mao Mao: chibi de gato
+    ("helice", pt_helice, dict(cloth="#b9a7ff", trim="#ff9fc0", rung="#fff3a8"), dict(face=_helice_cara)),
     ("noa", pt_noa, dict(skin="#e8b994", hair="#2f7f86", cloth="#f7e08a", trim="#a6e0ec"), {}),
     ("bruno", pt_bruno, dict(skin="#f3cfae", hair="#5b4636", cloth="#ffd3a8", hat="#6aa5d8", trim="#a0643e"), {}),
 ]
