@@ -1,4 +1,6 @@
-# FarmWeb — Documento de diseño (v0.1)
+# FarmWeb — Documento de diseño (v0.1, con la fase 1 de la v2 ya hecha)
+
+> **Estado de la v2.** El rumbo actual está en [`docs/superpowers/specs/2026-11-20-farmweb-v2-diseno.md`](superpowers/specs/2026-11-20-farmweb-v2-diseno.md) (mezcla de Hay Day y Stardew Valley, un jugador por ahora) y su plan por fases. **Fase 1 hecha:** varios corrales, mapa y formato de mundo v2 con migración. Este documento sigue describiendo la base; donde dice «una granja» o «ampliaciones», hoy son corrales con nivel (capacidad = base del tipo + 4 por nivel). Las secciones de multijugador y nube (5 y 8) quedan en pausa por decisión del usuario.
 
 Nombre de trabajo: **FarmWeb**. Juego de granja **familiar y tierno** (hasta 4 jugadores), en el navegador de móvil y PC, con pixel art propio.
 
@@ -45,7 +47,7 @@ Dos adultos **de la misma especie**, con hambre < 60 y felicidad ≥ 60, y con e
 - Los híbridos entre especies quedan fuera de la v1.
 
 ### Economía
-Monedas, comida (se compra), productos (se venden), ampliaciones (más espacio, estanque). Los precios están en `src/data.js` para balancear fácil.
+Monedas, comida (se compra), productos (se venden), corrales (se construyen y se amplían hasta el nivel 4; el Jurásico llega por la historia). Los precios están en `src/data.js` para balancear fácil.
 
 ### Tiempo
 Se calcula con marcas de tiempo (`Date.now()`) y un generador aleatorio con semilla guardado en el mundo. Al volver, se simula lo ocurrido hasta **8 horas**. Esto hace la simulación determinista, fácil de probar y trasladable al servidor.
@@ -80,16 +82,17 @@ Tres capas:
 
 ```
 index.html, styles.css          Interfaz (HTML + Canvas)
-src/data.js                     Especies, comidas, productos, misiones (solo datos)
+src/data.js                     Especies, comidas, productos, tipos de corral, mapa, misiones (solo datos)
+src/migrate.js                  Pasa un mundo v1 al formato v2 (función pura)
 src/rng.js                      Aleatorio con semilla
 src/state.js                    Mundo nuevo, validación, exportar/importar, progreso offline
 src/sim.js                      Reglas: necesidades, crecimiento, producción, cría
 src/quests.js                   Progreso de misiones
 src/storage.js                  Guardado local y archivo (interfaz para la nube)
-src/render.js                   Dibujo en Canvas, animación de sprites
+src/render.js                   Dibujo en Canvas por escena (mapa y cada corral), animación de sprites
 src/ui.js                       Paneles: animales, tienda, mochila, misiones, mundo
 src/main.js                     Bucle principal
-assets/sprites/                 Atlas de animales, iconos y tiles (generados)
+assets/sprites/                 Atlas de animales, iconos, tiles y lugares del mapa (generados)
 tools/gen_sprites.py            Generador del pixel art (Python + PIL)
 tests/                          Pruebas de la lógica (node --test)
 ```
@@ -117,8 +120,7 @@ Para empezar, el estado completo del mundo vive en `worlds.state` (jsonb). Norma
 
 ## 10. Hoja de ruta
 
-1. **Base (esta versión):** sprites, granja jugable local, guardado local y por archivo, misiones capítulos 1–4.
-2. Cuentas y nube con Supabase + mundo familiar (4 personas).
-3. Publicación en Cloudflare Pages conectada al repo.
-4. Sonido y música suaves, más animales, misiones diarias, capítulo 5.
-5. Instalación como PWA (ícono en el móvil y modo sin conexión).
+1. **Base (v0.1, hecha):** sprites, granja jugable local, guardado local y por archivo, misiones capítulos 1–4.
+2. **Fase 1 de la v2 (hecha):** corrales por tipo (Pradera, Bosque, Estanque, Jurásico), mapa para viajar, formato de mundo v2 con migración y respaldo de los guardados anteriores.
+3. **Fases siguientes de la v2** (detalle en el diseño v2; aún sin aprobar para empezar): 2 cuidado profundo (corazones, enfermedades, veterinaria) · 3 economía (puestos y pedidos) · 4 pueblo y calendario · 5 historia y misiones secundarias · 6 pulido y publicación.
+4. Más adelante: cuentas y nube con Supabase + mundo familiar, publicación en Cloudflare Pages, sonido y música suaves, instalación como PWA.

@@ -17,6 +17,7 @@ from playwright.sync_api import sync_playwright
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SHOTS = sys.argv[1] if len(sys.argv) > 1 else tempfile.mkdtemp(prefix="farmweb-shots-")
 PORT = 8123
+FIXTURE = os.path.join(ROOT, "tests", "fixtures", "mundo-v1.farmweb.json")
 URL = f"http://127.0.0.1:{PORT}/index.html?debug"
 CHROME = next((p for p in ("/usr/bin/google-chrome", "/usr/bin/chromium") if os.path.exists(p)), None)
 problems = []
@@ -131,6 +132,124 @@ def play(browser, name, viewport, dpr, mobile):
     page.wait_for_timeout(300)
     check("dañado" in page.locator("#toast").inner_text(), "un archivo modificado se rechaza")
 
+
+    # ---- v2: mapa, corrales y migración de archivos
+    page.keyboard.press("Escape")
+    page.evaluate("farmweb.app.w.coins = 3000; farmweb.app.w.unlocked.push('mapache')")
+    page.click('[data-goto="mapa"]')
+    page.wait_for_timeout(300)
+    check(page.evaluate("farmweb.app.scene") == "mapa", "el botón Mapa abre el mapa")
+    page.screenshot(path=f"{SHOTS}/{name}-5-mapa.png")
+    gbox = page.locator("#game").bounding_box()
+
+    def tap(lx, ly):
+        page.mouse.click(gbox["x"] + lx * gbox["width"] / 320, gbox["y"] + ly * gbox["height"] / 224)
+
+    tap(232, 84)  # Bosque, aún sin construir
+    page.wait_for_timeout(300)
+    check(page.locator("#backdrop").is_visible() and "Corrales" in page.locator('.tab[aria-selected="true"]').inner_text(),
+          "tocar un corral bloqueado abre Tienda > Corrales")
+    page.screenshot(path=f"{SHOTS}/{name}-6-corrales.png")
+    page.locator('[data-key="build-bosque"]').click()
+    page.wait_for_timeout(200)
+    page.locator('[data-key="tab-animals"]').click()
+    page.locator('[data-key="buy-mapache"]').click()
+    page.wait_for_timeout(300)
+    page.keyboard.press("Escape")
+    check(page.evaluate("farmweb.app.scene") == "bosque", "comprar un mapache lleva al Bosque")
+    check(page.evaluate("farmweb.app.w.animals.some(a => a.species === 'mapache' && a.corral === 'bosque')"),
+          "el mapache vive en el Bosque")
+    page.screenshot(path=f"{SHOTS}/{name}-7-bosque.png")
+    page.click('[data-panel="animals"]')
+    page.wait_for_timeout(200)
+    heads = page.locator("#sheetBody h3").all_inner_texts()
+    check(any(h.startswith("Pradera") for h in heads) and any(h.startswith("Bosque 1/6") for h in heads),
+          f"Animales agrupa por corral {heads}")
+    page.keyboard.press("Escape")
+
+    # cargar el archivo de un mundo v1 (migra a v2)
+    page.click('[data-panel="world"]')
+    page.locator("#fileInput").set_input_files(FIXTURE)
+    page.wait_for_timeout(300)
+    page.locator('[data-key="imp-yes"]').click()
+    page.wait_for_timeout(400)
+    check(page.evaluate("farmweb.app.w.animals.length") == 8 and page.evaluate("farmweb.app.w.corrales.length") == 4
+          and page.evaluate("farmweb.app.w.coins") == 777,
+          "cargar el archivo v1: 8 animales, 4 corrales, 777 monedas")
+
+    # estando en el Bosque, cargar un mundo sin Bosque devuelve a la Pradera
+    page.evaluate("farmweb.app.goTo('bosque')")
+    check(page.evaluate("farmweb.app.scene") == "bosque", "se puede visitar el Bosque del mundo cargado")
+    fresh = page.evaluate("(async () => { const st = await import('/src/state.js'); return st.exportWorldText(st.newWorld()); })()")
+    fresh_path = os.path.join(SHOTS, "mundo-nuevo.farmweb.json")
+    open(fresh_path, "w").write(fresh)
+    page.click('[data-panel="world"]')
+    page.locator("#fileInput").set_input_files(fresh_path)
+    page.wait_for_timeout(300)
+    page.locator('[data-key="imp-yes"]').click()
+    page.wait_for_timeout(400)
+    check(page.evaluate("farmweb.app.scene") == "pradera", "cargar un mundo sin Bosque vuelve a la Pradera")
+    page.screenshot(path=f"{SHOTS}/{name}-8-sin-bosque.png")
+
+    check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
+    ctx.close()
+
+
+def migration(browser):
+    """Un guardado v1 ya existente en el navegador se migra al abrir y deja su respaldo."""
+    print("\n== migración v1 -> v2 en el navegador")
+    raw = open(FIXTURE, encoding="utf-8").read()
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    ctx.add_init_script(
+        "if (!sessionStorage.getItem('sembrado')) { sessionStorage.setItem('sembrado', '1');"
+        f" localStorage.setItem('farmweb:world:v1', {json.dumps(raw)}); }}")
+    page = ctx.new_page()
+    errors = []
+    page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(URL)
+    page.wait_for_function("document.getElementById('loading').hidden === true", timeout=15000)
+    # el archivo es de 2023: al abrirlo se aplican las 8 h máximas fuera de línea y pueden haber nacido crías
+    check(page.evaluate("[1,2,3,4,5,6,7,8].every(id => farmweb.app.w.animals.some(a => a.id === id))"),
+          "el guardado v1 abre con sus 8 animales originales (más las crías de la puesta al día)")
+    check(page.evaluate("farmweb.app.w.corrales.length") == 4, "y con 4 corrales")
+    check(page.evaluate("farmweb.app.w.coins") == 777, "y con 777 monedas")
+    check(page.evaluate("localStorage.getItem('farmweb:world:v1:respaldo-v1')") == raw, "queda el respaldo con el texto original")
+    page.screenshot(path=f"{SHOTS}/migracion-1-pradera.png")
+    page.evaluate("farmweb.app.saveNow(false)")
+    page.reload()
+    page.wait_for_function("document.getElementById('loading').hidden === true", timeout=15000)
+    check(page.evaluate("farmweb.app.w.animals.length") >= 8 and
+          json.loads(page.evaluate("localStorage.getItem('farmweb:world:v1')"))["version"] == 2,
+          "tras guardar y recargar queda en formato v2")
+    check(page.evaluate("localStorage.getItem('farmweb:world:v1:respaldo-v1')") == raw, "el respaldo sigue intacto")
+    check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
+    ctx.close()
+
+
+def small_phone(browser):
+    """Celular chico (360x740): la barra de 6 botones y el encabezado caben sin cortes."""
+    print("\n== celular chico 360x740")
+    ctx = browser.new_context(viewport={"width": 360, "height": 740}, device_scale_factor=3, is_mobile=True, has_touch=True)
+    page = ctx.new_page()
+    errors = []
+    page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(URL)
+    page.wait_for_function("document.getElementById('loading').hidden === true", timeout=15000)
+    page.wait_for_timeout(400)
+    check(page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1"), "sin desbordamiento horizontal")
+    check(page.locator("#dock button").count() == 6, "la barra tiene 6 botones")
+    clipped = page.evaluate("[...document.querySelectorAll('#dock button')].filter(b => b.scrollWidth > b.clientWidth + 1).map(b => b.textContent)")
+    check(not clipped, f"el texto de la barra no se corta {clipped}")
+    inside = page.evaluate("[...document.querySelectorAll('#dock button')].every(b => { const r = b.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth; })")
+    check(inside, "todos los botones caben en pantalla")
+    quest_ok = page.evaluate("(() => { const t = document.getElementById('questTitle'); return t.scrollWidth <= t.clientWidth + 1 && t.textContent.length > 3; })()")
+    check(quest_ok, "el título de la misión se lee completo")
+    page.screenshot(path=f"{SHOTS}/chico-1-inicio.png")
+    page.click('[data-goto="mapa"]')
+    page.wait_for_timeout(300)
+    page.screenshot(path=f"{SHOTS}/chico-2-mapa.png")
     check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
     ctx.close()
 
@@ -144,6 +263,8 @@ def main():
             browser = p.chromium.launch(executable_path=CHROME, args=["--no-sandbox"])
             play(browser, "movil", {"width": 390, "height": 844}, 3, True)
             play(browser, "pc", {"width": 1280, "height": 800}, 1, False)
+            migration(browser)
+            small_phone(browser)
             browser.close()
     finally:
         server.terminate()
