@@ -16,8 +16,19 @@ function run(w, ms, step = 5000) {
 test('el hambre baja con el tiempo y nunca pasa de 0', () => {
   const w = fresh();
   const a = w.animals[0];
-  run(w, 3 * 60 * MIN);
+  for (let i = 0; i < 600; i++) sim.tick(w, 30_000, { live: true }); // 5 h con el juego abierto
   assert.equal(a.fed, 0);
+});
+
+test('sin conexión nadie pasa hambre de más: la saciedad no baja del piso y el ánimo no cae', () => {
+  const w = fresh();
+  const a = w.animals[0];
+  a.fed = 80; a.happy = 70;
+  for (let i = 0; i < 960; i++) sim.tick(w, 30_000, { live: false }); // 8 h fuera
+  assert.equal(a.fed, BALANCE.offlineFedFloor);
+  assert.ok(a.happy >= 70, 'el ánimo no cae sin conexión');
+  for (let i = 0; i < 120; i++) sim.tick(w, 30_000, { live: true }); // con el juego abierto sí se vacía
+  assert.ok(a.fed < BALANCE.offlineFedFloor);
 });
 
 test('un bebé crece solo si come, y se vuelve adulto', () => {

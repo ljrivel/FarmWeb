@@ -55,9 +55,9 @@ export function tick(w, dt, opts = {}) {
   for (const a of w.animals) {
     if (a.away) continue; // en el nido del Criadero: su hambre y su ánimo quedan en pausa
     const sp = SPECIES[a.species];
-    a.fed = Math.max(0, a.fed - B.fedDecayPerSec * s);
+    a.fed = Math.max(live ? 0 : Math.min(a.fed, B.offlineFedFloor), a.fed - B.fedDecayPerSec * s);
     if (a.fed >= 50) a.happy = Math.min(100, a.happy + B.happyUpPerSec * s);
-    else if (a.fed < 25) a.happy = Math.max(0, a.happy - B.happyDownPerSec * s);
+    else if (live && a.fed < 25) a.happy = Math.max(0, a.happy - B.happyDownPerSec * s);
     if (crowded.has(a.corral)) a.happy = Math.max(0, a.happy - B.crowdPenaltyPerSec * s);
     if (a.petCd > 0) a.petCd = Math.max(0, a.petCd - dt);
     if (a.cool > 0) a.cool = Math.max(0, a.cool - dt);

@@ -22,7 +22,7 @@ El dueño es Luis Josué; **responde siempre en español**.
 | Qué | Comando |
 |---|---|
 | Jugar en local (PC y celular en la misma Wi-Fi) | doble clic a `iniciar.bat` o `npm start` |
-| Pruebas unitarias | `npm test` (deben pasar todas; hoy 185) |
+| Pruebas unitarias | `npm test` (deben pasar todas; hoy 186) |
 | Regenerar sprites | `npm run sprites` (Python + Pillow; escribe `assets/sprites/*`) |
 | Recorrido en navegador | `python tools/e2e_smoke.py <carpeta_capturas>` (Playwright + Chrome; hoy 364 comprobaciones) |
 
@@ -91,6 +91,8 @@ Mini lecciones por mecánica nueva (`LESSONS` en `src/tutorial.js`: vender, Cria
 el Señor Hélice, Mao Mao y Noa): salen solas al llegar a su capítulo (el Laboratorio, al abrirse), tras el tutorial y las escenas, y se guardan en
 `farmweb:ui:v1` (`lessons`); una partida avanzada no repite las de capítulos anteriores y las repite desde Mundo → Lecciones. `startTutorial(onDone, lesson)`
 sirve para ambos. Una mecánica nueva en el futuro = una lección más en `LESSONS`.
+Juego ocasional: la saciedad llena dura ~3 h (`fedDecayPerSec`), con hambre el ánimo cae en ~33 min, cada animal acumula hasta 6 productos (`maxReady`) y
+sin conexión la saciedad no baja de `offlineFedFloor` (25) y el ánimo no cae: ausentarse no castiga (solo con el juego abierto se vacía, enferma o pierde corazones).
 `tests/historia-completa.test.mjs` recorre toda la historia: añade ahí cualquier capítulo nuevo sin tocar más.
 
 ## Pendiente

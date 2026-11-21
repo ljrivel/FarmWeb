@@ -7,9 +7,10 @@ export const CORRAL_COSTS = [120, 250, 500, 900]; // cada nivel: +4 de capacidad
 export const MAX_ANIMALS_IMPORT = 60;
 
 export const BALANCE = {
-  fedDecayPerSec: 100 / (45 * 60), // saciedad llena dura ~45 min
+  fedDecayPerSec: 100 / (180 * 60), // saciedad llena dura ~3 h (juego ocasional)
+  offlineFedFloor: 25,              // sin conexión la saciedad no baja de aquí y el ánimo no cae: ausentarse no castiga
   happyUpPerSec: 0.25,
-  happyDownPerSec: 0.2,
+  happyDownPerSec: 0.05,
   crowdPenaltyPerSec: 0.05,
   favFeed: 60,
   otherFeed: 35,
@@ -24,7 +25,7 @@ export const BALANCE = {
   mutantTierOdds: { poco: 0.7, raro: 0.3 },
   shinyChance: 0.02,
   shinyChanceParent: 0.15,
-  maxReady: 3,
+  maxReady: 6,
   // ---- Fase 2B: corazones (afecto 0..5). 100 de cariño = 1 corazón.
   lovePerPet: 10,
   lovePerFav: 15,
