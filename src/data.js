@@ -31,6 +31,23 @@ export const BALANCE = {
 export const AREA = { x0: 28, x1: 292, y0: 66, y1: 204 };
 export const POND = { x0: 208, y0: 112, x1: 304, y1: 192 };
 
+// Corrales (v2): un corral por tipo en la fase 1, así que cada especie vive en uno solo.
+// `cap` es la capacidad base; cada nivel de ampliación suma 4. `cost` null = llega por la historia.
+const LAND = { x0: 28, x1: 292, y0: 66, y1: 204 };
+export const CORRAL_TYPES = {
+  pradera: { nombre: 'Pradera', species: ['gallina', 'gato', 'vaca', 'chanchito'], cap: 8, cost: 0, area: LAND, aquatic: false },
+  bosque: { nombre: 'Bosque', species: ['mapache'], cap: 6, cost: 300, area: LAND, aquatic: false },
+  estanque: { nombre: 'Estanque', species: ['ajolote', 'spinosaurus'], cap: 6, cost: 250, area: { x0: 52, x1: 268, y0: 104, y1: 196 }, aquatic: true },
+  jurasico: { nombre: 'Jurásico', species: ['carnotauro'], cap: 4, cost: null, area: LAND, aquatic: false },
+};
+export const CORRAL_TYPE_ORDER = ['pradera', 'bosque', 'estanque', 'jurasico'];
+export const MAX_CORRAL_LEVEL = CORRAL_COSTS.length;
+// Posición de cada lugar en el mapa (lienzo lógico 320x224).
+export const MAP_SPOTS = {
+  pradera: { x: 96, y: 156 }, bosque: { x: 232, y: 84 }, estanque: { x: 232, y: 160 }, jurasico: { x: 96, y: 80 },
+};
+export const corralTypeOf = (species) => CORRAL_TYPE_ORDER.find((t) => CORRAL_TYPES[t].species.includes(species));
+
 export const SPECIES = {
   gallina: {
     nombre: 'Gallina', food: 'grano', product: 'huevo', price: 40,
