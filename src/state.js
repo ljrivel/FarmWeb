@@ -2,43 +2,52 @@
 // exportación/importación con suma de verificación.
 
 import {
-  VERSION, BASE_CAPACITY, SPECIES, FOODS, PRODUCTS, QUESTS, AREA, POND,
+  VERSION, SPECIES, FOODS, PRODUCTS, QUESTS, CORRAL_TYPES, MAX_CORRAL_LEVEL, corralTypeOf,
   MAX_ANIMALS_IMPORT, MAX_OFFLINE_MS,
 } from './data.js';
 import { rand, randInt } from './rng.js';
+import { migrateWorld } from './migrate.js';
 
 export const FORMAT = 'farmweb-world';
 const INITIAL_UNLOCKED = ['gallina', 'gato', 'vaca'];
 const MAX_EGGS = 30;
 
-export const capacityFor = (corral) => BASE_CAPACITY + 4 * corral;
+// ------------------------------------------------------------------ corrales
+export const getCorral = (w, id) => w.corrales.find((c) => c.id === id);
+export const capacityOf = (w, id) => {
+  const c = getCorral(w, id);
+  return c ? CORRAL_TYPES[c.tipo].cap + 4 * c.nivel : 0;
+};
+/** El corral (construido) donde vive esta especie. */
+export const corralOfSpecies = (w, species) => w.corrales.find((c) => CORRAL_TYPES[c.tipo].species.includes(species));
 
-export function inPond(x, y) {
-  return x >= POND.x0 - 4 && x <= POND.x1 && y >= POND.y0 + 10 && y <= POND.y1 + 4;
+export function addCorral(w, tipo, nivel = 0) {
+  if (!CORRAL_TYPES[tipo]) throw new Error(`Tipo de corral desconocido: ${tipo}`);
+  const have = getCorral(w, tipo);
+  if (have) return have;
+  const c = { id: tipo, tipo, nombre: CORRAL_TYPES[tipo].nombre, nivel };
+  w.corrales.push(c);
+  return c;
 }
 
+/** La escena a mostrar: el mapa o un corral que exista; si no, la Pradera. */
+export const resolveScene = (w, scene) => (scene === 'mapa' || (typeof scene === 'string' && getCorral(w, scene)) ? scene : 'pradera');
+
 export function randomSpot(w, species) {
-  const aquatic = SPECIES[species].aquatic && w.upgrades.estanque;
-  if (aquatic) {
-    return {
-      x: POND.x0 + 16 + rand(w) * (POND.x1 - POND.x0 - 32),
-      y: POND.y0 + 24 + rand(w) * (POND.y1 - POND.y0 - 28),
-    };
-  }
-  let x = 0, y = 0;
-  for (let i = 0; i < 12; i++) {
-    x = AREA.x0 + rand(w) * (AREA.x1 - AREA.x0);
-    y = AREA.y0 + rand(w) * (AREA.y1 - AREA.y0);
-    if (!(w.upgrades.estanque && inPond(x, y))) break;
-  }
-  return { x, y };
+  const { area } = CORRAL_TYPES[corralTypeOf(species)];
+  return {
+    x: area.x0 + rand(w) * (area.x1 - area.x0),
+    y: area.y0 + rand(w) * (area.y1 - area.y0),
+  };
 }
 
 export function addAnimal(w, species, variant, stage = 'baby', opts = {}) {
   const sp = SPECIES[species];
+  const corral = corralOfSpecies(w, species);
+  if (!corral) throw new Error(`No hay corral para ${sp.nombre}.`);
   const pos = opts.pos || randomSpot(w, species);
   const a = {
-    id: w.nextId++, species, variant, shiny: !!opts.shiny, stage,
+    id: w.nextId++, species, variant, shiny: !!opts.shiny, stage, corral: corral.id,
     name: sp.names[randInt(w, sp.names.length)],
     fed: 80, happy: 70, growth: 0, prod: 0, ready: 0, cool: 0, petCd: 0,
     x: pos.x, y: pos.y, tx: pos.x, ty: pos.y, wait: 0,
@@ -52,12 +61,12 @@ export function newWorld(name = 'Granja de la familia', now = Date.now(), seed =
     v: VERSION,
     id: 'w' + now.toString(36) + (seed % 1296).toString(36),
     name, createdAt: now, lastTick: now, rng: seed >>> 0,
-    capacity: BASE_CAPACITY, coins: 100,
+    coins: 100,
     foods: { grano: 10 }, products: {},
+    corrales: [{ id: 'pradera', tipo: 'pradera', nombre: CORRAL_TYPES.pradera.nombre, nivel: 0 }],
     animals: [], eggs: [], nextId: 1,
     stats: { fed: 0, petted: 0, sold: 0, collected: {}, born: {}, bornTotal: 0, bought: {}, breedStarted: 0 },
     quests: { claimed: {} },
-    upgrades: { estanque: false, corral: 0 },
     unlocked: [...INITIAL_UNLOCKED],
     players: [{ id: 'local', name: 'Jugador 1' }],
     maxPlayers: 4,
@@ -92,10 +101,6 @@ function countMap(raw, allowed, max = 99999) {
 /** Reconstruye un mundo desde datos no confiables, copiando solo campos conocidos. */
 export function validateWorld(raw, now = Date.now()) {
   if (!isObj(raw)) throw new Error('El archivo no contiene un mundo válido.');
-  const upgrades = {
-    estanque: raw.upgrades?.estanque === true,
-    corral: int(raw.upgrades?.corral, 0, 4, 0),
-  };
   const w = {
     v: VERSION,
     id: text(raw.id, 40, 'w' + now.toString(36)),
@@ -103,11 +108,10 @@ export function validateWorld(raw, now = Date.now()) {
     createdAt: num(raw.createdAt, 0, now, now),
     lastTick: num(raw.lastTick, now - MAX_OFFLINE_MS * 1000, now, now),
     rng: int(raw.rng, 0, 4294967295, 12345) >>> 0,
-    capacity: capacityFor(upgrades.corral),
     coins: int(raw.coins, 0, 1e9, 0),
     foods: countMap(raw.foods, FOODS),
     products: countMap(raw.products, PRODUCTS),
-    animals: [], eggs: [], nextId: 1,
+    corrales: [], animals: [], eggs: [], nextId: 1,
     stats: {
       fed: int(raw.stats?.fed, 0, 1e9, 0),
       petted: int(raw.stats?.petted, 0, 1e9, 0),
@@ -119,11 +123,16 @@ export function validateWorld(raw, now = Date.now()) {
       breedStarted: int(raw.stats?.breedStarted, 0, 1e9, 0),
     },
     quests: { claimed: {} },
-    upgrades,
     unlocked: [...INITIAL_UNLOCKED],
     players: [{ id: 'local', name: text(raw.players?.[0]?.name, 24, 'Jugador 1') }],
     maxPlayers: 4,
   };
+  // Un corral por tipo (gana el primero); la Pradera siempre existe.
+  for (const c of (Array.isArray(raw.corrales) ? raw.corrales : [])) {
+    if (!isObj(c) || !CORRAL_TYPES[c.tipo] || getCorral(w, c.tipo)) continue;
+    addCorral(w, c.tipo, int(c.nivel, 0, MAX_CORRAL_LEVEL, 0)).nombre = text(c.nombre, 24, CORRAL_TYPES[c.tipo].nombre);
+  }
+  if (!getCorral(w, 'pradera')) w.corrales.unshift({ id: 'pradera', tipo: 'pradera', nombre: CORRAL_TYPES.pradera.nombre, nivel: 0 });
   if (Array.isArray(raw.unlocked)) {
     for (const s of raw.unlocked) {
       if (SPECIES[s] && !w.unlocked.includes(s)) w.unlocked.push(s);
@@ -141,14 +150,20 @@ export function validateWorld(raw, now = Date.now()) {
     w.nextId = Math.max(w.nextId, id + 1);
     return id;
   };
-  const inArea = (v, lo, hi, d) => num(v, lo, hi, d);
+  // El corral de un animal sale de su especie (se crea si falta); el dato del archivo no manda.
+  const homeOf = (species) => addCorral(w, corralTypeOf(species));
+  const spot = (corral, rx, ry) => {
+    const a = CORRAL_TYPES[corral.tipo].area;
+    return { x: num(rx, a.x0, a.x1, (a.x0 + a.x1) / 2), y: num(ry, a.y0, a.y1, (a.y0 + a.y1) / 2) };
+  };
 
   for (const a of (Array.isArray(raw.animals) ? raw.animals : []).slice(0, MAX_ANIMALS_IMPORT)) {
     if (!isObj(a) || !SPECIES[a.species]) continue;
     const sp = SPECIES[a.species];
-    const x = inArea(a.x, 0, 320, 160), y = inArea(a.y, 0, 224, 120);
+    const corral = homeOf(a.species);
+    const { x, y } = spot(corral, a.x, a.y);
     w.animals.push({
-      id: newId(a.id), species: a.species,
+      id: newId(a.id), species: a.species, corral: corral.id,
       variant: int(a.variant, 0, sp.variants.length - 1, 0),
       shiny: a.shiny === true,
       stage: a.stage === 'adult' ? 'adult' : 'baby',
@@ -162,12 +177,18 @@ export function validateWorld(raw, now = Date.now()) {
   for (const e of (Array.isArray(raw.eggs) ? raw.eggs : []).slice(0, MAX_EGGS)) {
     if (!isObj(e) || !SPECIES[e.species]) continue;
     const sp = SPECIES[e.species];
+    const corral = homeOf(e.species);
     w.eggs.push({
-      id: newId(e.id), species: e.species,
+      id: newId(e.id), species: e.species, corral: corral.id,
       variant: int(e.variant, 0, sp.variants.length - 1, 0), shiny: e.shiny === true,
       left: num(e.left, 0, sp.breed, sp.breed),
-      x: inArea(e.x, 0, 320, 160), y: inArea(e.y, 0, 224, 120),
+      ...spot(corral, e.x, e.y),
     });
+  }
+  // Un corral nunca queda más chico que sus habitantes: sube de nivel lo necesario.
+  for (const c of w.corrales) {
+    const n = [...w.animals, ...w.eggs].filter((x) => x.corral === c.id).length;
+    while (c.nivel < MAX_CORRAL_LEVEL && capacityOf(w, c.id) < n) c.nivel++;
   }
   if (!w.animals.length && !w.eggs.length) throw new Error('El mundo no tiene animales.');
   return w;
@@ -201,5 +222,5 @@ export function importWorldText(str, now = Date.now()) {
   if (checksum(JSON.stringify(obj.world)) !== obj.checksum) {
     throw new Error('El archivo está dañado o fue modificado (la suma de verificación no coincide).');
   }
-  return validateWorld(obj.world, now);
+  return validateWorld(migrateWorld(obj.world), now);
 }

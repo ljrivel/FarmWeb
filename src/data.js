@@ -1,6 +1,6 @@
 // Datos del juego: solo datos, sin lógica. Aquí se balancea y se agregan misiones.
 
-export const VERSION = 1;
+export const VERSION = 2;
 export const MIN = 60 * 1000;
 export const MAX_OFFLINE_MS = 8 * 60 * MIN;
 export const BASE_CAPACITY = 8;

@@ -1,7 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { newWorld, exportWorldText, importWorldText, validateWorld, checksum } from '../src/state.js';
-import { SPECIES } from '../src/data.js';
+import {
+  newWorld, exportWorldText, importWorldText, validateWorld, checksum,
+  capacityOf, getCorral, corralOfSpecies, addCorral, addAnimal, resolveScene,
+} from '../src/state.js';
+import { SPECIES, CORRAL_TYPES } from '../src/data.js';
 
 const NOW = 1_700_000_000_000;
 
@@ -12,6 +15,34 @@ test('mundo nuevo: 2 gallinas adultas, 100 monedas y 3 especies desbloqueadas', 
   assert.equal(w.coins, 100);
   assert.deepEqual(w.unlocked, ['gallina', 'gato', 'vaca']);
   assert.equal(w.maxPlayers, 4);
+  assert.deepEqual(w.corrales, [{ id: 'pradera', tipo: 'pradera', nombre: 'Pradera', nivel: 0 }]);
+  assert.equal(capacityOf(w, 'pradera'), 8);
+  assert.ok(w.animals.every((a) => a.corral === 'pradera'));
+  assert.equal('capacity' in w, false);
+  assert.equal('upgrades' in w, false);
+});
+
+test('corrales: capacidad por nivel, búsqueda por especie y animales sin corral', () => {
+  const w = newWorld('C', NOW, 3);
+  assert.equal(corralOfSpecies(w, 'mapache'), undefined);
+  assert.throws(() => addAnimal(w, 'mapache', 0), /corral/);
+  const b = addCorral(w, 'bosque', 2);
+  assert.deepEqual(b, { id: 'bosque', tipo: 'bosque', nombre: 'Bosque', nivel: 2 });
+  assert.equal(capacityOf(w, 'bosque'), CORRAL_TYPES.bosque.cap + 8);
+  assert.equal(corralOfSpecies(w, 'mapache').id, 'bosque');
+  assert.equal(getCorral(w, 'bosque'), b);
+  assert.equal(addAnimal(w, 'mapache', 0).corral, 'bosque');
+});
+
+test('resolveScene: el mapa y los corrales existentes valen; lo demás vuelve a la Pradera', () => {
+  const w = newWorld('S', NOW, 3);
+  assert.equal(resolveScene(w, 'mapa'), 'mapa');
+  assert.equal(resolveScene(w, 'pradera'), 'pradera');
+  assert.equal(resolveScene(w, 'bosque'), 'pradera');
+  assert.equal(resolveScene(w, undefined), 'pradera');
+  assert.equal(resolveScene(w, 'x'), 'pradera');
+  addCorral(w, 'bosque');
+  assert.equal(resolveScene(w, 'bosque'), 'bosque');
 });
 
 test('misma semilla, mismo mundo (determinista)', () => {
@@ -51,7 +82,7 @@ test('validateWorld sanea datos hostiles', () => {
     coins: -50, rng: 'abc',
     foods: { grano: 1e12, veneno: 5 },
     unlocked: ['gallina', 'dragon', 'ajolote'],
-    upgrades: { corral: 99, estanque: 'sí' },
+    corrales: [{ tipo: 'pradera', nivel: 99 }],
     animals: [
       { id: 1, species: 'gallina', variant: 99, stage: 'zombi', fed: 5000, happy: -3, x: 1e9, y: NaN, name: 'x'.repeat(500) },
       { id: 1, species: 'dragon' },
@@ -65,9 +96,8 @@ test('validateWorld sanea datos hostiles', () => {
   assert.equal(w.foods.grano, 99999);
   assert.equal(w.foods.veneno, undefined);
   assert.ok(w.unlocked.includes('ajolote') && !w.unlocked.includes('dragon'));
-  assert.equal(w.upgrades.corral, 4);
-  assert.equal(w.upgrades.estanque, false);
-  assert.equal(w.capacity, 24);
+  assert.equal(getCorral(w, 'pradera').nivel, 4);
+  assert.equal(capacityOf(w, 'pradera'), 24);
   assert.equal(w.animals.length, 2);
   const [a, b] = w.animals;
   assert.equal(a.variant, SPECIES.gallina.variants.length - 1);
@@ -78,6 +108,24 @@ test('validateWorld sanea datos hostiles', () => {
   assert.ok(a.name.length <= 24);
   assert.notEqual(a.id, b.id, 'ids duplicados se reasignan');
   assert.equal(b.ready, 3);
+});
+
+test('validateWorld sanea corrales hostiles', () => {
+  const w = validateWorld({
+    corrales: [{ tipo: 'pradera', nivel: 99 }, { tipo: 'pradera', nivel: 1 }, { tipo: 'volcan', nivel: 0 }],
+    animals: [
+      { species: 'mapache', corral: 'pradera', x: -50, y: 900 },
+      { species: 'gallina', corral: 'zzz' },
+    ],
+  }, NOW);
+  assert.deepEqual(w.corrales.map((c) => c.tipo).sort(), ['bosque', 'pradera']);
+  assert.equal(getCorral(w, 'pradera').nivel, 4, 'gana el primero y el nivel se limita');
+  const mapache = w.animals.find((a) => a.species === 'mapache');
+  const gallina = w.animals.find((a) => a.species === 'gallina');
+  assert.equal(mapache.corral, 'bosque');
+  assert.equal(gallina.corral, 'pradera');
+  const area = CORRAL_TYPES.bosque.area;
+  assert.ok(mapache.x >= area.x0 && mapache.x <= area.x1 && mapache.y >= area.y0 && mapache.y <= area.y1);
 });
 
 test('un mundo sin animales ni huevos se rechaza', () => {
