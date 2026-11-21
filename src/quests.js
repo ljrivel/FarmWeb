@@ -24,6 +24,8 @@ export function progress(w, q) {
     case 'born': current = g.species ? (st.born[g.species] || 0) : st.bornTotal; break;
     case 'corral': current = getCorral(w, g.tipo) ? 1 : 0; target = 1; break;
     case 'owncount': current = w.animals.length; break;
+    case 'hearts': current = w.animals.reduce((m, a) => Math.max(m, a.hearts || 0), 0); break;
+    case 'cured': current = st.cured || 0; break;
     case 'own':
       current = w.animals.filter((a) => a.species === g.species && (!g.stage || a.stage === g.stage)).length;
       break;

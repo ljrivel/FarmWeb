@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { newWorld, addAnimal, addCorral, getCorral } from '../src/state.js';
 import * as sim from '../src/sim.js';
 import { activeQuest, progress, claim } from '../src/quests.js';
-import { QUESTS, SPECIES, FOODS, PRODUCTS, CORRAL_TYPES } from '../src/data.js';
+import { QUESTS, SPECIES, FOODS, PRODUCTS, CORRAL_TYPES, CHARACTERS, CHAPTERS } from '../src/data.js';
 
 const fresh = () => newWorld('T', 1_700_000_000_000, 9);
 
@@ -112,4 +112,19 @@ test('el progreso nunca supera la meta', () => {
   w.stats.fed = 500;
   const p = progress(w, QUESTS[0]);
   assert.equal(p.current, 3);
+});
+
+test('historia: personajes válidos, capítulo 5 al final y meta de corazones', () => {
+  for (const q of QUESTS) assert.ok(CHARACTERS[q.who], `${q.id}: personaje ${q.who}`);
+  for (const q of QUESTS) assert.ok(CHAPTERS[q.ch], `${q.id}: capítulo`);
+  const chs = QUESTS.map((q) => q.ch);
+  assert.deepEqual(chs, [...chs].sort((a, b) => a - b), 'capítulos en orden');
+  // los ids de la v1 siguen en el mismo orden (los guardados dependen de ellos)
+  const v1 = ['c1-carta', 'c1-huevos', 'c1-vender', 'c1-gato', 'c1-cria', 'c1-cuaderno', 'c2-mapache', 'c2-trufa', 'c2-estanque', 'c2-burbuja', 'c3-tormenta', 'c3-carnotauro', 'c4-pista', 'c4-expedicion', 'c4-spino'];
+  assert.deepEqual(QUESTS.slice(0, v1.length).map((q) => q.id), v1);
+  const w = fresh();
+  const q = QUESTS.find((x) => x.goal.type === 'hearts');
+  assert.equal(progress(w, q).done, false);
+  w.animals[1].hearts = q.goal.n;
+  assert.equal(progress(w, q).done, true);
 });

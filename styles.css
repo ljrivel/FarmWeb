@@ -365,3 +365,12 @@ input.text {
 .meters.tight + .sick-note, .group .sick-note { padding: 4px 8px; }
 .sick-line { display: flex; align-items: center; gap: 6px; font-weight: 700; color: var(--pink-d); }
 .empty { display: grid; justify-items: center; gap: 8px; padding: 18px 8px; text-align: center; color: var(--ink-soft); }
+
+/* ---------- quién habla en las misiones ---------- */
+.speaker { display: flex; align-items: center; gap: 8px; margin: 2px 0; }
+.avatar {
+  display: inline-grid; place-items: center; flex: none;
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 2px solid var(--line); font-weight: 800; font-size: .85rem; color: var(--ink);
+}
+.quest-text-body { line-height: 1.5; }

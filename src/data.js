@@ -155,61 +155,89 @@ export const PRODUCTS = {
   escama_rio: { nombre: 'Escama de río', price: 45 },
 };
 
+// Personajes: hablan en las misiones (campo `who`). `rol` explica su lugar en la historia.
+export const CHARACTERS = {
+  abuela: { nombre: 'Abuela Cosi', rol: 'Dejó la granja a la familia y escribe cartas desde lejos', color: '#ff8fb0' },
+  tomas: { nombre: 'Tomás', rol: 'El vecino curioso que ayuda en la granja', color: '#8fdcc0' },
+  pita: { nombre: 'Dra. Pita', rol: 'La veterinaria del pueblo', color: '#bfe4ff' },
+  ramon: { nombre: 'Don Ramón', rol: 'El comerciante que compra tus productos', color: '#ffe08a' },
+  lia: { nombre: 'Lía', rol: 'Guía del río perdido, amiga de la abuela de joven', color: '#c9b6f2' },
+};
+
 // Misiones de historia, en orden. Meta: { type, ... } (ver quests.js).
 // Recompensa: { coins, foods: {comida: n}, unlock: [especie], gift: especie }
+// Los `id` y las metas de los capítulos 1 a 4 no cambian (los guardados dependen de ellos); solo se
+// enriquecieron los textos. Las misiones nuevas van siempre al final para no hacer retroceder a nadie.
 export const QUESTS = [
   // Capítulo 1 — La granja de la abuela
-  { id: 'c1-carta', ch: 1, title: 'Una carta de la abuela',
-    text: 'Querida familia: les dejo mi granja y a mis gallinitas. Empiecen dándoles de comer. ¡Con cariño, abuela Cosi!',
+  { id: 'c1-carta', ch: 1, who: 'abuela', title: 'Una carta de la abuela',
+    text: 'Querida familia: les dejo mi granja y a mis gallinitas. Yo me voy de viaje a terminar algo que empecé hace muchos años. Empiecen dándoles de comer: ellas les enseñarán el resto. ¡Con cariño, abuela Cosi!',
     goal: { type: 'fed', n: 3 }, reward: { coins: 20 } },
-  { id: 'c1-huevos', ch: 1, title: 'Los primeros huevitos',
-    text: 'Cuando una gallina tiene un huevo listo aparece una burbuja sobre ella. ¡Tócala para recogerlo!',
+  { id: 'c1-huevos', ch: 1, who: 'tomas', title: 'Los primeros huevitos',
+    text: '¡Hola! Soy Tomás, vivo al lado. Tu abuela siempre me dejaba ayudar. Cuando una gallina tiene un huevo listo aparece una burbuja sobre ella: ¡tócala para recogerlo!',
     goal: { type: 'collect', product: 'huevo', n: 3 }, reward: { coins: 30, foods: { grano: 5 } } },
-  { id: 'c1-vender', ch: 1, title: 'La primera venta',
-    text: 'Abre la mochila y vende lo que recogiste. Las monedas sirven para comprar comida y nuevos amigos.',
+  { id: 'c1-vender', ch: 1, who: 'ramon', title: 'La primera venta',
+    text: 'Buenos días. Le compraba huevos a la señora Cosi todas las semanas, y no pienso dejar de hacerlo. Abre la mochila y véndeme lo que recogiste: con las monedas podrás comprar comida y nuevos amigos.',
     goal: { type: 'sold', n: 3 }, reward: { coins: 25 } },
-  { id: 'c1-gato', ch: 1, title: 'Un amiguito peludo',
-    text: 'El granero tiene ratoncitos traviesos. Compra un gatito en la tienda.',
+  { id: 'c1-gato', ch: 1, who: 'tomas', title: 'Un amiguito peludo',
+    text: '¡Oí ruiditos en el granero! Son ratoncitos traviesos que se comen el grano. Tu abuela tenía un gato que los espantaba con solo mirarlos. Compra un gatito en la tienda.',
     goal: { type: 'bought', species: 'gato', n: 1 }, reward: { foods: { pescadito: 5 } } },
-  { id: 'c1-cria', ch: 1, title: '¡Una gallinita!',
-    text: 'Si dos gallinas están felices y bien comidas, ponen un huevo especial. Cuídalas y espera.',
+  { id: 'c1-cria', ch: 1, who: 'abuela', title: '¡Una gallinita!',
+    text: 'Segunda carta: «Si dos gallinas están felices y bien comidas, ponen un huevo especial. Así empezó todo para mí: con una sola gallinita que nació una mañana de primavera.»',
     goal: { type: 'born', species: 'gallina', n: 1 }, reward: { coins: 60 } },
-  { id: 'c1-cuaderno', ch: 1, title: 'El cuaderno de la abuela',
-    text: 'Entre las páginas hay dibujos de amigos del bosque. Acaricia a tus animales para ganarte su confianza.',
+  { id: 'c1-cuaderno', ch: 1, who: 'tomas', title: 'El cuaderno de la abuela',
+    text: 'Encontré esto debajo del heno: ¡el cuaderno de tu abuela! Tiene dibujos de amigos del bosque y una página arrancada… Dice que para ganarte la confianza de un animal hay que acariciarlo mucho.',
     goal: { type: 'petted', n: 5 }, reward: { coins: 40, unlock: ['mapache', 'chanchito'] } },
 
   // Capítulo 2 — Amigos del bosque
-  { id: 'c2-mapache', ch: 2, title: 'Un visitante con antifaz',
-    text: 'Algo se mueve entre los arbustos… ¡un mapache curioso! Construye el corral del Bosque en el mapa y dale la bienvenida.',
+  { id: 'c2-mapache', ch: 2, who: 'tomas', title: 'Un visitante con antifaz',
+    text: 'Algo se mueve entre los arbustos… ¡es el mapache del cuaderno! Le encantan las cosas que brillan. Construye el corral del Bosque en el mapa y dale la bienvenida.',
     goal: { type: 'bought', species: 'mapache', n: 1 }, reward: { coins: 30, foods: { bayas: 5 } } },
-  { id: 'c2-trufa', ch: 2, title: 'Trufas escondidas',
-    text: 'El chanchito tiene un olfato increíble. Consigue una trufa.',
+  { id: 'c2-trufa', ch: 2, who: 'ramon', title: 'Trufas escondidas',
+    text: 'En el pueblo nadie ha probado una trufa en años. Dicen que los chanchitos de la señora Cosi las encontraban hasta bajo la nieve. Consígueme una y te pagaré bien.',
     goal: { type: 'collect', product: 'trufa', n: 1 }, reward: { coins: 80 } },
-  { id: 'c2-estanque', ch: 2, title: 'Un estanque para refrescarse',
-    text: 'En el cuaderno hay un dibujo de un animalito rosa que vive en el agua. Necesita un estanque.',
+  { id: 'c2-estanque', ch: 2, who: 'abuela', title: 'Un estanque para refrescarse',
+    text: 'Tercera carta: «En el cuaderno hay un animalito rosa que sonríe todo el tiempo. Lo conocí junto a un río que ya nadie encuentra. Necesita un estanque: constrúyanlo y vendrá.»',
     goal: { type: 'corral', tipo: 'estanque' }, reward: { coins: 60, foods: { gusanito: 6 }, unlock: ['ajolote'] } },
-  { id: 'c2-burbuja', ch: 2, title: 'Burbujas de colores',
-    text: '¡Ya puedes adoptar un ajolote! Cuando sea grande, recoge una burbuja.',
+  { id: 'c2-burbuja', ch: 2, who: 'tomas', title: 'Burbujas de colores',
+    text: '¡Ya puedes adoptar un ajolote! Mi hermanita dice que sus burbujas traen buena suerte. Cuando sea grande, recoge una burbuja.',
     goal: { type: 'collect', product: 'burbuja', n: 1 }, reward: { coins: 100 } },
 
   // Capítulo 3 — El huevo misterioso
-  { id: 'c3-tormenta', ch: 3, title: 'La gran tormenta',
-    text: 'Esta noche hubo una tormenta enorme y algo brilla en el corral. Cuida a 6 animales para mantener la granja animada.',
+  { id: 'c3-tormenta', ch: 3, who: 'tomas', title: 'La gran tormenta',
+    text: 'Anoche hubo una tormenta enorme y los animales estaban asustados. Ahora algo brilla en el corral… ¡un huevo gigante! Mantén la granja animada cuidando a 6 animales mientras lo vigilamos.',
     goal: { type: 'owncount', n: 6 }, reward: { coins: 100, unlock: ['carnotauro'], corral: 'jurasico', gift: 'carnotauro' } },
-  { id: 'c3-carnotauro', ch: 3, title: 'El bebé carnotauro',
-    text: '¡Del huevo misterioso nació un carnotauro! Es tierno aunque tenga cuernitos. Dale carnita hasta que crezca.',
+  { id: 'c3-carnotauro', ch: 3, who: 'pita', title: 'El bebé carnotauro',
+    text: 'Soy la Dra. Pita. Vine en cuanto me contaron… ¡nunca vi un carnotauro! Es tierno aunque tenga cuernitos. Dale carnita hasta que crezca y, si algún animal se enferma, la Veterinaria está en el mapa.',
     goal: { type: 'own', species: 'carnotauro', stage: 'adult', n: 1 }, reward: { coins: 200, foods: { carnita: 5 } } },
 
   // Capítulo 4 — El río perdido
-  { id: 'c4-pista', ch: 4, title: 'Una escama brillante',
-    text: 'Entre las escamas de fuego aparece un mapa del río perdido. Recoge una escama de fuego para estudiarlo.',
+  { id: 'c4-pista', ch: 4, who: 'tomas', title: 'Una escama brillante',
+    text: '¡Mira! Entre las escamas de fuego hay un dibujo igual a la página arrancada del cuaderno: es un mapa del río perdido. Recoge una escama de fuego para estudiarlo.',
     goal: { type: 'collect', product: 'escama_fuego', n: 1 }, reward: { coins: 150, foods: { pescadito: 10 } } },
-  { id: 'c4-expedicion', ch: 4, title: 'Preparando la expedición',
-    text: 'Para llegar al río hay que reunir provisiones. Vende 15 productos en total.',
+  { id: 'c4-expedicion', ch: 4, who: 'ramon', title: 'Preparando la expedición',
+    text: 'Así que van al río perdido… La señora Cosi partió hacia allá hace meses. Para llegar hay que reunir provisiones: véndeme 15 productos en total y les armo la mochila.',
     goal: { type: 'sold', n: 15 }, reward: { coins: 100, unlock: ['spinosaurus'], gift: 'spinosaurus' } },
-  { id: 'c4-spino', ch: 4, title: 'Un gigante tierno',
-    text: '¡Un spinosaurus bebé te siguió desde el río! Necesita el estanque y mucho pescadito para crecer.',
+  { id: 'c4-spino', ch: 4, who: 'lia', title: 'Un gigante tierno',
+    text: 'Me llamo Lía y cuido el río. Este spinosaurus bebé los siguió hasta casa… y lleva una cinta rosa atada a la cola: ¡es la cinta de Cosi! Necesita el estanque y mucho pescadito para crecer.',
     goal: { type: 'own', species: 'spinosaurus', stage: 'adult', n: 1 }, reward: { coins: 300 } },
+
+  // Capítulo 5 — El festival de la granja (final)
+  { id: 'c5-invitacion', ch: 5, who: 'ramon', title: 'Una invitación especial',
+    text: 'El pueblo quiere celebrar el Festival de la Cosecha… ¡en esta granja! Hace años que no se hace. Para recibir a todos, la granja tiene que estar llena de vida: cuida a 10 animales.',
+    goal: { type: 'owncount', n: 10 }, reward: { coins: 150, foods: { heno: 5, grano: 5 } } },
+  { id: 'c5-carta', ch: 5, who: 'lia', title: 'La carta del río',
+    text: 'Traigo una carta que la corriente dejó en mi orilla. Es de Cosi: «No me fui para siempre. Estaba en el río cuidando los últimos nidos de dinosaurios. El huevo de la tormenta era uno de ellos: lo mandé con la crecida para que lo cuidaran ustedes.» Gánate la confianza de un animal hasta tener 2 corazones.',
+    goal: { type: 'hearts', n: 2 }, reward: { coins: 120, foods: { carnita: 3, pescadito: 3 } } },
+  { id: 'c5-puesto', ch: 5, who: 'ramon', title: 'El puesto del festival',
+    text: 'Todo festival necesita un puesto con productos de la granja. Junta y vende 40 productos en total: con lo que ganes compraremos guirnaldas y faroles.',
+    goal: { type: 'sold', n: 40 }, reward: { coins: 200 } },
+  { id: 'c5-crias', ch: 5, who: 'pita', title: 'Familias felices',
+    text: 'Para el desfile de los bebés quiero ver muchas crías sanas. Que nazcan 8 crías en total en la granja, y ya sabes: animales bien comidos y contentos casi nunca se enferman.',
+    goal: { type: 'born', n: 8 }, reward: { coins: 150, foods: { gusanito: 4, bayas: 4 } } },
+  { id: 'c5-festival', ch: 5, who: 'abuela', title: '¡El festival!',
+    text: 'Suenan las campanitas… ¡es la abuela Cosi, que volvió para el festival! «Ustedes no solo cuidaron mi granja: la hicieron suya. Ahora es de ustedes de verdad.» Para el gran cierre, acaricia a tus animales 40 veces en total.',
+    goal: { type: 'petted', n: 40 }, reward: { coins: 500 } },
 ];
 
 export const CHAPTERS = {
@@ -217,4 +245,7 @@ export const CHAPTERS = {
   2: 'Amigos del bosque',
   3: 'El huevo misterioso',
   4: 'El río perdido',
+  5: 'El festival de la granja',
 };
+/** Epílogo que se muestra al terminar la historia. */
+export const EPILOGUE = 'La abuela Cosi se quedó a vivir en la casita junto al estanque. Cada tarde se sienta con Tomás, Lía y la Dra. Pita a mirar cómo juegan los animales, y dice que esta es la granja más feliz que conoció. La historia terminó, pero la granja sigue: quedan misiones secundarias, crías raras y secretos por descubrir.';

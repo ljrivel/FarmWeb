@@ -2,7 +2,7 @@
 // Todo el texto dinámico se inserta con textContent / nodos de texto (nunca innerHTML).
 
 import {
-  SPECIES, ORDER, FOODS, PRODUCTS, QUESTS, CHAPTERS, BALANCE, CORRAL_TYPES, corralTypeOf,
+  SPECIES, ORDER, FOODS, PRODUCTS, QUESTS, CHAPTERS, CHARACTERS, EPILOGUE, BALANCE, CORRAL_TYPES, corralTypeOf,
   rarityOf, rarityLabel, MAX_HEARTS, DISEASES,
 } from './data.js';
 import { spriteRow } from './render.js';
@@ -135,8 +135,8 @@ export function createUI(app) {
     const q = activeQuest(w);
     const chip = $('questChip');
     if (!q) {
-      $('questTitle').textContent = 'Historia al día';
-      $('questProg').textContent = 'Pronto: Capítulo 5';
+      $('questTitle').textContent = 'Historia completa';
+      $('questProg').textContent = 'Quedan secundarias y secretos';
       chip.classList.remove('done');
     } else {
       const p = progress(w, q);
@@ -405,6 +405,15 @@ export function createUI(app) {
         : h('p', { class: 'muted', text: 'Sin comida. Puedes comprar en la tienda.' }));
   }
 
+  /** Quién habla en una misión: inicial en un círculo de color (decorativo) y su nombre y rol en texto. */
+  function speaker(id) {
+    const c = CHARACTERS[id];
+    if (!c) return null;
+    const dot = h('span', { class: 'avatar', 'aria-hidden': 'true', text: c.nombre.replace(/^(Dra\.|Don|Abuela)\s+/, '')[0] });
+    dot.style.background = c.color;
+    return h('p', { class: 'speaker' }, dot, h('span', null, h('strong', { text: c.nombre }), h('span', { class: 'muted small', text: ` · ${c.rol}` })));
+  }
+
   // ---- panel: misiones
   function panelQuests() {
     const w = W();
@@ -417,14 +426,16 @@ export function createUI(app) {
       return h('div', { class: 'quest-card' },
         h('p', { class: 'chapter', text: `Capítulo ${q.ch} · ${CHAPTERS[q.ch]}` }),
         h('h3', { text: q.title }),
-        h('p', { text: q.text }),
+        speaker(q.who),
+        h('p', { class: 'quest-text-body', text: q.text }),
         h('div', { class: 'bar quest', role: 'progressbar', 'aria-label': 'Progreso de la misión', 'aria-valuemin': '0', 'aria-valuemax': String(p.target), 'aria-valuenow': String(p.current) }, fill),
         h('p', { class: 'small', text: `Progreso: ${p.current} de ${p.target}` }),
         h('p', { class: 'small' }, h('strong', { text: 'Premio: ' }), rewardText(q.reward)),
         btn(p.done ? '¡Reclamar premio!' : 'Aún falta', () => app.claimQuest(), { cls: 'primary', disabled: !p.done, key: 'claim' }));
     })() : h('div', { class: 'quest-card' },
-      h('h3', { text: '¡Historia al día!' }),
-      h('p', { text: 'Terminaste todas las misiones disponibles. Pronto llegará el Capítulo 5: Festival de la granja.' }));
+      h('p', { class: 'chapter', text: 'Epílogo' }),
+      h('h3', { text: '¡Historia completa!' }),
+      h('p', { text: EPILOGUE }));
     return h('div', null, card,
       done.length > 0 && h('h3', { text: 'Completadas' }),
       h('ul', { class: 'done-list' }, done.map((x) => h('li', null, h('span', { class: 'ok', 'aria-hidden': 'true', text: '✓ ' }), x.title))));
