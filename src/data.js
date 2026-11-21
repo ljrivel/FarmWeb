@@ -69,12 +69,13 @@ export const CORRAL_TYPES = {
   bosque: { nombre: 'Bosque', species: ['mapache', 'conejo'], cap: 6, cost: 300, area: LAND, aquatic: false },
   estanque: { nombre: 'Estanque', species: ['ajolote', 'spinosaurus', 'pato'], cap: 6, cost: 250, area: { x0: 52, x1: 268, y0: 104, y1: 196 }, aquatic: true },
   jurasico: { nombre: 'Jurásico', species: ['carnotauro'], cap: 4, cost: null, area: LAND, aquatic: false },
+  valle: { nombre: 'Valle', species: ['triceratops', 'estegosaurio'], cap: 6, cost: null, area: LAND, aquatic: false },
 };
-export const CORRAL_TYPE_ORDER = ['pradera', 'bosque', 'estanque', 'jurasico'];
+export const CORRAL_TYPE_ORDER = ['pradera', 'bosque', 'estanque', 'jurasico', 'valle'];
 export const MAX_CORRAL_LEVEL = CORRAL_COSTS.length;
 // Posición de cada lugar en el mapa (lienzo lógico 320x224).
 export const MAP_SPOTS = {
-  pradera: { x: 96, y: 156 }, bosque: { x: 232, y: 84 }, estanque: { x: 232, y: 160 }, jurasico: { x: 96, y: 80 },
+  pradera: { x: 96, y: 156 }, bosque: { x: 232, y: 84 }, estanque: { x: 232, y: 160 }, jurasico: { x: 96, y: 80 }, valle: { x: 164, y: 124 },
 };
 // La Veterinaria no es un corral: siempre está abierta y no cuenta para las metas de corrales.
 export const VET_SPOT = { x: 164, y: 48 };
@@ -152,6 +153,20 @@ export const SPECIES = {
     variants: ['Amarillo', 'Blanco', 'Menta', 'Rosado'],
     names: ['Cuac', 'Patito', 'Plumón', 'Charco', 'Lulú'],
   },
+  triceratops: {
+    nombre: 'Triceratops', food: 'helecho', product: 'cuerno_cristal', price: null,
+    dato: 'Sus cuernos brillan como cristal cuando está contento.',
+    grow: 10 * MIN, prod: 360 * 1000, breed: 8 * MIN, aquatic: false,
+    variants: ['Verde', 'Arena', 'Cielo', 'Atardecer'],
+    names: ['Tri', 'Cuernito', 'Frill', 'Rocky', 'Bambú'],
+  },
+  estegosaurio: {
+    nombre: 'Estegosaurio', food: 'helecho', product: 'placa_dorada', price: null,
+    dato: 'Deja placas doradas cuando duerme bien.',
+    grow: 10 * MIN, prod: 360 * 1000, breed: 8 * MIN, aquatic: false,
+    variants: ['Oliva', 'Lila', 'Coral', 'Turquesa'],
+    names: ['Placas', 'Estego', 'Lomito', 'Rocío', 'Púas'],
+  },
 };
 export const ORDER = Object.keys(SPECIES);
 
@@ -174,6 +189,7 @@ export const FOODS = {
   carnita: { nombre: 'Carnita', price: 18 },
   gusanito: { nombre: 'Gusanitos', price: 14 },
   zanahoria: { nombre: 'Zanahoria', price: 12 },
+  helecho: { nombre: 'Helecho', price: 14 },
 };
 
 export const PRODUCTS = {
@@ -187,6 +203,8 @@ export const PRODUCTS = {
   escama_rio: { nombre: 'Escama de río', price: 45 },
   lana: { nombre: 'Lanita', price: 18 },
   pluma: { nombre: 'Pluma', price: 22 },
+  cuerno_cristal: { nombre: 'Cuernito de cristal', price: 45 },
+  placa_dorada: { nombre: 'Placa dorada', price: 45 },
 };
 
 // Personajes: hablan en las misiones (campo `who`). `rol` explica su lugar en la historia.
@@ -197,6 +215,7 @@ export const CHARACTERS = {
   ramon: { nombre: 'Don Ramón', rol: 'El comerciante que compra tus productos', color: '#ffe08a' },
   lia: { nombre: 'Lía', rol: 'Guía del río perdido, amiga de la abuela de joven', color: '#c9b6f2' },
   mia: { nombre: 'Mía', rol: 'La hermanita de Tomás, coleccionista de cosas suaves', color: '#ffc9dc' },
+  noa: { nombre: 'Noa', rol: 'Paleontóloga joven que llega a estudiar el valle', color: '#a6e0ec' },
   bruno: { nombre: 'Bruno', rol: 'El cartero del pueblo, que trae las cartas de la abuela', color: '#ffd3a8' },
 };
 
@@ -274,7 +293,28 @@ export const QUESTS = [
   { id: 'c5-festival', ch: 5, who: 'abuela', title: '¡El festival!',
     text: 'Suenan las campanitas… ¡es la abuela Cosi, que volvió para el festival! «Ustedes no solo cuidaron mi granja: la hicieron suya. Ahora es de ustedes de verdad.» Para el gran cierre, acaricia a tus animales 40 veces en total.',
     goal: { type: 'petted', n: 40 }, reward: { coins: 500 } },
+
+  // Capítulo 6 — El valle escondido
+  { id: 'c6-camino', ch: 6, who: 'lia', title: 'El camino del río',
+    text: 'El río volvió a abrirse: pasó por el festival y se quedó cantando. Para que el valle los acepte, los animales tienen que confiar en ustedes. Consigue que uno tenga 3 corazones y te llevo.',
+    goal: { type: 'hearts', n: 3 }, reward: { coins: 200, corral: 'valle', unlock: ['triceratops', 'estegosaurio'], gift: 'triceratops' } },
+  { id: 'c6-noa', ch: 6, who: 'noa', title: 'Una visitante con lupa',
+    text: '¡Hola! Soy Noa, paleontóloga. Seguí unas huellas imposibles hasta aquí… ¡y encontré un triceratops bebé! Prometo no asustarlo. Cuídalo hasta que sea adulto y déjame verlo crecer.',
+    goal: { type: 'own', species: 'triceratops', stage: 'adult', n: 1 }, reward: { coins: 150, foods: { helecho: 6 }, gift: 'estegosaurio' } },
+  { id: 'c6-nombres', ch: 6, who: 'noa', title: 'Nombres para el cuaderno',
+    text: 'Cada animal del valle tendrá su ficha en mi cuaderno de campo, con su nombre y su especie. Ponle nombre a 3 de tus animales y los anoto.',
+    goal: { type: 'named', n: 3 }, reward: { coins: 100 } },
+  { id: 'c6-cristal', ch: 6, who: 'noa', title: 'Cuernitos de cristal',
+    text: 'Los cuernos del triceratops brillan como cristal cuando está contento. Recoge 3 cuernitos de cristal y los uso para dibujar el mapa del valle.',
+    goal: { type: 'collect', product: 'cuerno_cristal', n: 3 }, reward: { coins: 180 } },
+  { id: 'c6-placas', ch: 6, who: 'noa', title: 'Placas doradas',
+    text: '¡El estegosaurio deja placas doradas cuando duerme bien! Recoge 3 placas y las comparamos con las de un fósil que encontré.',
+    goal: { type: 'collect', product: 'placa_dorada', n: 3 }, reward: { coins: 180, foods: { helecho: 6 } } },
+  { id: 'c6-reserva', ch: 6, who: 'abuela', title: 'Una reserva para el valle',
+    text: 'Noa quiere contarle al mundo lo que encontró y Lía teme que lo arruinen. Yo propongo una reserva, con ustedes de guardianes. Demuestren que pueden con muchos amigos: cuida a 18 animales a la vez.',
+    goal: { type: 'owncount', n: 18 }, reward: { coins: 400 } },
 ];
+
 
 export const CHAPTERS = {
   1: 'La granja de la abuela',
@@ -282,6 +322,7 @@ export const CHAPTERS = {
   3: 'El huevo misterioso',
   4: 'El río perdido',
   5: 'El festival de la granja',
+  6: 'El valle escondido',
 };
 // Misiones secundarias: independientes, varias activas a la vez. Aparecen cuando la historia llega a
 // `minCh` (y, si tienen `needs`, cuando ya conoces esa especie). Las metas de contador (fed, petted,
@@ -532,6 +573,72 @@ export const SCENES = [
     ['pita', 1, '¡Un brindis! Con leche, que hay vacas.'],
     ['abuela', 1, 'Gracias por quedarse. Esta granja es de ustedes de verdad.'],
   ] },
+  { id: 'el-rio-vuelve', when: 'inicio:c6-camino', title: 'El río vuelve a cantar', lines: [
+    ['lia', 1, '¿Lo oyen? El río cantó toda la noche. Desde el festival ya no se esconde.'],
+    ['mia', 1, '¡Suena como un cascabel enorme!'],
+    ['lia', 0, 'Algo cambió cuando Cosi volvió. Como si el valle supiera que ya no estoy sola cuidándolo.'],
+    ['tomas', 0, '¿Podemos ir a verlo? ¿El valle?'],
+    ['lia', 0, 'Primero tienen que demostrar que los animales confían en ustedes: tres corazones. Así lo pidió Cosi hace años.'],
+  ] },
+  { id: 'puerta-del-valle', when: 'fin:c6-camino', title: 'La puerta del valle', lines: [
+    ['lia', 0, 'Aquí. Detrás de esta cascada. Cierren los ojos un momento.'],
+    ['mia', 2, '¿Y si hay cosas con muchos dientes?'],
+    ['tomas', 1, 'Si las hay, serán cosas con muchos dientes simpáticas.'],
+    ['abuela', 1, 'Hace cuarenta años crucé este mismo paso, Mía. Tenía tu edad y tanto miedo como tú.'],
+    ['abuela', 0, 'El miedo no se va. Se hace pequeño cuando alguien te toma de la mano.'],
+    ['mia', 1, '…¿Me toma de la mano?'],
+  ] },
+  { id: 'visitante-con-lupa', when: 'inicio:c6-noa', title: 'Una visitante con lupa', lines: [
+    ['noa', 1, '¡Alto! ¡No pisen esa huella! Perdón. Hola. Soy Noa.'],
+    ['noa', 0, 'Soy paleontóloga. Llevo tres años siguiendo unas huellas que, según mis colegas, no existen.'],
+    ['lia', 2, 'Nadie debía encontrar esas huellas.'],
+    ['noa', 2, 'Lo sé, perdón… pero ¿han visto lo que hay ahí? ¡Un triceratops bebé!'],
+    ['tomas', 1, 'Es un poco tímido. Como mi hermana.'],
+    ['noa', 1, 'Prometo no asustarlo. Solo quiero verlo crecer.'],
+  ] },
+  { id: 'noa-y-el-triceratops', when: 'fin:c6-noa', title: 'Noa y el triceratops', lines: [
+    ['noa', 1, 'Ya es adulto… ¡y me reconoció! ¡Me reconoció!'],
+    ['noa', 0, 'Veinte años de libros sobre ellos y ninguno decía que ronronean.'],
+    ['pita', 1, 'No ronronean, Noa. Se les hincha el pecho de felicidad.'],
+    ['noa', 1, 'Eso. Lo apunto ahora mismo.'],
+  ] },
+  { id: 'nombres-para-el-cuaderno', when: 'inicio:c6-nombres', title: 'Nombres para el cuaderno', lines: [
+    ['noa', 0, 'Cada animal merece su ficha: nombre, especie, qué come y qué le gusta.'],
+    ['mia', 1, 'Yo los dibujo. Tengo uno por animal, ¿ven?'],
+    ['noa', 1, '¡Mía, esto es mejor que cualquier ilustración científica!'],
+    ['mia', 2, '¿De verdad? Es que los miro mucho.'],
+    ['noa', 0, 'Eso es ciencia: mirar mucho y escribir lo que ves.'],
+  ] },
+  { id: 'cuernitos-de-cristal', when: 'fin:c6-cristal', title: 'Cuernitos de cristal', lines: [
+    ['noa', 1, 'Mira cómo cambia el cristal con el sol: azul, rosa, otra vez azul.'],
+    ['ramon', 0, 'Eso se vende bien. Digo… se admira. Se admira muy bien.'],
+    ['noa', 0, 'Don Ramón, no son para vender.'],
+    ['ramon', 2, 'Ya lo sé, jovencita. Es la costumbre. La costumbre es muy fuerte.'],
+  ] },
+  { id: 'placas-doradas', when: 'fin:c6-placas', title: 'Placas doradas', lines: [
+    ['noa', 1, 'Idénticas a las del fósil. El estegosaurio del cuaderno de mi maestro era de aquí.'],
+    ['noa', 2, 'Y ahora debo decidir qué hago. Mi maestro quería que todo el mundo lo supiera.'],
+    ['lia', 2, 'Si todos lo saben, vendrán todos.'],
+    ['noa', 0, 'Lo sé. Por eso todavía no mandé el informe.'],
+    ['tomas', 0, '¿Y qué vas a hacer?'],
+    ['noa', 2, 'No lo sé todavía.'],
+  ] },
+  { id: 'lo-que-hay-que-proteger', when: 'inicio:c6-reserva', title: 'Lo que hay que proteger', lines: [
+    ['lia', 2, 'Noa merece contar lo que descubrió. Pero yo prometí proteger este lugar.'],
+    ['noa', 0, 'Y yo prometí algo también: no mentir nunca en la ciencia.'],
+    ['abuela', 0, 'Dos promesas no se pelean, niñas. Solo hay que encontrar la forma de cumplir las dos.'],
+    ['abuela', 1, 'Una reserva: un lugar que se cuida, se estudia y no se enseña a cualquiera.'],
+    ['mia', 1, '¿Con guardianes?'],
+    ['abuela', 1, 'Con guardianes. Y ya están en la granja.'],
+  ] },
+  { id: 'una-reserva', when: 'fin:c6-reserva', title: 'Una reserva', lines: [
+    ['noa', 1, 'Escribiré el informe. Sin decir dónde está el valle.'],
+    ['lia', 0, '¿Harías eso?'],
+    ['noa', 0, 'La ciencia no es contar dónde está algo. Es entenderlo y cuidarlo.'],
+    ['lia', 1, 'Gracias, Noa. Perdóname por desconfiar.'],
+    ['noa', 1, '¿Amigas?'],
+    ['lia', 1, 'Amigas.'],
+  ] },
 ];
 
 // Cartas de Cosi: misiones cuyo texto es una carta. Se releen en el Diario cuando ya las recibiste.
@@ -560,4 +667,11 @@ export const VISITS = [
   { id: 'v-lia-2', who: 'lia', minCh: 5, lines: [['lia', 0, 'El río hace un ruidito cuando está contento. Hace días que lo oigo desde aquí.'], ['lia', 1, 'Dicen que es mi imaginación. Yo creo que no.']] },
   { id: 'v-cosi-1', who: 'abuela', minCh: 6, lines: [['abuela', 1, 'Me gusta sentarme a verlos jugar. Siempre hay uno que hace travesuras.'], ['abuela', 0, 'Y siempre es el que más cariño necesita.']] },
   { id: 'v-cosi-2', who: 'abuela', minCh: 6, lines: [['abuela', 0, 'Hay una carta mía que nunca terminé. La estoy escribiendo despacio, para ustedes.'], ['abuela', 1, 'Sin prisa. Tengo toda la tarde.']] },
+  { id: 'v-noa-1', who: 'noa', minCh: 6, lines: [['noa', 0, 'Anoté hoy: «El triceratops duerme con una pata estirada». Eso no está en ningún libro.']] },
+  { id: 'v-noa-2', who: 'noa', minCh: 6, lines: [['noa', 1, 'Descubrí que a los dinosaurios les encanta el helecho. Y a mí el café. Combina.']] },
+  { id: 'v-tomas-5', who: 'tomas', minCh: 6, lines: [['tomas', 1, 'Noa me enseñó a dibujar huellas. Las mías parecen papas.']] },
+  { id: 'v-mia-4', who: 'mia', minCh: 6, lines: [['mia', 1, 'Le dibujé un triceratops a Noa. Dijo que tiene «proporciones expresivas». No sé qué es, pero suena lindo.']] },
+  { id: 'v-lia-3', who: 'lia', minCh: 6, lines: [['lia', 0, 'El valle está más tranquilo desde que Noa lo cuida con nosotras.']] },
+  { id: 'v-pita-4', who: 'pita', minCh: 6, lines: [['pita', 0, 'Noa y yo comparamos notas: ella sabe de huesos y yo de achaques. Equipo perfecto.']] },
+  { id: 'v-ramon-4', who: 'ramon', minCh: 6, lines: [['ramon', 0, 'Cosi dice que ya no vende nada que no pueda mirar a los ojos. Yo sigo vendiendo huevos, pero con cariño.']] },
 ];

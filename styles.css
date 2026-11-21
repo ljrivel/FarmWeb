@@ -338,6 +338,7 @@ input.text {
   #hud { flex-wrap: wrap; }
   #hud .small-chip { flex: 1; min-width: 0; }
   #hud .chip-btn { order: 3; flex: 1 1 100%; min-height: 44px; }
+  #hud .chip-btn.gift { order: 1; flex: none; min-height: 48px; } /* la cesta se queda en la primera fila */
 }
 @media (max-width: 380px) {
   .meters { grid-template-columns: 1fr; }

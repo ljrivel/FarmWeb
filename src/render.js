@@ -105,6 +105,13 @@ const GROUND = {
     entrance(ctx, S);
     fence(ctx, S);
   },
+  valle(ctx, S) {
+    field(ctx, S, ['fern', 'grass2', 'fern']);
+    for (const [c, r] of [[3, 4], [16, 4], [1, 7], [18, 9], [4, 12], [15, 12]]) tile(ctx, S, 'rock', c * 16, r * 16);
+    for (const [c, r] of [[8, 3], [11, 3], [2, 10], [17, 5]]) tile(ctx, S, 'fern', c * 16, r * 16);
+    entrance(ctx, S);
+    fence(ctx, S);
+  },
 };
 
 /** Dónde espera el visitante: sobre el camino de la entrada del corral (coordenadas lógicas). */

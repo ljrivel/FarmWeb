@@ -89,7 +89,7 @@ test('Lía llega desde el capítulo 4 y Cosi solo después del final', () => {
   assert.ok(quienes(world('c4-pista')).has('lia'));
   assert.ok(!quienes(world('c5-festival')).has('abuela'));
   const fin = world('nada-despues'); // todo reclamado
-  assert.equal(chapterNow(fin), 6);
+  assert.equal(chapterNow(fin), Math.max(...QUESTS.map((q) => q.ch)) + 1);
   assert.ok(quienes(fin).has('abuela'));
 });
 

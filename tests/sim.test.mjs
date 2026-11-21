@@ -265,9 +265,9 @@ test('el hacinamiento solo afecta al corral lleno', () => {
   assert.ok(Math.abs(mapache.happy - (50 + BALANCE.happyUpPerSec * 60)) < 1e-6, 'el Bosque no pierde por hacinamiento');
 });
 
-test('simulación de 8 h con 4 corrales: sin NaN y dentro de los topes', () => {
+test('simulación de 8 h con todos los corrales: sin NaN y dentro de los topes', () => {
   const w = fresh(8);
-  for (const t of ['bosque', 'estanque', 'jurasico']) addCorral(w, t);
+  for (const t of CORRAL_TYPE_ORDER.slice(1)) addCorral(w, t);
   for (const s of Object.keys(SPECIES)) {
     addAnimal(w, s, 0, 'adult'); addAnimal(w, s, 1, 'adult');
   }
@@ -319,7 +319,7 @@ test('wander nunca produce NaN (dt negativo, cero o enorme)', () => {
 
 test('wander mantiene a cada animal dentro del área de su corral', () => {
   const w = fresh();
-  for (const t of ['bosque', 'estanque', 'jurasico']) addCorral(w, t);
+  for (const t of CORRAL_TYPE_ORDER.slice(1)) addCorral(w, t);
   for (const sp of Object.keys(SPECIES)) addAnimal(w, sp, 0, 'adult');
   for (let i = 0; i < 4000; i++) sim.wander(w, 100);
   for (const a of w.animals) {

@@ -5,11 +5,13 @@
   "bosque": 1,
   "estanque": 2,
   "jurasico": 3,
-  "pradera_bloq": 4,
-  "bosque_bloq": 5,
-  "estanque_bloq": 6,
-  "jurasico_bloq": 7,
-  "vet": 8
+  "valle": 4,
+  "pradera_bloq": 5,
+  "bosque_bloq": 6,
+  "estanque_bloq": 7,
+  "jurasico_bloq": 8,
+  "valle_bloq": 9,
+  "vet": 10
  },
- "version": "1de48f767e"
+ "version": "6cc202bab4"
 }

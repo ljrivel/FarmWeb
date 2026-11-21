@@ -23,8 +23,8 @@ export function markPastScenes(w) {
   }
 }
 
-/** Capítulo actual de la historia (6 = ya terminada). */
-export const chapterNow = (w) => QUESTS.find((q) => !w.quests.claimed[q.id])?.ch ?? 6;
+/** Capítulo actual de la historia (el último + 1 = ya terminada). */
+export const chapterNow = (w) => QUESTS.find((q) => !w.quests.claimed[q.id])?.ch ?? Math.max(...QUESTS.map((q) => q.ch)) + 1;
 
 /**
  * Charla de la próxima visita: de las que ya tocan por capítulo y condición, sin repetir al `last` que acaba

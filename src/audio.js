@@ -52,6 +52,9 @@ export const VOICES = {
   // conejo: dos golpecitos de nariz muy suaves; pato: un «cuac» nasal corto
   conejo: [n('sine', 0, 0.04, 1800, 0.08, { f1: 2200 }), n('sine', 0.07, 0.04, 1900, 0.08, { f1: 2300 })],
   pato: [n('square', 0, 0.12, 520, 0.07, { f1: 420, lp: 1400 }), n('square', 0.16, 0.12, 500, 0.07, { f1: 400, lp: 1400 })],
+  // triceratops: bufido grave con un «uuh» detrás; estegosaurio: retumbo lento y suave
+  triceratops: [n('sawtooth', 0, 0.35, 180, 0.14, { f1: 140, lp: 700 }), n('sine', 0.05, 0.3, 360, 0.08, { f1: 280 })],
+  estegosaurio: [n('triangle', 0, 0.5, 110, 0.18, { f1: 90, lp: 500 }), n('sine', 0.25, 0.3, 160, 0.09)],
 };
 
 // ------------------------------------------------------------- programación

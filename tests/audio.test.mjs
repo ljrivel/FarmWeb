@@ -55,7 +55,6 @@ const EFFECTS = ['tap', 'pet', 'feed', 'feedFav', 'collect', 'sell', 'buy', 'bui
 test('SOUNDS y VOICES tienen exactamente los nombres pedidos y cada nota es válida', () => {
   assert.deepEqual(Object.keys(SOUNDS).sort(), [...EFFECTS].sort());
   assert.deepEqual(Object.keys(VOICES).sort(), [...ORDER].sort());
-  assert.equal(ORDER.length, 10);
   const all = { ...Object.fromEntries(Object.entries(SOUNDS)), ...Object.fromEntries(Object.entries(VOICES).map(([k, v]) => [`voz ${k}`, v])) };
   for (const [name, notes] of Object.entries(all)) {
     assert.ok(notes.length >= 1 && notes.length <= 6, `${name}: de 1 a 6 notas (caben en el tope de 8)`);

@@ -111,7 +111,27 @@
   "pato:3:baby": 96,
   "pato:3:adult": 97,
   "pato:shiny:baby": 98,
-  "pato:shiny:adult": 99
+  "pato:shiny:adult": 99,
+  "triceratops:0:baby": 100,
+  "triceratops:0:adult": 101,
+  "triceratops:1:baby": 102,
+  "triceratops:1:adult": 103,
+  "triceratops:2:baby": 104,
+  "triceratops:2:adult": 105,
+  "triceratops:3:baby": 106,
+  "triceratops:3:adult": 107,
+  "triceratops:shiny:baby": 108,
+  "triceratops:shiny:adult": 109,
+  "estegosaurio:0:baby": 110,
+  "estegosaurio:0:adult": 111,
+  "estegosaurio:1:baby": 112,
+  "estegosaurio:1:adult": 113,
+  "estegosaurio:2:baby": 114,
+  "estegosaurio:2:adult": 115,
+  "estegosaurio:3:baby": 116,
+  "estegosaurio:3:adult": 117,
+  "estegosaurio:shiny:baby": 118,
+  "estegosaurio:shiny:adult": 119
  },
  "species": {
   "gallina": 4,
@@ -123,7 +143,9 @@
   "carnotauro": 4,
   "spinosaurus": 4,
   "conejo": 4,
-  "pato": 4
+  "pato": 4,
+  "triceratops": 4,
+  "estegosaurio": 4
  },
- "version": "c75bd16a25"
+ "version": "ee6f516bf9"
 }

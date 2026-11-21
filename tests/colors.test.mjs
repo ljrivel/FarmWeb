@@ -15,7 +15,7 @@ test('cada especie tiene 4 colores con nombres distintos y los 2 primeros son lo
   for (const [s, sp] of Object.entries(SPECIES)) {
     assert.equal(sp.variants.length, 4, `${s} tiene 4 colores`);
     assert.equal(new Set(sp.variants).size, 4, `${s}: nombres distintos`);
-    assert.deepEqual(sp.variants.slice(0, 2), ACTUALES[s], `${s}: los 2 primeros no cambian`);
+    if (ACTUALES[s]) assert.deepEqual(sp.variants.slice(0, 2), ACTUALES[s], `${s}: los 2 primeros no cambian`); // las especies nuevas empiezan con sus 2 comunes
   }
   assert.equal(COMMON_VARIANTS, 2);
   assert.deepEqual(VARIANT_TIERS, ['comun', 'comun', 'poco', 'raro']);

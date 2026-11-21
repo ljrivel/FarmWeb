@@ -361,6 +361,44 @@ def pato_face(c, p, blink):
     c.rect(-3, -7, 3, -7, shade(p["beak"], 0.85))
 
 
+# ------------------------------------------------------------- triceratops
+def triceratops_body(c, p):
+    c.ell(11, -4, 3, 3, p["body"])
+    c.ell(0, -16, 12, 8, p["frill"])              # gola
+    c.px(-7, -19, p["spot"]); c.px(7, -19, p["spot"]); c.px(0, -23, p["spot"])
+    c.ell(0, -9, 10, 8, p["body"])
+    c.ell(0, -4, 6, 4, p["belly"])
+    c.ell(0, -6, 5, 3, p["snout"])
+    c.poly([(-6, -17), (-9, -25), (-3, -18)], p["horn"])
+    c.poly([(6, -17), (9, -25), (3, -18)], p["horn"])
+    c.ell(-5, -1, 3, 2, p["foot"])
+    c.ell(5, -1, 3, 2, p["foot"])
+
+
+def triceratops_face(c, p, blink):
+    eyes(c, -12, 4, blink)
+    blush(c, -8, 7)
+    pxs(c, [(-2, -5), (-1, -4), (0, -4), (1, -4), (2, -5)], EYE)
+
+
+# ------------------------------------------------------------- estegosaurio
+def estego_body(c, p):
+    c.ell(12, -4, 3, 3, p["body"])
+    c.poly([(13, -6), (18, -10), (16, -3)], p["plate"])    # púas de la cola
+    for x, h in ((-7, 5), (-3, 7), (1, 8), (5, 6), (9, 4)):
+        c.poly([(x - 2, -15), (x, -15 - h), (x + 2, -15)], p["plate"])
+    c.ell(0, -9, 11, 8, p["body"])
+    c.ell(0, -4, 7, 4, p["belly"])
+    c.ell(-5, -1, 3, 2, p["foot"])
+    c.ell(5, -1, 3, 2, p["foot"])
+
+
+def estego_face(c, p, blink):
+    eyes(c, -11, 5, blink)
+    blush(c, -7, 8)
+    pxs(c, [(-2, -5), (-1, -4), (0, -4), (1, -4), (2, -5)], EYE)
+
+
 SPECIES = {
     "gallina": (gallina_body, gallina_face, [
         dict(body="#fffaf0", wing="#f1e0cc", comb="#ff7b8e", beak="#ffb347", feet="#ffb347"),
@@ -422,6 +460,18 @@ SPECIES = {
         dict(body="#b9ecd6", wing="#8fd8bc", beak="#ffb36b", feet="#ff9f5a"),  # Menta
         dict(body="#ffc9dc", wing="#ffa8c4", beak="#ffb36b", feet="#ff9f5a"),  # Rosado
     ]),
+    "triceratops": (triceratops_body, triceratops_face, [
+        dict(body="#8fd49b", belly="#f1ffe9", frill="#ff9fb4", spot="#ffd0dc", horn="#fff0b8", snout="#b4e6bb", foot="#6fbe7c"),
+        dict(body="#e6c89a", belly="#fff6e4", frill="#ffb27a", spot="#ffd9b8", horn="#fffbe0", snout="#f0dcb8", foot="#cfaa78"),
+        dict(body="#8fc7ee", belly="#f0f9ff", frill="#c9b6f2", spot="#e6dcfa", horn="#fff0b8", snout="#b4dcf5", foot="#6fadd8"),  # Cielo
+        dict(body="#ff9f8f", belly="#fff1ea", frill="#ffd36e", spot="#fff0b0", horn="#fffbe0", snout="#ffbfb2", foot="#e07a6a"),  # Atardecer
+    ]),
+    "estegosaurio": (estego_body, estego_face, [
+        dict(body="#a8d98f", belly="#f4ffe8", plate="#ffb27a", foot="#86c06d"),
+        dict(body="#c9a8f0", belly="#f6efff", plate="#ffe08a", foot="#a98ad8"),
+        dict(body="#ff9f8f", belly="#fff1ea", plate="#ffd9b8", foot="#e07a6a"),  # Coral
+        dict(body="#4fb3a9", belly="#d9f7f2", plate="#ffe08a", foot="#3a968d"),  # Turquesa
+    ]),
 }
 STAGES = {"baby": 0.74, "adult": 1.0}
 
@@ -437,6 +487,8 @@ SHINY = {
     "spinosaurus": dict(body="#fff0b0", belly="#fffbe6", sail="#7fe3d6", ribs="#3fbfae", dark="#f0c85a", snout="#fff3c8"),
     "conejo": dict(body="#fff3c4", ear="#9fe8e0", belly="#fffbea", nose="#ffb04d"),
     "pato": dict(body="#fff6d0", wing="#ffd77a", beak="#7fe0d4", feet="#7fe0d4"),
+    "triceratops": dict(body="#fff0b0", belly="#fffbe6", frill="#7fe3d6", spot="#c9f5ee", horn="#ffd04d", snout="#fff3c8", foot="#f5c562"),
+    "estegosaurio": dict(body="#fff0b0", belly="#fffbe6", plate="#7fe3d6", foot="#f5c562"),
 }
 
 
@@ -492,6 +544,25 @@ def ic_regalo(c):
     c.px(8, 11, hx("#ff6f91"))
     c.px(7, 10, hx("#ff9fb4"))
     c.px(8, 10, hx("#ff9fb4"))
+
+
+def ic_helecho(c):
+    c.rect(8, 3, 8, 14, hx("#4f9a5e"))
+    for y, w in ((4, 2), (6, 3), (8, 4), (10, 4), (12, 3)):
+        c.rect(8 - w, y, 8, y + 1, hx("#7cc68b"))
+        c.rect(8, y, 8 + w, y + 1, hx("#7cc68b"))
+
+
+def ic_cuerno_cristal(c):
+    c.poly([(8, 1), (12, 10), (8, 14), (4, 10)], hx("#9fd8ff"))
+    c.poly([(8, 1), (8, 14), (4, 10)], hx("#d6efff"))
+    c.px(7, 6, WHITE)
+
+
+def ic_placa_dorada(c):
+    c.poly([(8, 2), (13, 6), (11, 14), (5, 14), (3, 6)], hx("#ffd95e"))
+    c.poly([(8, 2), (8, 14), (5, 14), (3, 6)], hx("#ffeb9a"))
+    c.px(6, 7, WHITE)
 
 
 def ic_huevo(c):
@@ -682,6 +753,7 @@ ICONS = [
     ("nube", "#c9cbe0", ic_nube), ("vet", "#ff6f91", ic_vet),
     ("zanahoria", "#ff9a4d", ic_zanahoria), ("lana", "#e6dcf5", ic_lana), ("pluma", "#ffe9a8", ic_pluma),
     ("regalo", "#e0a866", ic_regalo),
+    ("helecho", "#7cc68b", ic_helecho), ("cuerno_cristal", "#9fd8ff", ic_cuerno_cristal), ("placa_dorada", "#ffd95e", ic_placa_dorada),
 ]
 
 
@@ -855,6 +927,17 @@ def pl_jurasico(c):
     c.poly([(36, 42), (40, 30), (44, 42)], hx("#69b87b"))
 
 
+def pl_valle(c):
+    c.ell(24, 43, 21, 4, hx("#a9d98a"))
+    c.poly([(2, 42), (14, 16), (26, 42)], hx("#b7a9d6"))
+    c.poly([(18, 42), (34, 10), (46, 42)], hx("#9d8fc4"))
+    c.poly([(30, 16), (34, 10), (38, 16)], hx("#f4f0ff"))
+    c.ell(24, 40, 16, 5, hx("#7cc68b"))
+    c.poly([(8, 42), (12, 31), (16, 42)], hx("#69b87b"))
+    c.poly([(32, 42), (37, 29), (42, 42)], hx("#7cc68b"))
+    c.ell(24, 35, 4, 5, hx("#5a4a72"))
+
+
 def pl_vet(c):
     """Veterinaria: casita blanca con techo rosa, cruz y un huellita en la puerta."""
     c.ell(24, 43, 21, 4, hx("#a9d98a"))
@@ -883,7 +966,7 @@ def desaturate(img):
     return out
 
 
-PLACES = [("pradera", pl_pradera), ("bosque", pl_bosque), ("estanque", pl_estanque), ("jurasico", pl_jurasico)]
+PLACES = [("pradera", pl_pradera), ("bosque", pl_bosque), ("estanque", pl_estanque), ("jurasico", pl_jurasico), ("valle", pl_valle)]
 EXTRA_PLACES = [("vet", pl_vet)]  # lugares que no son corrales (sin versión bloqueada)
 
 
@@ -978,6 +1061,16 @@ def pt_bruno(c, p):
     c.rect(-6, 8, 6, 9, p["trim"])  # visera
 
 
+def pt_noa(c, p):
+    c.ell(0, 16, 11.5, 11, p["hair"])
+    _shoulders(c, p)
+    _head(c, p)
+    _fringe(c, p)
+    c.rect(-8, 9, -3, 11, p["trim"])  # gafas de campo sobre la frente
+    c.rect(3, 9, 8, 11, p["trim"])
+    c.rect(-9, 10, 9, 10, shade(p["trim"], 0.7))
+
+
 PORTRAITS = [
     ("abuela", pt_abuela, dict(skin="#ffe0c8", hair="#e8e2f2", cloth="#ff8fb0", trim="#ffc4d6"), dict(glasses=True)),
     ("tomas", pt_tomas, dict(skin="#ffd9b8", hair="#8a5a3c", cloth="#8fdcc0", hat="#f3d27a", trim="#d9a85a"), dict(freckles=True)),
@@ -985,6 +1078,7 @@ PORTRAITS = [
     ("ramon", pt_ramon, dict(skin="#f2c9a0", hair="#d8d2cc", cloth="#ffe08a", trim="#e0606a"), dict(my=22)),
     ("lia", pt_lia, dict(skin="#efc4a4", hair="#8d6fd1", cloth="#c9b6f2", trim="#7fd8c8"), {}),
     ("mia", pt_mia, dict(skin="#ffe0c8", hair="#a0643e", cloth="#ffc9dc", trim="#ff7fa8"), dict(freckles=True)),
+    ("noa", pt_noa, dict(skin="#e8b994", hair="#2f7f86", cloth="#f7e08a", trim="#a6e0ec"), {}),
     ("bruno", pt_bruno, dict(skin="#f3cfae", hair="#5b4636", cloth="#ffd3a8", hat="#6aa5d8", trim="#a0643e"), {}),
 ]
 

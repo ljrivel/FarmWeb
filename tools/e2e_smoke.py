@@ -637,6 +637,51 @@ def gift_labels_guide(browser):
     ctx.close()
 
 
+def chapter6(browser):
+    print("\n== capítulo 6: el Valle, los dinosaurios nuevos y Noa")
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    page = ctx.new_page()
+    errors = []
+    page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(URL)
+    page.wait_for_function("document.getElementById('loading').hidden === true", timeout=15000)
+    page.evaluate("""(async () => {
+      const { QUESTS } = await import('/src/data.js');
+      const w = farmweb.app.w;
+      for (const q of QUESTS) { if (q.id === 'c6-camino') break; w.quests.claimed[q.id] = true; }
+      for (const t of ['bosque', 'estanque', 'jurasico']) if (!w.corrales.some((c) => c.tipo === t)) w.corrales.push({ id: t, tipo: t, nombre: t, nivel: 0 });
+      w.animals[0].hearts = 3;
+      farmweb.app.ui?.refresh?.();
+    })()""")
+    page.click('[data-panel="quests"]')
+    check("El camino del río" in page.locator("#sheetBody").inner_text(), "la misión del capítulo 6 es la activa")
+    page.locator('[data-key="claim"]').click()
+    page.wait_for_timeout(300)
+    check(page.evaluate("farmweb.app.w.corrales.some((c) => c.tipo === 'valle')"), "reclamarla abre el Valle")
+    check(page.evaluate("farmweb.app.w.unlocked.includes('triceratops') && farmweb.app.w.unlocked.includes('estegosaurio')"), "y desbloquea los dos dinosaurios")
+    check(page.evaluate("farmweb.app.w.animals.some((a) => a.species === 'triceratops' && a.corral === 'valle')"), "el triceratops bebé llega al Valle")
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(200)
+    page.evaluate("farmweb.app.setLabels('todo')")
+    page.evaluate("farmweb.app.goTo('valle', true)")
+    page.wait_for_timeout(500)
+    page.screenshot(path=f"{SHOTS}/movil-35-valle.png")
+    page.click('[data-goto="mapa"]')
+    page.wait_for_timeout(400)
+    page.screenshot(path=f"{SHOTS}/movil-36-mapa-valle.png")
+    page.click('[data-panel="quests"]')
+    check("Una visitante con lupa" in page.locator("#sheetBody").inner_text(), "sigue Noa con su misión")
+    check("Noa" in page.locator(".speaker").first.inner_text(), "y habla con su retrato")
+    page.screenshot(path=f"{SHOTS}/movil-37-noa.png")
+    page.keyboard.press("Escape")
+    page.click('[data-panel="animals"]')
+    page.locator('[data-key="tab-guia"]').click()
+    check("Triceratops" in page.locator("#sheetBody").inner_text(), "la Guía ya conoce al triceratops")
+    check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
+    ctx.close()
+
+
 def main():
     server = subprocess.Popen([sys.executable, "-m", "http.server", str(PORT), "--bind", "127.0.0.1"],
                               cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -660,6 +705,7 @@ def main():
             story_scenes(browser, "pc", {"width": 1280, "height": 800}, 1, False)
             visits_and_diary(browser)
             gift_labels_guide(browser)
+            chapter6(browser)
             browser.close()
     finally:
         server.terminate()
