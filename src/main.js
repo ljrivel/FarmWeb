@@ -9,6 +9,7 @@ import { store, downloadWorld, readWorldFile } from './storage.js';
 import { MAX_OFFLINE_MS, SPECIES, DISEASES, SECRETS, BALANCE, CHARACTERS, rarityOf } from './data.js';
 import { createAudio } from './audio.js';
 import { nextScene, pickVisit } from './story.js';
+import { CHECK_MS, fetchVersion, isNewer } from './update.js';
 
 const app = { w: null, sprites: null, scene: 'pradera', selectedId: null, fx: [], lastSaved: 0, k: 1, audio: null, visit: null, nextVisitAt: 0, lastVisitor: null, labels: 'ninguna' };
 // El sonido es opcional: sin localStorage o sin AudioContext el juego sigue igual, en silencio.
@@ -280,6 +281,25 @@ function konamiKey(e) {
   if (konamiAt === KONAMI.length) { konamiAt = 0; wave(); }
 }
 /** Cuenta la siguiente escena pendiente cuando no hay otra hoja abierta. `?sinescenas` las apaga (para las pruebas). */
+// ---- actualización automática (versión que se cargó al abrir y versión nueva pendiente)
+let loadedVersion = null, updateLatest = null;
+async function checkUpdate() {
+  const latest = await fetchVersion();
+  if (!isNewer(loadedVersion, latest)) return;
+  try { if (sessionStorage.getItem('farmweb:reloaded') === latest) return; } catch { /* sin sessionStorage: se intenta igual */ }
+  updateLatest = latest;
+}
+/** Recarga cuando no hay panel, escena ni tutorial abiertos; el progreso se guarda antes. */
+async function applyUpdate() {
+  if (!updateLatest || ui.busy()) return;
+  const latest = updateLatest;
+  updateLatest = null;
+  ui.toast('Hay una versión nueva: actualizando…');
+  await saveNow(false);
+  try { sessionStorage.setItem('farmweb:reloaded', latest); } catch { /* sin sessionStorage */ }
+  setTimeout(() => location.reload(), 1200);
+}
+app.checkUpdate = checkUpdate;
 const STORY_ON = !location.search.includes('sinescenas');
 const TUTORIAL_ON = !location.search.includes('sintutorial');
 /** El tutorial empieza cuando no hay nada abierto (en una partida nueva, tras la escena de Bruno). */
@@ -368,7 +388,7 @@ async function boot() {
     last = t;
     sim.wander(app.w, dt);
     const now = Date.now();
-    if (now - app.w.lastTick >= 1000) { advance(now); checkSecrets(); checkStory(); checkTutorial(); checkVisit(); ui.tickLight(); }
+    if (now - app.w.lastTick >= 1000) { advance(now); checkSecrets(); checkStory(); checkTutorial(); checkVisit(); applyUpdate(); ui.tickLight(); }
     ctx.setTransform(app.k, 0, 0, app.k, 0, 0);
     draw(ctx, app.sprites, app.w, app, t);
     requestAnimationFrame(frame);
@@ -376,7 +396,12 @@ async function boot() {
   requestAnimationFrame(frame);
 
   setInterval(() => saveNow(false), 10_000);
+  // Actualización automática: si se publicó otra versión, se guarda y se recarga sola en un momento tranquilo.
+  fetchVersion().then((v) => { loadedVersion = v; });
+  setInterval(checkUpdate, CHECK_MS);
+  addEventListener('online', checkUpdate);
   document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) checkUpdate();
     app.audio.setHidden(document.hidden);
     if (document.hidden) saveNow(false);
     else { advance(Date.now()); ui.refresh(); }

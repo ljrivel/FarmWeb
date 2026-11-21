@@ -198,3 +198,10 @@ arreglo: la tarjeta de un animal sano mostraba «null» desde el sub-paso 2 de l
 - Dinosaurios: tenían `price: null` y la Tienda solo lista especies con precio, por eso no aparecían. Ahora cuestan 700
   (carnotauro), 750 (spinosaurus), 800 (triceratops y estegosaurio), 850 (pterodáctilo) y 900 (plesiosaurio).
 - Pendiente de la lista original: cuidados nuevos (cepillar, jugar, bañar), remedios de Mao Mao y ficha de cría con el álbum de colores.
+
+## Actualización automática
+- `tools/build-web.mjs` escribe `dist/version.json` con `CF_PAGES_COMMIT_SHA` (o la hora). `_headers` lo marca `no-cache`.
+- El juego guarda la versión con la que abrió y la compara cada 5 min, al volver a la pestaña y al recuperar la red. Si cambió,
+  espera un momento tranquilo (`ui.busy()` falso), guarda y recarga. Una marca en `sessionStorage` evita recargar en bucle.
+- Límite: un dispositivo que ya tenga abierta una versión anterior a esta necesita **una** recarga manual para recibir el
+  actualizador; desde ahí se actualiza solo.

@@ -22,9 +22,9 @@ El dueño es Luis Josué; **responde siempre en español**.
 | Qué | Comando |
 |---|---|
 | Jugar en local (PC y celular en la misma Wi-Fi) | doble clic a `iniciar.bat` o `npm start` |
-| Pruebas unitarias | `npm test` (deben pasar todas; hoy 159) |
+| Pruebas unitarias | `npm test` (deben pasar todas; hoy 162) |
 | Regenerar sprites | `npm run sprites` (Python + Pillow; escribe `assets/sprites/*`) |
-| Recorrido en navegador | `python tools/e2e_smoke.py <carpeta_capturas>` (Playwright + Chrome; hoy 308 comprobaciones) |
+| Recorrido en navegador | `python tools/e2e_smoke.py <carpeta_capturas>` (Playwright + Chrome; hoy 313 comprobaciones) |
 
 Tras un cambio visible, recarga con Ctrl+F5. El servidor local envía `Cache-Control: no-store`.
 Con `?debug` en la URL queda disponible `window.farmweb = { app, sim, audio }`. `?sinescenas` y `?sintutorial` apagan las
@@ -67,6 +67,9 @@ tienen precio y se compran en la Tienda cuando se desbloquean (antes `price: nul
 Mao Mao (retrato pixel art chibi de gato, id `mao`) atiende la Veterinaria desde el Capítulo 6 mientras la Dra. Pita está de viaje:
 Pita se despide en la escena `una-boticaria-nueva` (al terminar el festival), sus visitas llevan `maxCh: 5` y las líneas de los
 capítulos 6 a 8 las dice Mao Mao.
+Actualización automática (`src/update.js`): `npm run build` escribe `dist/version.json` (commit de Cloudflare o la hora) y el juego lo
+consulta cada 5 min y al volver a la pestaña; si cambió, guarda y se recarga solo cuando no hay panel, escena ni tutorial abiertos
+(la raíz trae un `version.json` de desarrollo con `dev` para que en local no haya 404).
 Tutorial guiado de Tomás, 13 pasos; los de panel abren el panel y no oscurecen encima (`src/tutorial.js` pasos, `startTutorial` en `ui.js`, marca `tutorial` en `farmweb:ui:v1`, una vez
 por dispositivo, repetible en Mundo; `?sintutorial` lo apaga y el e2e lo usa).
 `tests/historia-completa.test.mjs` recorre toda la historia: añade ahí cualquier capítulo nuevo sin tocar más.

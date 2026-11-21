@@ -1020,6 +1020,39 @@ def criadero_flow(browser):
     ctx.close()
 
 
+def auto_update(browser):
+    print("\n== actualización automática")
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    page = ctx.new_page()
+    errors = []
+    page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    ver = {"v": "version-a"}
+    page.route("**/version.json", lambda route: route.fulfill(status=200, content_type="application/json", body=json.dumps(ver)))
+    page.goto(URL)
+    page.wait_for_function("document.getElementById('loading').hidden === true", timeout=15000)
+    page.wait_for_timeout(500)
+    page.evaluate("window.__abierta = 1; farmweb.app.w.coins = 777")
+    page.evaluate("farmweb.app.checkUpdate()")
+    page.wait_for_timeout(2500)
+    check(page.evaluate("window.__abierta") == 1, "con la misma versión no se recarga")
+    ver["v"] = "version-b"
+    page.click('[data-panel="shop"]')
+    page.evaluate("farmweb.app.checkUpdate()")
+    page.wait_for_timeout(3000)
+    check(page.evaluate("window.__abierta") == 1, "con un panel abierto espera y no interrumpe")
+    page.keyboard.press("Escape")
+    page.wait_for_function("!window.__abierta", timeout=9000)
+    page.wait_for_function("document.getElementById('loading').hidden === true", timeout=15000)
+    check(page.evaluate("farmweb.app.w.coins") == 777, "al cerrar el panel se actualiza sola y la partida se conserva")
+    page.evaluate("window.__abierta = 1")
+    page.evaluate("farmweb.app.checkUpdate()")
+    page.wait_for_timeout(3000)
+    check(page.evaluate("window.__abierta") == 1, "ya con la versión nueva no se recarga en bucle")
+    check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
+    ctx.close()
+
+
 def main():
     server = subprocess.Popen([sys.executable, "-m", "http.server", str(PORT), "--bind", "127.0.0.1"],
                               cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -1049,6 +1082,7 @@ def main():
             chapter8(browser)
             mao_mao(browser)
             criadero_flow(browser)
+            auto_update(browser)
             tutorial_flow(browser, "movil", {"width": 390, "height": 844}, 3, True)
             tutorial_flow(browser, "pc", {"width": 1280, "height": 800}, 1, False)
             tutorial_returning_player(browser)
