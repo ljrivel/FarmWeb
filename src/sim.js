@@ -7,7 +7,7 @@ import {
   COMMON_VARIANTS, VARIANT_TIERS,
 } from './data.js';
 import { rand, randInt, chance } from './rng.js';
-import { addAnimal, addCorral, capacityOf, getCorral, corralOfSpecies } from './state.js';
+import { addAnimal, addCorral, capacityOf, getCorral, corralOfSpecies, cleanName } from './state.js';
 
 const ok = (msg, extra = {}) => ({ ok: true, msg, ...extra });
 const no = (msg) => ({ ok: false, msg });
@@ -102,6 +102,17 @@ export function pickBabyVariant(w, a, b) {
 }
 
 // ------------------------------------------------------------------ acciones
+/** Cambia el nombre de un animal. Siempre deja `named` en true. */
+export function renameAnimal(w, id, raw) {
+  const a = find(w, id);
+  if (!a) return no('No encuentro a ese animal.');
+  const name = cleanName(raw, 24, '');
+  if (!name) return no('Escribe un nombre.');
+  a.name = name;
+  a.named = true;
+  return ok(`Ahora se llama ${name}.`, { animal: a });
+}
+
 export function feed(w, id, food) {
   const a = find(w, id);
   if (!a) return no('No encuentro a ese animal.');

@@ -48,7 +48,7 @@ export function addAnimal(w, species, variant, stage = 'baby', opts = {}) {
   const pos = opts.pos || randomSpot(w, species);
   const a = {
     id: w.nextId++, species, variant, shiny: !!opts.shiny, stage, corral: corral.id,
-    name: sp.names[randInt(w, sp.names.length)],
+    name: sp.names[randInt(w, sp.names.length)], named: false,
     fed: 80, happy: 70, growth: 0, prod: 0, ready: 0, cool: 0, petCd: 0,
     x: pos.x, y: pos.y, tx: pos.x, ty: pos.y, wait: 0,
   };
@@ -85,6 +85,16 @@ const num = (v, min, max, d) => {
   v = Number(v);
   return Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : d;
 };
+/**
+ * Nombre limpio para un animal: sin caracteres de control ni de formato, espacios colapsados,
+ * recortado a `max` caracteres (sin partir un emoji). Si no queda nada devuelve `fallback`.
+ * Nunca se inserta como HTML: la interfaz lo muestra siempre con textContent.
+ */
+export function cleanName(raw, max = 24, fallback = '') {
+  if (typeof raw !== 'string') return fallback;
+  const s = raw.normalize('NFC').replace(/[\p{Cc}\p{Cf}\p{Cs}\u2028\u2029]/gu, '').replace(/\s+/gu, ' ').trim();
+  return Array.from(s).slice(0, max).join('').trim() || fallback;
+}
 const text = (v, max, d) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : d);
 const isObj = (v) => v && typeof v === 'object' && !Array.isArray(v);
 
@@ -167,7 +177,8 @@ export function validateWorld(raw, now = Date.now()) {
       variant: int(a.variant, 0, sp.variants.length - 1, 0),
       shiny: a.shiny === true,
       stage: a.stage === 'adult' ? 'adult' : 'baby',
-      name: text(a.name, 24, sp.names[0]),
+      name: cleanName(a.name, 24, sp.names[0]),
+      named: a.named !== false,
       fed: num(a.fed, 0, 100, 50), happy: num(a.happy, 0, 100, 50),
       growth: num(a.growth, 0, 1e9, 0), prod: num(a.prod, 0, 1e9, 0),
       ready: int(a.ready, 0, 3, 0), cool: num(a.cool, 0, 1e9, 0), petCd: num(a.petCd, 0, 1e9, 0),
