@@ -3,17 +3,27 @@
 import { loadSprites, fit, draw, hitTest, hitVisit, hitMap, W, H } from './render.js';
 import { createUI } from './ui.js';
 import * as sim from './sim.js';
-import { claim, claimSide, syncSide } from './quests.js';
+import { claim, claimSide, syncSide, rewardText } from './quests.js';
 import { newWorld, getCorral, resolveScene } from './state.js';
 import { store, downloadWorld, readWorldFile } from './storage.js';
 import { MAX_OFFLINE_MS, SPECIES, DISEASES, SECRETS, BALANCE, CHARACTERS, rarityOf } from './data.js';
 import { createAudio } from './audio.js';
 import { nextScene, pickVisit } from './story.js';
 
-const app = { w: null, sprites: null, scene: 'pradera', selectedId: null, fx: [], lastSaved: 0, k: 1, audio: null, visit: null, nextVisitAt: 0, lastVisitor: null };
+const app = { w: null, sprites: null, scene: 'pradera', selectedId: null, fx: [], lastSaved: 0, k: 1, audio: null, visit: null, nextVisitAt: 0, lastVisitor: null, labels: 'ninguna' };
 // El sonido es opcional: sin localStorage o sin AudioContext el juego sigue igual, en silencio.
 const safeStorage = () => { try { return window.localStorage; } catch { return null; } };
 app.audio = createAudio({ storage: safeStorage(), AudioContextClass: window.AudioContext || window.webkitAudioContext });
+// Preferencia de etiquetas en el corral: se guarda en este dispositivo, no dentro del mundo.
+const UI_KEY = 'farmweb:ui:v1';
+const LABEL_MODES = ['ninguna', 'nombre', 'todo'];
+try { const m = JSON.parse(safeStorage()?.getItem(UI_KEY) || '{}').labels; if (LABEL_MODES.includes(m)) app.labels = m; } catch { /* sin guardado: se queda en «ninguna» */ }
+app.setLabels = (mode) => {
+  if (!LABEL_MODES.includes(mode)) return;
+  app.labels = mode;
+  try { safeStorage()?.setItem(UI_KEY, JSON.stringify({ labels: mode })); } catch { /* sin guardado: dura la sesión */ }
+  ui.refresh();
+};
 const ui = createUI(app);
 const $ = (id) => document.getElementById(id);
 
@@ -46,6 +56,11 @@ app.collect = (id) => {
   const r = sim.collect(app.w, id);
   const a = sim.find(app.w, id);
   report(r, a && r.ok && [a.x, a.y, r.product], 'collect');
+};
+app.claimGift = () => {
+  const r = sim.claimGift(app.w);
+  ui.toast(r.ok ? `${r.msg}: ${rewardText(r.reward)}.` : r.msg, r.ok ? 'ok' : 'warn');
+  if (r.ok) { app.audio.play('collect'); saveNow(false); ui.refresh(); }
 };
 app.collectAll = () => report(sim.collectAll(app.w), undefined, 'collect');
 app.buyAnimal = (s) => {
@@ -323,6 +338,7 @@ async function boot() {
   ui.refresh();
   loading.hidden = true;
   if (!Object.keys(app.w.quests.claimed).length && app.w.stats.fed === 0) ui.toast('¡Bienvenido! Toca un animal para cuidarlo.');
+  else if (STORY_ON && sim.giftReady(app.w)) ui.toast('¡Bruno dejó una cesta para ti! Tócala para recogerla.', 'ok', () => app.claimGift());
 
   let last = performance.now();
   const frame = (t) => {

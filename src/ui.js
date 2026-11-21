@@ -146,6 +146,7 @@ export function createUI(app) {
     }
     const sideReady = activeSide(w).filter((x) => sideProgress(w, x).done).length;
     if (sideReady) $('questProg').textContent += ` · ${sideReady} ${plural(sideReady, 'secundaria lista', 'secundarias listas')}`;
+    $('giftChip').hidden = !sim.giftReady(w);
     document.querySelector('[data-goto="mapa"]')?.classList.toggle('on', app.scene === 'mapa');
     const ready = w.animals.reduce((n, a) => n + a.ready, 0);
     $('collectAll').hidden = ready === 0;
@@ -287,7 +288,29 @@ export function createUI(app) {
   }
 
   // ---- panel: animales (agrupados por corral)
+  let animalsTab = 'mios';
   function panelAnimals() {
+    const tabBar = h('div', { class: 'tabs', role: 'tablist' }, [['mios', 'Mis animales'], ['guia', 'Guía']].map(([id, label]) => h('button', {
+      class: 'tab', type: 'button', role: 'tab', 'aria-selected': String(animalsTab === id), 'data-key': `tab-${id}`,
+      onclick: () => { animalsTab = id; refreshSheet(); },
+    }, label)));
+    return h('div', null, tabBar, animalsTab === 'guia' ? panelGuide() : panelMine());
+  }
+  /** Guía de especies: qué es cada una, qué come, qué produce y un dato curioso; «???» hasta conocerla. */
+  function panelGuide() {
+    const w = W();
+    return h('div', null, ORDER.map((s) => {
+      const sp = SPECIES[s];
+      const known = w.unlocked.includes(s);
+      return row(
+        known ? portrait(s, 0, 'adult', 2) : icon('candado', 2),
+        h('div', { class: 'grow' },
+          h('strong', { text: known ? sp.nombre : '???' }),
+          h('div', { class: 'muted small', text: known ? `Vive en ${CORRAL_TYPES[corralTypeOf(s)].nombre} · le gusta ${FOODS[sp.food].nombre.toLowerCase()} · produce ${PRODUCTS[sp.product].nombre.toLowerCase()}` : 'Avanza en la historia para conocerlo.' }),
+          known && h('div', { class: 'small', text: sp.dato })));
+    }));
+  }
+  function panelMine() {
     const w = W();
     const groups = sim.corralInfo(w).filter((c) => c.built).map((c) => {
       const list = w.animals.filter((a) => a.corral === c.id).sort((a, b) => a.species.localeCompare(b.species) || a.id - b.id);
@@ -584,6 +607,17 @@ export function createUI(app) {
         : h('li', { class: 'muted' }, h('span', { 'aria-hidden': 'true', text: '??? ' }), h('span', { class: 'visually-hidden', text: 'Secreto sin descubrir' }))))));
   }
 
+  /** Etiquetas sobre los animales del corral (el seleccionado siempre muestra su nombre y su especie). */
+  function labelsSection() {
+    const modes = [['ninguna', 'Ninguna'], ['nombre', 'Nombre'], ['todo', 'Nombre y especie']];
+    return h('section', { class: 'group', 'aria-labelledby': 'labelsTitle' },
+      h('h3', { id: 'labelsTitle', text: 'Etiquetas en el corral' }),
+      h('div', { class: 'tabs', role: 'group', 'aria-label': 'Etiquetas en el corral' }, modes.map(([id, label]) => h('button', {
+        class: 'tab', type: 'button', 'aria-pressed': String(app.labels === id), 'data-key': `labels-${id}`, onclick: () => app.setLabels(id),
+      }, label))),
+      h('p', { class: 'muted small', text: 'Se guarda en este dispositivo.' }));
+  }
+
   // ---- sección de sonido del panel Mundo (se guarda en este dispositivo, no en el archivo del mundo)
   function soundSection() {
     const { muted, volume } = app.audio.prefs;
@@ -651,6 +685,7 @@ export function createUI(app) {
     return h('div', null,
       h('label', { class: 'meter-label', for: 'worldName', text: 'Nombre de la granja' }), nameInput,
       soundSection(),
+      labelsSection(),
       row(h('div', { class: 'grow' }, h('strong', { text: 'Jugadores' }),
         h('div', { class: 'muted small', text: `${w.players.length} de ${w.maxPlayers} · modo local en este dispositivo` })),
         h('span', { class: 'muted small', text: 'La nube con cuentas llega pronto' })),
@@ -697,6 +732,7 @@ export function createUI(app) {
     document.querySelectorAll('[data-goto]').forEach((b) => b.addEventListener('click', () => app.goTo(b.dataset.goto)));
     $('questChip').addEventListener('click', () => openPanel('quests'));
     $('collectAll').addEventListener('click', () => app.collectAll());
+    $('giftChip').addEventListener('click', () => app.claimGift());
     $('sheetClose').addEventListener('click', closeSheet);
     backdrop().addEventListener('click', (e) => { if (e.target === backdrop()) closeSheet(); });
     document.addEventListener('keydown', trapTab);

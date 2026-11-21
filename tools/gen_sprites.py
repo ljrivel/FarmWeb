@@ -482,6 +482,18 @@ def ic_heart(c):
     c.px(4, 5, hx("#ffc2d1"))
 
 
+def ic_regalo(c):
+    c.rect(3, 2, 3, 6, hx("#b9824a"))
+    c.rect(12, 2, 12, 6, hx("#b9824a"))
+    c.rect(3, 2, 12, 3, hx("#b9824a"))  # asa
+    c.poly([(2, 7), (13, 7), (12, 14), (3, 14)], hx("#e0a866"))
+    c.rect(2, 6, 13, 8, hx("#f1c88f"))  # borde
+    c.px(7, 11, hx("#ff6f91"))
+    c.px(8, 11, hx("#ff6f91"))
+    c.px(7, 10, hx("#ff9fb4"))
+    c.px(8, 10, hx("#ff9fb4"))
+
+
 def ic_huevo(c):
     c.ell(8, 9, 4, 5, hx("#fffaf0"))
     c.px(6, 7, WHITE)
@@ -669,6 +681,7 @@ ICONS = [
     ("gota", "#8fd0ff", ic_gota), ("pancita", "#ffc9a8", ic_pancita), ("pulga", "#b08968", ic_pulga),
     ("nube", "#c9cbe0", ic_nube), ("vet", "#ff6f91", ic_vet),
     ("zanahoria", "#ff9a4d", ic_zanahoria), ("lana", "#e6dcf5", ic_lana), ("pluma", "#ffe9a8", ic_pluma),
+    ("regalo", "#e0a866", ic_regalo),
 ]
 
 

@@ -257,9 +257,15 @@ export function draw(ctx, S, w, view, t) {
     ctx.globalAlpha = 1;
     if (a.sick) {
       icon(ctx, S, DISEASES[a.sick].icon, x - 19, y - 30 + Math.round(Math.sin(t / 500 + a.id)), 12);
-      if (a.id === view.selectedId) pill(ctx, DISEASES[a.sick].nombre, x, y + 5, '#ffe3ea');
+      if (a.id === view.selectedId) pill(ctx, DISEASES[a.sick].nombre, x, y + 18, '#ffe3ea');
     }
     if (a.shiny && Math.sin(t / 180 + a.id) > -0.3) icon(ctx, S, 'destello', x + 7, y - 33 + Math.round(Math.sin(t / 400)), 9);
+  }
+  for (const a of sorted) { // etiquetas: la del animal seleccionado siempre; las demás según la preferencia
+    const sel = a.id === view.selectedId;
+    if (!sel && !(view.labels === 'nombre' || view.labels === 'todo')) continue;
+    const withKind = sel || view.labels === 'todo';
+    pill(ctx, withKind ? `${a.name} · ${SPECIES[a.species].nombre}` : a.name, Math.round(a.x), Math.round(a.y) + 5, sel ? '#ffe9a8' : CREAM);
   }
   drawVisit(ctx, S, view, corral.id, t);
   for (const a of sorted) {

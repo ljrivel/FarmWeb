@@ -162,6 +162,31 @@ export function makeSick(w, id, disease) {
   return a;
 }
 
+/** Día local del dispositivo como AAAA-MM-DD (la cesta es una por día). */
+export const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+export const giftReady = (w, day = dayKey()) => w.gift.day !== day;
+
+/** Qué trae la cesta del próximo día del ciclo: monedas y la comida favorita de lo que tienes (o grano si no tienes nada). */
+export function giftReward(w) {
+  const B = BALANCE;
+  const foods = {};
+  for (const a of w.animals) {
+    const f = SPECIES[a.species].food;
+    if (!foods[f] && Object.keys(foods).length < B.giftMaxFoods) foods[f] = B.giftFoodEach;
+  }
+  if (!Object.keys(foods).length) foods.grano = B.giftFoodEach;
+  return { coins: B.giftCoins[w.gift.n % B.giftCoins.length], foods, big: w.gift.n % B.giftCoins.length === B.giftCoins.length - 1 };
+}
+
+export function claimGift(w, day = dayKey()) {
+  if (!giftReady(w, day)) return no('Ya recogiste la cesta de hoy. ¡Bruno vuelve mañana!');
+  const reward = giftReward(w);
+  w.coins += reward.coins;
+  for (const [f, n] of Object.entries(reward.foods)) w.foods[f] = (w.foods[f] || 0) + n;
+  w.gift = { day, n: w.gift.n + 1 };
+  return ok(reward.big ? '¡Cesta grande de Bruno!' : 'Cesta de Bruno', { reward });
+}
+
 /** Suma cariño con tope diario. Devuelve true si ganó un corazón. */
 function addLove(w, a, n) {
   const day = Math.floor(w.lastTick / DAY_MS);

@@ -599,6 +599,44 @@ def visits_and_diary(browser):
     ctx.close()
 
 
+def gift_labels_guide(browser):
+    print("\n== cesta diaria, etiquetas y Guía")
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    page = ctx.new_page()
+    errors = []
+    page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(URL)
+    page.wait_for_function("document.getElementById('loading').hidden === true", timeout=15000)
+    check(page.locator("#giftChip").is_visible(), "con una cesta sin recoger se ve el botón de Bruno")
+    page.locator("#giftChip").click()
+    check(page.evaluate("farmweb.app.w.coins") == 130, "recoger la cesta da las monedas del día 1")
+    check("Cesta de Bruno" in page.locator("#toast").inner_text(), "y lo avisa")
+    check(page.locator("#giftChip").is_hidden(), "el botón desaparece hasta mañana")
+    page.evaluate("farmweb.app.claimGift()")
+    check(page.evaluate("farmweb.app.w.coins") == 130, "una segunda cesta el mismo día no cobra")
+
+    page.click('[data-panel="world"]')
+    page.locator('[data-key="labels-todo"]').click()
+    check(page.evaluate("farmweb.app.labels") == "todo", "las etiquetas pasan a «nombre y especie»")
+    check(page.evaluate("JSON.parse(localStorage.getItem('farmweb:ui:v1')).labels") == "todo", "y se guardan en el dispositivo")
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(400)
+    page.screenshot(path=f"{SHOTS}/movil-33-etiquetas.png")
+    page.reload()
+    page.wait_for_function("document.getElementById('loading').hidden === true", timeout=15000)
+    check(page.evaluate("farmweb.app.labels") == "todo", "al recargar siguen puestas")
+
+    page.click('[data-panel="animals"]')
+    page.locator('[data-key="tab-guia"]').click()
+    texto = page.locator("#sheetBody").inner_text()
+    check("Gallina" in texto and "Pone un huevo" in texto, "la Guía cuenta la gallina y su dato")
+    check("???" in texto, "y esconde las especies que aún no conoces")
+    page.screenshot(path=f"{SHOTS}/movil-34-guia.png")
+    check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
+    ctx.close()
+
+
 def main():
     server = subprocess.Popen([sys.executable, "-m", "http.server", str(PORT), "--bind", "127.0.0.1"],
                               cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -621,6 +659,7 @@ def main():
             story_scenes(browser, "movil", {"width": 390, "height": 844}, 3, True)
             story_scenes(browser, "pc", {"width": 1280, "height": 800}, 1, False)
             visits_and_diary(browser)
+            gift_labels_guide(browser)
             browser.close()
     finally:
         server.terminate()

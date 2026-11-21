@@ -438,3 +438,7 @@ body.sheet-open .toast.show { animation: none; }
 @media (min-width: 700px) { .story { align-items: center; } }
 @media (prefers-reduced-motion: reduce) { .story-card { animation: none; } }
 .diary li { display: flex; align-items: center; gap: 8px; }
+.chip-btn.gift { flex: none; background: var(--butter); border-color: var(--butter-d); animation: glow 1.6s ease-in-out infinite; }
+@keyframes glow { 50% { box-shadow: 0 0 0 4px rgba(232, 184, 74, .45); } }
+@media (prefers-reduced-motion: reduce) { .chip-btn.gift { animation: none; } }
+.tabs .tab[aria-pressed="true"] { background: var(--butter); border-color: var(--butter-d); }

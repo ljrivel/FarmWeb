@@ -44,6 +44,10 @@ export const BALANCE = {
   visitMinMs: 8 * MIN,    // cada cuánto llega una visita: entre estos dos tiempos
   visitMaxMs: 12 * MIN,
   visitStayMs: 90 * 1000, // cuánto espera antes de irse si no la tocas
+  // ---- Cesta diaria de Bruno: una al día (fecha local), ciclo de 7 días sin castigo por faltar.
+  giftCoins: [30, 40, 50, 60, 70, 80, 150], // el día 7 es el premio grande
+  giftFoodEach: 3,   // raciones de la comida favorita de cada especie que tengas…
+  giftMaxFoods: 3,   // …hasta este número de comidas distintas
 };
 
 export const MAX_HEARTS = 5;
@@ -79,48 +83,56 @@ export const corralTypeOf = (species) => CORRAL_TYPE_ORDER.find((t) => CORRAL_TY
 export const SPECIES = {
   gallina: {
     nombre: 'Gallina', food: 'grano', product: 'huevo', price: 40,
+    dato: 'Pone un huevo cuando está contenta y bien comida.',
     grow: 3 * MIN, prod: 90 * 1000, breed: 2 * MIN, aquatic: false,
     variants: ['Blanca', 'Marrón', 'Durazno', 'Lavanda'],
     names: ['Pepita', 'Cocó', 'Plumita', 'Huevito', 'Pollita'],
   },
   gato: {
     nombre: 'Gato', food: 'pescadito', product: 'pelusa', price: 80,
+    dato: 'Espanta a los ratoncitos con solo mirarlos.',
     grow: 4 * MIN, prod: 150 * 1000, breed: 3 * MIN, aquatic: false,
     variants: ['Naranja', 'Gris', 'Siamés', 'Medianoche'],
     names: ['Misi', 'Bigotes', 'Mochi', 'Nube', 'Canela'],
   },
   vaca: {
     nombre: 'Vaca', food: 'heno', product: 'leche', price: 150,
+    dato: 'Da leche tibia y le encanta que le hablen.',
     grow: 6 * MIN, prod: 180 * 1000, breed: 4 * MIN, aquatic: false,
     variants: ['Blanquinegra', 'Marrón', 'Fresa', 'Galaxia'],
     names: ['Manchita', 'Lola', 'Violeta', 'Flor', 'Lechuga'],
   },
   mapache: {
     nombre: 'Mapache', food: 'bayas', product: 'brillito', price: 180,
+    dato: 'Le fascina todo lo que brilla: de ahí sus brillitos.',
     grow: 5 * MIN, prod: 200 * 1000, breed: 4 * MIN, aquatic: false,
     variants: ['Gris', 'Canela', 'Rojizo', 'Nieve'],
     names: ['Antifaz', 'Rocío', 'Pipo', 'Nuez', 'Tizón'],
   },
   chanchito: {
     nombre: 'Chanchito', food: 'bayas', product: 'trufa', price: 200,
+    dato: 'Con su olfato fino encuentra trufas bajo la nieve.',
     grow: 5 * MIN, prod: 240 * 1000, breed: 4 * MIN, aquatic: false,
     variants: ['Rosa', 'Lunares', 'Chocolate', 'Algodón'],
     names: ['Bolita', 'Rosita', 'Pimpón', 'Fresita', 'Cerdi'],
   },
   ajolote: {
     nombre: 'Ajolote', food: 'gusanito', product: 'burbuja', price: 260,
+    dato: 'Sonríe todo el tiempo, aunque llueva.',
     grow: 6 * MIN, prod: 240 * 1000, breed: 5 * MIN, aquatic: true,
     variants: ['Rosa', 'Dorado', 'Menta', 'Medianoche'],
     names: ['Axi', 'Burbuja', 'Coral', 'Luna', 'Gominola'],
   },
   carnotauro: {
     nombre: 'Carnotauro', food: 'carnita', product: 'escama_fuego', price: null,
+    dato: 'Tiene cuernitos y es muy tierno con quien lo cuida.',
     grow: 10 * MIN, prod: 360 * 1000, breed: 8 * MIN, aquatic: false,
     variants: ['Coral', 'Menta', 'Lavanda', 'Medianoche'],
     names: ['Rawr', 'Cuernitos', 'Brasa', 'Dino', 'Pelusa'],
   },
   spinosaurus: {
     nombre: 'Spinosaurus', food: 'pescadito', product: 'escama_rio', price: null,
+    dato: 'Nada como un pez y le gusta el pescadito.',
     grow: 10 * MIN, prod: 360 * 1000, breed: 8 * MIN, aquatic: true,
     variants: ['Azul', 'Verde', 'Naranja', 'Violeta'],
     names: ['Vela', 'Río', 'Gigi', 'Splash', 'Gota'],
@@ -128,12 +140,14 @@ export const SPECIES = {
   // Especies nuevas (se conocen con misiones secundarias del capítulo 2 y 3)
   conejo: {
     nombre: 'Conejo', food: 'zanahoria', product: 'lana', price: 160,
+    dato: 'Es tímido, pero se anima con una zanahoria.',
     grow: 4 * MIN, prod: 170 * 1000, breed: 3 * MIN, aquatic: false,
     variants: ['Blanco', 'Gris', 'Canela', 'Cielo'],
     names: ['Saltarín', 'Copito', 'Orejitas', 'Bombón', 'Algodón'],
   },
   pato: {
     nombre: 'Pato', food: 'grano', product: 'pluma', price: 220,
+    dato: 'Su «cuac» nasal se oye desde lejos.',
     grow: 5 * MIN, prod: 210 * 1000, breed: 4 * MIN, aquatic: true,
     variants: ['Amarillo', 'Blanco', 'Menta', 'Rosado'],
     names: ['Cuac', 'Patito', 'Plumón', 'Charco', 'Lulú'],

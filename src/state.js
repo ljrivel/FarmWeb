@@ -76,6 +76,7 @@ export function newWorld(name = 'Granja de la familia', now = Date.now(), seed =
     quests: { claimed: {}, side: {}, sideBase: {} },
     secrets: {},
     story: { seen: {}, talked: {} },
+    gift: { day: '', n: 0 },
     unlocked: [...INITIAL_UNLOCKED],
     players: [{ id: 'local', name: 'Jugador 1' }],
     maxPlayers: 4,
@@ -147,6 +148,7 @@ export function validateWorld(raw, now = Date.now()) {
     quests: { claimed: {}, side: {}, sideBase: {} },
     secrets: {},
     story: { seen: {}, talked: {} },
+    gift: { day: '', n: 0 },
     unlocked: [...INITIAL_UNLOCKED],
     players: [{ id: 'local', name: text(raw.players?.[0]?.name, 24, 'Jugador 1') }],
     maxPlayers: 4,
@@ -167,6 +169,7 @@ export function validateWorld(raw, now = Date.now()) {
     for (const q of QUESTS) if (raw.quests.claimed[q.id] === true) w.quests.claimed[q.id] = true;
   }
   for (const id of Object.keys(SECRETS)) if (raw.secrets?.[id] === true) w.secrets[id] = true;
+  if (isObj(raw.gift)) w.gift = { day: /^\d{4}-\d{2}-\d{2}$/.test(raw.gift.day) ? raw.gift.day : '', n: int(raw.gift.n, 0, 1e6, 0) };
   if (isObj(raw.story)) {
     for (const sc of SCENES) if (raw.story.seen?.[sc.id] === true) w.story.seen[sc.id] = true;
     for (const v of VISITS) if (raw.story.talked?.[v.id] === true) w.story.talked[v.id] = true;
