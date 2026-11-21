@@ -166,16 +166,12 @@ test('mejorar el Criadero acorta los tiempos', () => {
   assert.ok(t(4) < t(2) && t(2) < t(0));
 });
 
-test('un corral en cría manual no pone huevos solo', () => {
+test('los animales no crían solos: sin Criadero no hay huevos ni crías', () => {
   const w = listo();
   DOS(w);
-  w.corrales.find((c) => c.id === 'pradera').breed = 'manual';
-  correr(w, 3 * MIN, 1000);
+  correr(w, 10 * MIN, 1000);
   assert.equal(w.eggs.length, 0);
-  assert.ok(sim.setCorralBreed(w, 'pradera', 'auto').ok);
-  correr(w, 3 * MIN, 1000);
-  assert.ok(w.stats.breedStarted > 0, 'en automática vuelve a criar');
-  assert.equal(sim.setCorralBreed(w, 'pradera', 'raro').ok, false);
+  assert.equal(w.stats.breedStarted, 0);
 });
 
 test('guardar y cargar conserva el Criadero y limpia lo que no cuadra', () => {

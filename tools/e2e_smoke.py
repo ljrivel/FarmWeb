@@ -983,8 +983,7 @@ def criadero_flow(browser):
     page.keyboard.press("Escape")
     page.click('[data-panel="animals"]')
     check("en el Criadero" in page.locator("#sheetBody").inner_text(), "Animales avisa que están en el Criadero")
-    page.locator('[data-key="breed-pradera"]').click()
-    check(page.evaluate("farmweb.app.w.corrales[0].breed") == "manual", "el corral pasa a cría manual")
+    check(page.locator('[data-key^="breed-"]').count() == 0, "ya no hay botón de cría automática en los corrales")
     page.keyboard.press("Escape")
     page.evaluate("farmweb.app.w.criadero.lanes[0].left = 0")
     page.wait_for_function("farmweb.app.w.criadero.lanes[0].phase === 'egg'", timeout=4000)
@@ -1255,25 +1254,43 @@ def arreglos_criadero_vet(browser):
     ctx.close()
 
 
-def cria_afk(browser):
-    print("\n== la cría automática se pausa si el jugador está ausente")
+def cria_solo_criadero(browser):
+    print("\n== toda la cría pasa por el Criadero (gratis en el capítulo 1)")
     ctx = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
     page = ctx.new_page()
+    errors = []
+    page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+    page.on("pageerror", lambda e: errors.append(str(e)))
     page.goto(URL)
     page.wait_for_function("document.getElementById('loading').hidden === true", timeout=15000)
     page.evaluate("""(async () => {
-      const { addAnimal } = await import('/src/state.js');
+      const { QUESTS } = await import('/src/data.js');
       const w = farmweb.app.w;
-      addAnimal(w, 'gallina', 0, 'adult');
+      for (const q of QUESTS) { if (q.id === 'c1-cria') break; w.quests.claimed[q.id] = true; }
+      w.coins = 0;
       for (const a of w.animals) { a.fed = 100; a.happy = 100; a.cool = 0; }
-      w.eggs.length = 0;
-      farmweb.app.lastInput = Date.now() - 6 * 60 * 1000;
     })()""")
     page.wait_for_timeout(2500)
-    check(page.evaluate("farmweb.app.w.eggs.length") == 0, "ausente más de 5 min: sus parejas no ponen huevos")
-    page.mouse.click(5, 5)
-    page.wait_for_timeout(2500)
-    check(page.evaluate("farmweb.app.w.eggs.length") >= 1, "al volver a tocar, la cría automática sigue")
+    check(page.evaluate("farmweb.app.w.eggs.length") == 0, "dos gallinas listas no ponen huevos solas")
+    page.click('[data-goto="mapa"]')
+    page.wait_for_timeout(300)
+    gbox = page.locator("#game").bounding_box()
+    page.mouse.click(gbox["x"] + 36 * gbox["width"] / 320, gbox["y"] + 34 * gbox["height"] / 224)
+    page.wait_for_selector('[data-key="cr-build"]', timeout=3000)
+    check("Gratis" in page.locator("#sheetBody").inner_text() and page.locator('[data-key="cr-build"]').is_enabled(), "con la misión «¡Una gallinita!» el Criadero es gratis")
+    page.locator('[data-key="cr-build"]').click()
+    page.wait_for_selector('[data-key^="pair-sp-"]', timeout=3000)
+    page.locator('[data-key="pair-sp-gallina"]').click()
+    picks = page.locator('[data-key^="pick-"]')
+    picks.nth(0).click(); picks.nth(1).click()
+    page.locator('[data-key="pair-go"]').click()
+    page.wait_for_timeout(300)
+    page.evaluate("farmweb.app.w.criadero.lanes[0].left = 0")
+    page.wait_for_function("farmweb.app.w.criadero.lanes[0]?.phase === 'egg'", timeout=4000)
+    page.evaluate("farmweb.app.w.criadero.lanes[0].left = 0")
+    page.wait_for_function("farmweb.app.w.criadero.lanes.length === 0", timeout=4000)
+    check(page.evaluate("farmweb.app.w.stats.born.gallina") == 1, "la gallinita nace en el Criadero y cuenta para la misión")
+    check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
     ctx.close()
 
 
@@ -1422,7 +1439,7 @@ def main():
             criadero_flow(browser)
             lab_flow(browser)
             venta_lecciones(browser)
-            cria_afk(browser)
+            cria_solo_criadero(browser)
             arreglos_criadero_vet(browser)
             auto_update(browser)
             vet_interactiva(browser)

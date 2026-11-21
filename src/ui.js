@@ -351,9 +351,6 @@ export function createUI(app) {
       const list = w.animals.filter((a) => a.corral === c.id).sort((a, b) => a.species.localeCompare(b.species) || a.id - b.id);
       return h('section', { class: 'group' },
         row(h('h3', { class: 'grow', text: `${c.nombre} ${c.used}/${c.capacity}` }),
-          btn(`Cría: ${w.corrales.find((x) => x.id === c.id)?.breed === 'manual' ? 'manual' : 'automática'}`,
-            () => app.setBreed(c.id, w.corrales.find((x) => x.id === c.id)?.breed === 'manual' ? 'auto' : 'manual'),
-            { key: `breed-${c.tipo}`, cls: 'small' }),
           btn('Ir al corral', () => { closeSheet(); app.goTo(c.id); }, { key: `go-${c.tipo}` })),
         list.length ? list.map((a) => row(
           portrait(a.species, a.variant, a.stage, 2, a.shiny),
@@ -444,10 +441,10 @@ export function createUI(app) {
     const info = sim.criaderoInfo(w);
     if (!info.built) {
       return h('div', { class: 'empty' }, icon('huevo', 3),
-        h('p', { text: 'El Criadero es un lugar tranquilo donde tú eliges las parejas y cuidas cada huevo hasta que nace. Mientras los padres están en el nido no están en su corral.' }),
+        h('p', { text: 'El Criadero es un lugar tranquilo donde tú eliges las parejas y cuidas cada huevo hasta que nace: los animales no crían solos. Mientras los padres están en el nido no están en su corral.' }),
         info.open
-          ? row(price(BALANCE.criaderoCost), btn('Construir el Criadero', () => app.buildCriadero(), { cls: 'primary', disabled: w.coins < BALANCE.criaderoCost, key: 'cr-build' }))
-          : h('p', { class: 'muted', text: 'Se abre cuando la historia llegue al capítulo 2.' }));
+          ? row(info.price ? price(info.price) : h('span', { class: 'muted small', text: 'Gratis ahora' }), btn('Construir el Criadero', () => app.buildCriadero(), { cls: 'primary', disabled: w.coins < info.price, key: 'cr-build' }))
+          : h('p', { class: 'muted', text: 'Se abre con la misión «¡Una gallinita!».' }));
     }
     const perk = info.level ? ` · tiempos −${Math.round(BALANCE.criaderoTimeCut * info.level * 100)} % y +${(BALANCE.criaderoMutationBonus * info.level * 100).toFixed(1)} % de colores raros` : '';
     const lanes = w.criadero.lanes.map((l) => {
@@ -494,7 +491,7 @@ export function createUI(app) {
       lanes.length ? lanes : h('p', { class: 'muted small', text: 'Todavía no hay nada en el Criadero.' }),
       h('h3', { text: 'Nueva pareja' }),
       pairing,
-      h('p', { class: 'muted small', text: 'En «Animales» puedes poner un corral en cría manual para que solo críe aquí.' }));
+      h('p', { class: 'muted small', text: 'Los animales no crían solos: toda cría pasa por aquí.' }));
   }
 
   // ---- panel: Laboratorio Hélice (Banco de ADN, minijuego de la hebra y equipo)

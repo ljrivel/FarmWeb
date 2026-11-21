@@ -213,8 +213,9 @@ function drawMap(ctx, S, w, t) {
     else {
       icon(ctx, S, 'candado', x + 8, y - 28, 16);
       pill(ctx, 'Criadero', x, y + 26);
-      if (!info.open) pill(ctx, 'Capítulo 2', x, y + 39, '#fff0d4');
-      else icon(ctx, S, 'coin', pill(ctx, String(BALANCE.criaderoCost), x, y + 39, '#fff0d4', 10) + 2, y + 39, 12);
+      if (!info.open) pill(ctx, 'Una gallinita', x, y + 39, '#fff0d4');
+      else if (!info.price) pill(ctx, 'Gratis', x, y + 39, '#fff0d4');
+      else icon(ctx, S, 'coin', pill(ctx, String(info.price), x, y + 39, '#fff0d4', 10) + 2, y + 39, 12);
     }
   }
 

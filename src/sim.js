@@ -44,7 +44,7 @@ function careRand(w) {
  * `opts.live`: el jugador tiene el juego abierto. Solo entonces se puede enfermar, curarse solo o perder
  * corazones; en la puesta al día (sin `live`) los enfermos quedan igual y nadie empeora.
  */
-export function tick(w, dt, opts = {}) { // opts.noBreed: sin cría automática (sin conexión o jugador ausente)
+export function tick(w, dt, opts = {}) {
   const live = opts.live === true;
   const events = [];
   const s = dt / 1000;
@@ -125,30 +125,6 @@ export function tick(w, dt, opts = {}) { // opts.noBreed: sin cría automática 
     }
   }
 
-  for (const c of w.corrales) if (c.breedPause > 0) c.breedPause = Math.max(0, c.breedPause - dt);
-
-  // cría: parejas de la misma especie, felices y comidas
-  for (const species of Object.keys(SPECIES)) {
-    const corral = corralOfSpecies(w, species);
-    if (!corral || corral.breed === 'manual' || corral.breedPause > 0 || opts.noBreed) continue; // en manual solo se cría en el Criadero
-    const ready = w.animals.filter((a) =>
-      a.species === species && a.stage === 'adult' && a.cool <= 0 && !a.sick && !a.away &&
-      a.fed >= B.minFedToBreed && a.happy >= B.minHappyToBreed);
-    while (ready.length >= 2 && hasSpace(w, corral.id)) {
-      const a = ready.shift();
-      const b = ready.shift();
-      const sp = SPECIES[species];
-      const variant = pickBabyVariant(w, a, b);
-      const shiny = chance(w, a.shiny || b.shiny ? B.shinyChanceParent : B.shinyChance);
-      w.eggs.push({
-        id: w.nextId++, species, corral: corral.id, variant, shiny, left: sp.breed,
-        x: (a.x + b.x) / 2, y: (a.y + b.y) / 2,
-      });
-      a.cool = b.cool = sp.breed * 2;
-      w.stats.breedStarted++;
-      events.push({ type: 'egg', species });
-    }
-  }
   return events;
 }
 
@@ -473,18 +449,25 @@ export function buyFood(w, food, n = 1) {
 // ------------------------------------------------------------------ Criadero
 const chapterOf = (w) => QUESTS.find((q) => !w.quests.claimed[q.id])?.ch ?? Infinity;
 const cutOf = (w) => Math.max(0.3, 1 - BALANCE.criaderoTimeCut * w.criadero.level);
-export const criaderoOpen = (w) => chapterOf(w) >= BALANCE.criaderoMinCh;
+/** El Criadero se abre con la misión «¡Una gallinita!» (capítulo 1): desde ahí es la única forma de criar. */
+export const criaderoOpen = (w) => {
+  const i = QUESTS.findIndex((q) => !w.quests.claimed[q.id]);
+  return i < 0 || i >= QUESTS.findIndex((q) => q.id === 'c1-cria');
+};
+/** Gratis en el capítulo 1 (hace falta para la primera cría); después cuesta `criaderoCost`. */
+export const criaderoPrice = (w) => (chapterOf(w) <= 1 ? 0 : BALANCE.criaderoCost);
 export function criaderoInfo(w) {
   const c = w.criadero, max = BALANCE.criaderoUpgradeCosts.length;
   const slots = BALANCE.criaderoSlots[c.level];
-  return { built: c.built, open: criaderoOpen(w), level: c.level, maxLevel: max, slots, used: c.lanes.length, free: slots - c.lanes.length,
+  return { built: c.built, open: criaderoOpen(w), price: criaderoPrice(w), level: c.level, maxLevel: max, slots, used: c.lanes.length, free: slots - c.lanes.length,
     upgradeCost: c.level < max ? BALANCE.criaderoUpgradeCosts[c.level] : null };
 }
 export function buildCriadero(w) {
   if (w.criadero.built) return no('Ya tienes el Criadero.');
-  if (!criaderoOpen(w)) return no('El Criadero se abre cuando la historia llegue al capítulo 2.');
-  if (w.coins < BALANCE.criaderoCost) return no('Te faltan monedas.');
-  w.coins -= BALANCE.criaderoCost;
+  if (!criaderoOpen(w)) return no('El Criadero se abre con la misión «¡Una gallinita!».');
+  const price = criaderoPrice(w);
+  if (w.coins < price) return no('Te faltan monedas.');
+  w.coins -= price;
   w.criadero.built = true;
   return ok('¡Construiste el Criadero! Ahora puedes elegir las parejas.');
 }
@@ -533,15 +516,6 @@ export function heatEgg(w, laneId) {
   l.heatCd = BALANCE.heatCooldown;
   return ok('¡Calorcito para el huevo!');
 }
-/** Cría «automática» (por defecto) o «manual» (solo en el Criadero) para un corral. */
-export function setCorralBreed(w, corralId, mode) {
-  const c = getCorral(w, corralId);
-  if (!c) return no('Ese corral no existe.');
-  if (mode !== 'auto' && mode !== 'manual') return no('Modo desconocido.');
-  c.breed = mode;
-  return ok(mode === 'manual' ? `En ${c.nombre} ahora solo se cría en el Criadero.` : `En ${c.nombre} la cría vuelve a ser automática.`);
-}
-
 // ------------------------------------------------------------------ venta de animales
 /** Lo que pagan por un animal: depende de su etapa (bebé o adulto) y de la rareza de su color. */
 export const sellPrice = (a) => Math.max(1, Math.round(SPECIES[a.species].price * (a.stage === 'baby' ? BALANCE.sellBabyPct : BALANCE.sellAdultPct) * BALANCE.sellRarityMul[rarityOf(a)]));
@@ -558,8 +532,6 @@ export function sellAnimal(w, id) {
   if (!c.ok) return c;
   const gain = sellPrice(a);
   w.animals.splice(w.animals.indexOf(a), 1);
-  const corral = getCorral(w, a.corral);
-  if (corral) corral.breedPause = BALANCE.sellBreedPauseMs;
   w.coins += gain;
   w.stats.soldAnimals++;
   return ok(`Vendiste a ${a.name} por ${gain} monedas.`, { gain });

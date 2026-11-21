@@ -22,9 +22,9 @@ El dueño es Luis Josué; **responde siempre en español**.
 | Qué | Comando |
 |---|---|
 | Jugar en local (PC y celular en la misma Wi-Fi) | doble clic a `iniciar.bat` o `npm start` |
-| Pruebas unitarias | `npm test` (deben pasar todas; hoy 188) |
+| Pruebas unitarias | `npm test` (deben pasar todas; hoy 185) |
 | Regenerar sprites | `npm run sprites` (Python + Pillow; escribe `assets/sprites/*`) |
-| Recorrido en navegador | `python tools/e2e_smoke.py <carpeta_capturas>` (Playwright + Chrome; hoy 366 comprobaciones) |
+| Recorrido en navegador | `python tools/e2e_smoke.py <carpeta_capturas>` (Playwright + Chrome; hoy 368 comprobaciones) |
 
 Tras un cambio visible, recarga con Ctrl+F5. El servidor local envía `Cache-Control: no-store`.
 Con `?debug` en la URL queda disponible `window.farmweb = { app, sim, audio }`. `?sinescenas` y `?sintutorial` apagan las
@@ -61,7 +61,7 @@ Estación Estelar (Capítulo 8 «Más allá del cielo»): corral `estacion` (12 
 compran y crían (porg, gato loth, tauntaun, bantha, purrgil, dewback, ewok, Grogu y BB-8; los últimos 3 se conocen al
 cobrar la leche azul). Sitio privado y sin fines de lucro, según el dueño.
 Criadero (lugar único del mapa, `CRIADERO_SPOT`; `w.criadero = { built, level, lanes }`, `a.away`, `corral.breed`): cupos con
-nido → huevo en incubadora → eclosión, «Darle calor», niveles 0 a 4, cría automática por defecto y «manual» por corral. Los
+nido → huevo en incubadora → eclosión, «Darle calor», niveles 0 a 4, Los
 padres en el nido están ausentes (sin hambre ni ánimo, ni dibujados). Todo en `BALANCE.criadero*` y `heat*`. Los 6 dinosaurios tienen
 precio y se listan en la Tienda, pero se replican en el Laboratorio (ver abajo).
 Mao Mao (retrato pixel art chibi de gato, id `mao`) atiende la Veterinaria desde el Capítulo 6 mientras la Dra. Pita está de viaje:
@@ -86,14 +86,14 @@ doctora de turno): los dinosaurios ya no se compran, se **replican** (`replicate
 (migración en `validateWorld`, sin subir `VERSION`). Personaje nuevo `helice` (Señor Hélice). Sin hacer: las «lagunas de ADN de rana» del guion.
 Vender animales (`sellPrice`, `canSellAnimal`, `sellAnimal` en `sim.js`; `BALANCE.sell*`; `stats.soldAnimals`): bebé 25 % y adulto 50 % del precio de la
 especie, por la rareza (poco ×1,5, raro ×2,5, brillante ×4); no se vende un enfermo, uno del nido ni el último animal. Botón en la tarjeta y en la lista de
-Animales, con confirmación (`askSell` en `ui.js`). Tras vender, ese corral no cría solo 60 s (`corral.breedPause`, `BALANCE.sellBreedPauseMs`, no se guarda). La etapa se ve como etiqueta (`stageBadge`: Bebé / Adulto).
-Mini lecciones por mecánica nueva (`LESSONS` en `src/tutorial.js`: vender, Criadero, enfermedades, Laboratorio, Mao Mao y Estación; las cuentan Tomás, Pita,
+Animales, con confirmación (`askSell` en `ui.js`). La etapa se ve como etiqueta (`stageBadge`: Bebé / Adulto).
+Mini lecciones por mecánica nueva (`LESSONS` en `src/tutorial.js`: Criadero (al abrirse), vender, enfermedades, Laboratorio, Mao Mao y Estación; las cuentan Tomás, Pita,
 el Señor Hélice, Mao Mao y Noa): salen solas al llegar a su capítulo (el Laboratorio, al abrirse), tras el tutorial y las escenas, y se guardan en
 `farmweb:ui:v1` (`lessons`); una partida avanzada no repite las de capítulos anteriores y las repite desde Mundo → Lecciones. `startTutorial(onDone, lesson)`
 sirve para ambos. Una mecánica nueva en el futuro = una lección más en `LESSONS`.
 Juego ocasional: la saciedad llena dura ~3 h (`fedDecayPerSec`), con hambre el ánimo cae en ~33 min, cada animal acumula hasta 3 productos (`maxReady`) y
 sin conexión la saciedad no baja de `offlineFedFloor` (25) y el ánimo no cae: ausentarse no castiga (solo con el juego abierto se vacía, enferma o pierde corazones).
-La cría automática solo ocurre con el jugador presente: se pausa sin conexión y tras `BALANCE.afkMs` (5 min) sin tocar nada (`opts.noBreed` en `tick`, `app.lastInput` en `main.js`); el Criadero sigue igual.
+Los animales **no crían solos**: toda cría pasa por el Criadero (`pairAnimals`). El Criadero se abre con la misión `c1-cria` (`criaderoOpen`) y es gratis en el capítulo 1 (`criaderoPrice`); después cuesta `criaderoCost`. Ya no hay cría automática, pausa por venta ni pausa por AFK; `corral.breed` queda en el guardado pero no hace nada.
 `tests/historia-completa.test.mjs` recorre toda la historia: añade ahí cualquier capítulo nuevo sin tocar más.
 
 ## Pendiente

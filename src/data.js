@@ -51,7 +51,6 @@ export const BALANCE = {
   giftMaxFoods: 3,   // …hasta este número de comidas distintas
   // ---- Criadero (lugar único del mapa): cría manual en cupos (nido → huevo en incubadora → eclosión).
   criaderoCost: 300,
-  criaderoMinCh: 2,                                // se abre cuando la historia llega a este capítulo
   criaderoUpgradeCosts: [400, 800, 1500, 2500],    // costo de pasar al nivel 1, 2, 3 y 4
   criaderoSlots: [1, 2, 3, 4, 5],                  // parejas a la vez según el nivel (0 a 4)
   criaderoTimeCut: 0.1,                            // −10 % de tiempo por nivel
@@ -59,10 +58,8 @@ export const BALANCE = {
   criaderoNestMul: 0.5,                            // el nido dura medio tiempo de cría de la especie
   criaderoEggMul: 1,                               // la incubación dura un tiempo de cría
   // ---- Venta de animales: un bebé vale el 25 % del precio de su especie y un adulto el 50 %, por la rareza del color.
-  afkMs: 5 * MIN,   // sin tocar nada por tanto tiempo, la cría automática se pausa (y también sin conexión)
   sellBabyPct: 0.25,
   sellAdultPct: 0.5,
-  sellBreedPauseMs: 60 * 1000, // tras vender, ese corral no cría solo por un rato: el lugar libre no se llena al instante con un huevo
   sellRarityMul: { comun: 1, poco: 1.5, raro: 2.5, brillante: 4 },
   // ---- Laboratorio Hélice (lugar único del mapa, se abre en el capítulo 4): los dinosaurios se «replican» con el minijuego de la hebra.
   labUpgradeCosts: [600, 1200, 2200],              // costo de pasar al nivel 1, 2 y 3
@@ -385,7 +382,7 @@ export const QUESTS = [
     text: '¡Oí ruiditos en el granero! Son ratoncitos traviesos que se comen el grano. Tu abuela tenía un gato que los espantaba con solo mirarlos. Compra un gatito en la tienda.',
     goal: { type: 'bought', species: 'gato', n: 1 }, reward: { foods: { pescadito: 5 } } },
   { id: 'c1-cria', ch: 1, who: 'abuela', title: '¡Una gallinita!',
-    text: 'Segunda carta: «Si dos gallinas están felices y bien comidas, ponen un huevo especial. Así empezó todo para mí: con una sola gallinita que nació una mañana de primavera.»',
+    text: 'Segunda carta: «Si dos gallinas están felices y bien comidas, ponen un huevo especial. Así empezó todo para mí: con una sola gallinita que nació una mañana de primavera.» Los animales no crían solos: construye el Criadero en el mapa (por ahora es gratis) y elige dos gallinas.',
     goal: { type: 'born', species: 'gallina', n: 1 }, reward: { coins: 60 } },
   { id: 'c1-cuaderno', ch: 1, who: 'tomas', title: 'El cuaderno de la abuela',
     text: 'Encontré esto debajo del heno: ¡el cuaderno de tu abuela! Tiene dibujos de amigos del bosque y una página arrancada… Dice que para ganarte la confianza de un animal hay que acariciarlo mucho.',

@@ -47,17 +47,3 @@ test('el contador de animales vendidos tiene valor por defecto en partidas vieja
   delete raw.stats.soldAnimals;
   assert.equal(validateWorld(raw, 0).stats.soldAnimals, 0);
 });
-
-test('tras vender, el corral no cría solo por un rato y el lugar libre se queda libre', () => {
-  const w = granja();
-  while (sim.hasSpace(w, 'pradera')) addAnimal(w, 'gallina', 0, 'adult');
-  for (const a of w.animals) { a.fed = 100; a.happy = 100; a.cool = 0; }
-  sim.sellAnimal(w, w.animals[0].id);
-  const libre = sim.spaceUsed(w, 'pradera');
-  sim.tick(w, 1000);
-  assert.equal(sim.spaceUsed(w, 'pradera'), libre, 'sin huevo nuevo durante la pausa');
-  sim.tick(w, BALANCE.sellBreedPauseMs);
-  for (const a of w.animals) { a.fed = 100; a.happy = 100; a.cool = 0; }
-  sim.tick(w, 1000);
-  assert.equal(sim.spaceUsed(w, 'pradera'), libre + 1, 'pasada la pausa vuelve a criar');
-});

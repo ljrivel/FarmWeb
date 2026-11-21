@@ -40,7 +40,7 @@ export function stepDone(step, { w, selectedId, base }) {
   return false;
 }
 
-// Mini lecciones: una por mecánica nueva. `ch`: capítulo en que salen; `when: 'lab'`: salen al abrirse el Laboratorio (no antes).
+// Mini lecciones: una por mecánica nueva. `ch`: capítulo en que salen; `when: 'lab'`: al abrirse el Laboratorio; `when: 'criadero'`: al abrirse el Criadero.
 // Mismos pasos que el tutorial, contados por el personaje `who`. Se ven una vez por dispositivo y se repiten desde Mundo.
 export const LESSONS = [
   { id: 'vender', ch: 2, who: 'tomas', title: 'Vender animales', steps: [
@@ -48,8 +48,8 @@ export const LESSONS = [
     { id: 'lista', panel: 'animals', text: 'En «Animales» ves la etapa de cada uno (bebé o adulto) y también puedes venderlos desde la lista. No se vende uno enfermo ni el último.' },
     { id: 'cuidado', mood: 1, panel: 'pack', text: 'Los productos se siguen vendiendo en la Mochila. Piénsalo bien: vender un animal no se deshace.' },
   ] },
-  { id: 'criadero', ch: 2, who: 'tomas', title: 'El Criadero', steps: [
-    { id: 'mapa', scene: 'mapa', target: '#game', text: 'El Criadero es un lugar del mapa, arriba a la izquierda. Ahí tú eliges las parejas en vez de dejarlo al azar.' },
+  { id: 'criadero', ch: 1, when: 'criadero', who: 'tomas', title: 'El Criadero', steps: [
+    { id: 'mapa', scene: 'mapa', target: '#game', text: 'El Criadero es un lugar del mapa, arriba a la izquierda. Los animales no crían solos: ahí tú eliges las parejas.' },
     { id: 'pareja', panel: 'criadero', text: 'Elige dos adultos de la misma especie, sanos y contentos: van al nido y después sale el huevo.' },
     { id: 'calor', panel: 'criadero', text: '«Darle calor» adelanta la eclosión. Si lo mejoras, tienes más cupos, menos espera y más colores raros.' },
   ] },
@@ -77,8 +77,7 @@ export const LESSONS = [
 ];
 
 /** La primera lección sin ver que ya toca: por capítulo, o al abrirse el Laboratorio. `seen`: { id: true }. */
-export const lessonDue = (w, seen, ch) => LESSONS.find((l) => !seen[l.id] && (l.when === 'lab' ? w.lab.built : ch >= l.ch)) || null;
+export const lessonOpen = (w, l, ch) => (l.when === 'lab' ? w.lab.built : l.when === 'criadero' ? !!w.quests.claimed['c1-gato'] : ch >= l.ch);
+export const lessonDue = (w, seen, ch) => LESSONS.find((l) => !seen[l.id] && lessonOpen(w, l, ch)) || null;
 /** Lecciones de un capítulo anterior al actual: una partida que ya iba avanzada no las repite. */
 export const pastLessons = (ch) => Object.fromEntries(LESSONS.filter((l) => l.ch < ch).map((l) => [l.id, true]));
-/** ¿Esta lección ya se puede repetir desde Mundo (llegó su capítulo o abrió el Laboratorio)? */
-export const lessonOpen = (w, l, ch) => (l.when === 'lab' ? w.lab.built : ch >= l.ch);

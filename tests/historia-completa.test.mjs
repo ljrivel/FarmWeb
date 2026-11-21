@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { QUESTS, SIDE_QUESTS, SPECIES, corralTypeOf } from '../src/data.js';
 import { newWorld, addAnimal, addCorral, getCorral } from '../src/state.js';
 import { claim, claimSide, activeSide, activeQuest, syncSide } from '../src/quests.js';
-import { buyAnimal, tick } from '../src/sim.js';
+import { buyAnimal, tick, pairAnimals } from '../src/sim.js';
 
 function satisfy(w, g) {
   const st = w.stats;
@@ -91,13 +91,13 @@ test('al terminar la historia las 9 criaturas de la Estación se compran y viven
   }
 });
 
-test('las criaturas de la Estación crían (dos adultos felices ponen un huevo)', () => {
+test('las criaturas de la Estación crían en el Criadero (dos adultos felices van al nido)', () => {
   for (const s of ESTACION) {
     const w = newWorld('T', 1, 1);
     addCorral(w, 'estacion');
     const a = addAnimal(w, s, 0, 'adult'), b = addAnimal(w, s, 0, 'adult');
     a.fed = b.fed = a.happy = b.happy = 100;
-    tick(w, 1000);
-    assert.equal(w.eggs.filter((e) => e.species === s).length, 1, `${s} no cría`);
+    w.criadero.built = true;
+    assert.ok(pairAnimals(w, a.id, b.id).ok, `${s} no cría`);
   }
 });

@@ -216,24 +216,12 @@ test('corralStatus cuenta listos y hambrientos', () => {
   assert.deepEqual(sim.corralStatus(w, 'pradera'), { used: 2, capacity: 8, ready: 2, hungry: 1 });
 });
 
-test('cría: dos adultas felices ponen un huevo y nace una cría', () => {
+test('los animales no crían solos: dos adultas felices no ponen huevo (toda cría pasa por el Criadero)', () => {
   const w = fresh(11);
-  for (const a of w.animals) { a.fed = 100; a.happy = 100; }
-  const ev = sim.tick(w, 1000);
-  assert.ok(ev.some((e) => e.type === 'egg'));
-  assert.equal(w.eggs.length, 1);
-  assert.equal(w.eggs[0].corral, 'pradera');
-  assert.equal(w.stats.breedStarted, 1);
-  const hatched = [];
-  for (let t = 0; t < SPECIES.gallina.breed + 10_000; t += 5000) {
-    for (const a of w.animals) a.fed = 100;
-    hatched.push(...sim.tick(w, 5000).filter((e) => e.type === 'hatch'));
-  }
-  assert.equal(hatched.length, 1);
-  assert.equal(hatched[0].animal.stage, 'baby');
-  assert.equal(hatched[0].animal.corral, 'pradera');
-  assert.equal(w.animals.length, 3);
-  assert.equal(w.stats.born.gallina, 1);
+  for (const a of w.animals) { a.fed = 100; a.happy = 100; a.cool = 0; }
+  sim.tick(w, 60_000);
+  assert.equal(w.eggs.length, 0);
+  assert.equal(w.stats.breedStarted, 0);
 });
 
 test('no se cría sin espacio, ni con hambre, ni con una sola', () => {
@@ -252,16 +240,6 @@ test('no se cría sin espacio, ni con hambre, ni con una sola', () => {
   solo.animals[0].fed = 100; solo.animals[0].happy = 100;
   sim.tick(solo, 1000);
   assert.equal(solo.eggs.length, 0, 'una sola');
-});
-
-test('no se cría con el corral lleno aunque otro tenga espacio', () => {
-  const w = fresh(4);
-  addCorral(w, 'bosque');
-  for (const a of w.animals) { a.fed = 100; a.happy = 100; }
-  for (let i = 0; i < 6; i++) addAnimal(w, 'gato', 0, 'baby');
-  for (let i = 0; i < 2; i++) Object.assign(addAnimal(w, 'mapache', 0, 'adult'), { fed: 100, happy: 100 });
-  sim.tick(w, 1000);
-  assert.deepEqual(w.eggs.map((e) => [e.species, e.corral]), [['mapache', 'bosque']]);
 });
 
 test('el hacinamiento solo afecta al corral lleno', () => {
@@ -295,12 +273,10 @@ test('simulación de 8 h con todos los corrales: sin NaN y dentro de los topes',
 });
 
 test('la cría hereda color de un padre: con distintas semillas salen ambos colores comunes', () => {
-  let seen = new Set();
+  const seen = new Set();
   for (let seed = 1; seed < 60; seed++) {
     const w = fresh(seed);
-    for (const a of w.animals) { a.fed = 100; a.happy = 100; }
-    sim.tick(w, 1000);
-    seen.add(w.eggs[0].variant);
+    seen.add(sim.pickBabyVariant(w, { variant: 0 }, { variant: 1 }));
   }
   assert.ok(seen.has(0) && seen.has(1), 'salen ambos colores comunes con distintas semillas');
   assert.ok([...seen].every((v) => v >= 0 && v <= 3), 'siempre un color válido');
@@ -338,14 +314,4 @@ test('wander mantiene a cada animal dentro del área de su corral', () => {
     assert.ok(a.x >= area.x0 - 1e-6 && a.x <= area.x1 + 1e-6 && a.y >= area.y0 - 1e-6 && a.y <= area.y1 + 1e-6,
       `${a.species} fuera de ${a.corral}: ${a.x},${a.y}`);
   }
-});
-
-test('sin cría automática (ausente o sin conexión) las parejas listas no ponen huevos, y con ella sí', () => {
-  const w = fresh();
-  addAnimal(w, 'gallina', 0, 'adult');
-  for (const a of w.animals) { a.fed = 100; a.happy = 100; a.cool = 0; }
-  sim.tick(w, 1000, { noBreed: true });
-  assert.equal(w.eggs.length, 0);
-  sim.tick(w, 1000, {});
-  assert.ok(w.eggs.length >= 1);
 });

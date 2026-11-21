@@ -102,8 +102,9 @@ test('las lecciones están bien formadas: narrador existente, ids únicos y text
 test('cada lección sale en su capítulo (o al abrir el Laboratorio), una vez y en orden', () => {
   const w = fresh();
   assert.equal(lessonDue(w, {}, 1), null, 'en el capítulo 1 solo está el tutorial');
-  assert.equal(lessonDue(w, {}, 2).id, 'vender');
-  assert.equal(lessonDue(w, { vender: true }, 2).id, 'criadero');
+  w.quests.claimed['c1-gato'] = true;
+  assert.equal(lessonDue(w, {}, 1).id, 'criadero', 'el Criadero se abre en el capítulo 1');
+  assert.equal(lessonDue(w, { criadero: true }, 2).id, 'vender');
   assert.equal(lessonDue(w, { vender: true, criadero: true }, 3).id, 'salud');
   const hasta3 = { vender: true, criadero: true, salud: true };
   assert.equal(lessonDue(w, hasta3, 5), null, 'el laboratorio espera a abrirse');
@@ -115,6 +116,7 @@ test('cada lección sale en su capítulo (o al abrir el Laboratorio), una vez y 
 
 test('una partida avanzada no repite las lecciones de capítulos anteriores, pero puede verlas desde Mundo', () => {
   assert.deepEqual(Object.keys(pastLessons(3)).sort(), ['criadero', 'vender']);
+  assert.deepEqual(Object.keys(pastLessons(2)), ['criadero']);
   assert.deepEqual(pastLessons(1), {});
   const w = fresh();
   assert.equal(lessonOpen(w, LESSONS.find((l) => l.id === 'mao'), 5), false);
