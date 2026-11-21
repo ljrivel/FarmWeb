@@ -69,6 +69,10 @@ export const VOICES = {
   bantha: [n('sawtooth', 0, 0.8, 100, 0.2, { f1: 80, lp: 500 }), n('sine', 0, 0.8, 100, 0.14)],
   purrgil: [n('sine', 0, 0.9, 250, 0.14, { f1: 600 }), n('sine', 0.2, 0.8, 380, 0.08, { f1: 800 })],
   dewback: [n('square', 0, 0.2, 160, 0.1, { f1: 120, lp: 600 }), n('square', 0.25, 0.2, 150, 0.1, { f1: 110, lp: 600 })],
+  // ewok: parloteo de tres notitas; grogu: arrullo suave; bb-8: pitiditos electrónicos
+  ewok: [n('triangle', 0, 0.08, 700, 0.1, { f1: 900 }), n('triangle', 0.1, 0.08, 820, 0.1, { f1: 700 }), n('triangle', 0.2, 0.1, 760, 0.1, { f1: 960 })],
+  grogu: [n('sine', 0, 0.2, 900, 0.1, { f1: 1200 }), n('sine', 0.2, 0.25, 1100, 0.1, { f1: 800 })],
+  bb8: [n('square', 0, 0.05, 1500, 0.06, { f1: 2200, lp: 3500 }), n('square', 0.07, 0.05, 1900, 0.06, { f1: 1300, lp: 3500 }), n('square', 0.14, 0.05, 1600, 0.06, { f1: 2400, lp: 3500 })],
 };
 
 // ------------------------------------------------------------- programación

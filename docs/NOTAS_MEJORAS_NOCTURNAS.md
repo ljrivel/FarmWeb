@@ -162,10 +162,16 @@ arreglo: la tarjeta de un animal sano mostraba «null» desde el sub-paso 2 de l
   (300 a 520 monedas) para poder criarlas, a diferencia de los dinosaurios, que llegan de uno en uno.
 - Comida nueva «ración estelar» (tauntaun, bantha, purrgil, dewback); porg y gato loth comen pescadito. 6 productos nuevos
   y 4 secundarias. Suelo propio (metal con estrellas) y lugar en el mapa arriba a la derecha.
-- Arte rehecho según referencias del dueño. Ewok, Grogu y BB-8 quedan en `CANDIDATES` (sin registrar). El bantha y el
+- Arte rehecho según referencias del dueño. Ewok, Grogu y BB-8 ya son especies (ver abajo). El bantha y el
   tauntaun son los menos fieles: un sprite de 32 px solo captura los rasgos principales.
 - Tutorial: los pasos de panel abren el panel; con una hoja abierta no se oscurece nada encima (`.tuto.quiet`), la hoja se
   acorta (`body.tuto-sheet`) y la tarjeta de Tomás va arriba. El paso del mapa viaja al mapa y al terminar se vuelve al
   corral. Antes el recuadro iluminado dejaba el panel opaco.
 - Derechos: nombres y criaturas de Star Wars son de Lucasfilm/Disney. Aviso en el README; si el sitio es público conviene
   mantenerlo privado o sustituir los nombres.
+
+## Ewok, Grogu y BB-8 como animales
+- Se suman a la Estación (capacidad 12): ewok (380, come bayas), Grogu (600, ración estelar) y BB-8 (560, «aceite brillante»,
+  comida nueva). Productos: hilo peludo, chispa verde y tuerquita. Se conocen al cobrar `c8-leche` (la escena
+  «Tres visitantes» los presenta) y se compran y crían como el resto. 3 secundarias y 3 charlas de visita.
+- El dueño confirmó que el sitio es privado, sin acceso externo y sin fines de lucro.

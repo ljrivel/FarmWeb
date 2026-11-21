@@ -841,7 +841,7 @@ SHINY = {
 
 
 
-# Candidatos (porg aparte, ya registrado): se previsualizan con `render_entry` y se registran cuando se aprueben.
+# Ewok, Grogu y BB-8: se registran como especies justo después de definirse (ver SPECIES.update más abajo).
 CANDIDATES = {
     "ewok": (ewok_body, ewok_face, [
         dict(body="#8a7a6c", hood="#b88a5a", trim="#d8d0c4", face="#6f625a", muzzle="#d9d2c8", eye="#c0742a", wood="#8a6244", stone="#c9c9d0"),
@@ -862,6 +862,13 @@ CANDIDATES = {
         dict(body="#fffaf0", accent="#e8b830", gray="#b8a888", lens="#2a2a30", glint="#ff4a4a"),
     ]),
 }
+
+SPECIES.update(CANDIDATES)
+SHINY.update({
+    "ewok": dict(body="#fff0b0", hood="#ffd77a", trim="#fffbe6", face="#e8d8a0", muzzle="#fffbe6", eye="#7fe3d6", wood="#d9a24a", stone="#ffffff"),
+    "grogu": dict(body="#fff0b0", robe="#f5d9a0", collar="#d9a24a", ear="#ffe3c0", dark="#f0c85a"),
+    "bb8": dict(body="#fffbe6", accent="#7fe3d6", gray="#d9c88a", lens="#2a2a30", glint="#ff4a4a"),
+})
 
 
 def render_entry(entry, variant, stage, frame=0):
@@ -1012,6 +1019,30 @@ def ic_escama_duna(c):
     c.ell(8, 8, 5, 6, hx("#c9b27a"))
     c.rect(8, 4, 8, 12, hx("#a8905a"))
     c.px(6, 6, hx("#f2e6bf"))
+
+
+def ic_aceite(c):
+    c.poly([(5, 5), (10, 5), (11, 14), (4, 14)], hx("#7fd0e8"))
+    c.rect(6, 2, 9, 5, hx("#e8e8f0"))
+    c.px(6, 8, WHITE)
+
+
+def ic_hilo_peludo(c):
+    c.ell(8, 8, 5, 5, hx("#8a7a6c"))
+    c.rect(4, 7, 12, 8, hx("#b8a898"))
+    c.px(6, 5, hx("#d8d0c4"))
+
+
+def ic_chispa_verde(c):
+    c.poly([(8, 1), (10, 6), (15, 8), (10, 10), (8, 15), (6, 10), (1, 8), (6, 6)], hx("#a9d884"))
+    c.ell(8, 8, 2, 2, hx("#eaffd0"))
+
+
+def ic_tuerquita(c):
+    c.ell(8, 8, 6, 6, hx("#c9ced6"))
+    c.ell(8, 8, 2, 2, CLEAR)
+    c.rect(8, 2, 8, 4, hx("#f08a2a"))
+    c.px(5, 5, WHITE)
 
 
 def ic_huevo(c):
@@ -1208,6 +1239,8 @@ ICONS = [
     ("racion", "#ff9fbd", ic_racion), ("pluma_porg", "#8a6a52", ic_pluma_porg), ("pelo_loth", "#e8c88a", ic_pelo_loth),
     ("pelaje_helado", "#dff0ff", ic_pelaje_helado), ("leche_azul", "#8fc4ff", ic_leche_azul),
     ("polvo_estelar", "#ffe08a", ic_polvo_estelar), ("escama_duna", "#c9b27a", ic_escama_duna),
+    ("aceite", "#7fd0e8", ic_aceite), ("hilo_peludo", "#8a7a6c", ic_hilo_peludo), ("chispa_verde", "#a9d884", ic_chispa_verde),
+    ("tuerquita", "#c9ced6", ic_tuerquita),
 ]
 
 

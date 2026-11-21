@@ -886,6 +886,13 @@ def chapter8(browser):
     r = page.evaluate("farmweb.sim.buyAnimal(farmweb.app.w, 'gato_loth')")
     check(r["ok"], "el gato loth se puede comprar con monedas (así se puede criar)")
     check(page.evaluate("farmweb.app.w.animals.find((a) => a.species === 'gato_loth').corral") == "estacion", "y vive en la Estación")
+    page.evaluate("""(() => {
+      const w = farmweb.app.w;
+      w.unlocked.push('tauntaun', 'bantha', 'purrgil', 'dewback', 'ewok', 'grogu', 'bb8');
+      for (const sp of ['tauntaun', 'bantha', 'purrgil', 'dewback', 'ewok', 'grogu', 'bb8']) farmweb.sim.buyAnimal(w, sp);
+      for (const a of w.animals) if (a.corral === 'estacion') a.stage = 'adult';
+    })()""")
+    check(page.evaluate("farmweb.app.w.animals.filter((a) => a.corral === 'estacion').length") == 9, "las 9 criaturas viven en la Estación")
     page.evaluate("farmweb.app.setLabels('todo')")
     page.evaluate("farmweb.app.goTo('estacion', true)")
     page.wait_for_timeout(500)
@@ -896,7 +903,7 @@ def chapter8(browser):
     page.click('[data-panel="animals"]')
     page.locator('[data-key="tab-guia"]').click()
     texto = page.locator("#sheetBody").inner_text()
-    check("Porg" in texto and "Gato loth" in texto, "la Guía conoce a las criaturas de la Estación")
+    check("Porg" in texto and "Gato loth" in texto and "Ewok" in texto and "Grogu" in texto and "BB-8" in texto, "la Guía conoce a las criaturas de la Estación")
     check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
     ctx.close()
 

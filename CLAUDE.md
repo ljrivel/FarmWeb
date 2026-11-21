@@ -24,7 +24,7 @@ El dueño es Luis Josué; **responde siempre en español**.
 | Jugar en local (PC y celular en la misma Wi-Fi) | doble clic a `iniciar.bat` o `npm start` |
 | Pruebas unitarias | `npm test` (deben pasar todas; hoy 145) |
 | Regenerar sprites | `npm run sprites` (Python + Pillow; escribe `assets/sprites/*`) |
-| Recorrido en navegador | `python tools/e2e_smoke.py <carpeta_capturas>` (Playwright + Chrome; hoy 289 comprobaciones) |
+| Recorrido en navegador | `python tools/e2e_smoke.py <carpeta_capturas>` (Playwright + Chrome; hoy 290 comprobaciones) |
 
 Tras un cambio visible, recarga con Ctrl+F5. El servidor local envía `Cache-Control: no-store`.
 Con `?debug` en la URL queda disponible `window.farmweb = { app, sim, audio }`. `?sinescenas` y `?sintutorial` apagan las
@@ -47,7 +47,7 @@ escenas y el tutorial (para pruebas).
 ## Estado
 
 Hecho y subido a `main`: corrales y mapa, nombres, colores raros y brillantes, sonido, cuidado profundo (2B),
-historia hasta el Capítulo 5, secundarias en paralelo con Historial, 8 secretos, conejo y pato, 22 especies.
+historia hasta el Capítulo 5, secundarias en paralelo con Historial, 8 secretos, conejo y pato, 25 especies.
 Detalle y decisiones en `docs/NOTAS_MEJORAS_NOCTURNAS.md`.
 Retratos pixel art de los 7 personajes (`assets/sprites/portraits.*`, se ven en Misiones). Escenas con diálogo (Etapa B, 23 escenas del guion aprobado en `docs/GUION_HISTORIA.md`): `SCENES` en `data.js`,
 lógica en `src/story.js`, diálogo en `ui.js` (`playStory`), vistas guardadas en `w.story.seen`. `?sinescenas` las apaga
@@ -57,9 +57,9 @@ repetibles).
 Cesta diaria de Bruno (`BALANCE.gift*`, `w.gift`), etiquetas en el corral y Guía de especies (`dato` en cada especie).
 Historia hasta el Capítulo 7 («El valle escondido» y «Alas y mareas»): corral Valle, Noa, 6 dinosaurios en total
 (carnotauro, spinosaurus, triceratops, estegosaurio, pterodáctilo, plesiosaurio) y oveja y zorro por secundarias.
-Estación Estelar (Capítulo 8 «Más allá del cielo»): corral `estacion` por historia y 6 criaturas de Star Wars que se compran
-(porg, gato loth, tauntaun, bantha, purrgil, dewback). Ewok, Grogu y BB-8 están dibujados como `CANDIDATES` en
-`gen_sprites.py` pero sin registrar: se añaden si el dueño lo pide.
+Estación Estelar (Capítulo 8 «Más allá del cielo»): corral `estacion` (12 lugares) por historia y 9 criaturas de Star Wars que se
+compran y crían (porg, gato loth, tauntaun, bantha, purrgil, dewback, ewok, Grogu y BB-8; los últimos 3 se conocen al
+cobrar la leche azul). Sitio privado y sin fines de lucro, según el dueño.
 Tutorial guiado de Tomás, 13 pasos; los de panel abren el panel y no oscurecen encima (`src/tutorial.js` pasos, `startTutorial` en `ui.js`, marca `tutorial` en `farmweb:ui:v1`, una vez
 por dispositivo, repetible en Mundo; `?sintutorial` lo apaga y el e2e lo usa).
 `tests/historia-completa.test.mjs` recorre toda la historia: añade ahí cualquier capítulo nuevo sin tocar más.

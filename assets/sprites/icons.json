@@ -43,7 +43,11 @@
   "pelaje_helado": 39,
   "leche_azul": 40,
   "polvo_estelar": 41,
-  "escama_duna": 42
+  "escama_duna": 42,
+  "aceite": 43,
+  "hilo_peludo": 44,
+  "chispa_verde": 45,
+  "tuerquita": 46
  },
- "version": "1ac7266c96"
+ "version": "b1b7123572"
 }

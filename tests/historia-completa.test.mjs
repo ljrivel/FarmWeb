@@ -76,9 +76,9 @@ test('las secundarias se pueden cumplir una por una cuando aparecen', () => {
   assert.equal(activeSide(w).length, 0, 'ninguna secundaria queda sin poder cumplirse');
 });
 
-const ESTACION = ['porg', 'gato_loth', 'tauntaun', 'bantha', 'purrgil', 'dewback'];
+const ESTACION = ['porg', 'gato_loth', 'tauntaun', 'bantha', 'purrgil', 'dewback', 'ewok', 'grogu', 'bb8'];
 
-test('al terminar la historia las 6 criaturas de la Estación se compran y viven ahí', () => {
+test('al terminar la historia las 9 criaturas de la Estación se compran y viven ahí', () => {
   const w = newWorld('T', 1, 1);
   addAnimal(w, 'gallina', 0, 'adult');
   for (const q of QUESTS) { satisfy(w, q.goal); assert.ok(claim(w).ok, q.id); }

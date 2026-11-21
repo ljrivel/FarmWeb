@@ -231,7 +231,37 @@
   "dewback:3:baby": 216,
   "dewback:3:adult": 217,
   "dewback:shiny:baby": 218,
-  "dewback:shiny:adult": 219
+  "dewback:shiny:adult": 219,
+  "ewok:0:baby": 220,
+  "ewok:0:adult": 221,
+  "ewok:1:baby": 222,
+  "ewok:1:adult": 223,
+  "ewok:2:baby": 224,
+  "ewok:2:adult": 225,
+  "ewok:3:baby": 226,
+  "ewok:3:adult": 227,
+  "ewok:shiny:baby": 228,
+  "ewok:shiny:adult": 229,
+  "grogu:0:baby": 230,
+  "grogu:0:adult": 231,
+  "grogu:1:baby": 232,
+  "grogu:1:adult": 233,
+  "grogu:2:baby": 234,
+  "grogu:2:adult": 235,
+  "grogu:3:baby": 236,
+  "grogu:3:adult": 237,
+  "grogu:shiny:baby": 238,
+  "grogu:shiny:adult": 239,
+  "bb8:0:baby": 240,
+  "bb8:0:adult": 241,
+  "bb8:1:baby": 242,
+  "bb8:1:adult": 243,
+  "bb8:2:baby": 244,
+  "bb8:2:adult": 245,
+  "bb8:3:baby": 246,
+  "bb8:3:adult": 247,
+  "bb8:shiny:baby": 248,
+  "bb8:shiny:adult": 249
  },
  "species": {
   "gallina": 4,
@@ -255,7 +285,10 @@
   "tauntaun": 4,
   "bantha": 4,
   "purrgil": 4,
-  "dewback": 4
+  "dewback": 4,
+  "ewok": 4,
+  "grogu": 4,
+  "bb8": 4
  },
- "version": "1d8bfbd354"
+ "version": "1f846e14d6"
 }

@@ -69,7 +69,7 @@ export const CORRAL_TYPES = {
   bosque: { nombre: 'Bosque', species: ['mapache', 'conejo', 'zorro'], cap: 6, cost: 300, area: LAND, aquatic: false },
   estanque: { nombre: 'Estanque', species: ['ajolote', 'spinosaurus', 'pato', 'plesiosaurio'], cap: 6, cost: 250, area: { x0: 52, x1: 268, y0: 104, y1: 196 }, aquatic: true },
   jurasico: { nombre: 'Jurásico', species: ['carnotauro'], cap: 4, cost: null, area: LAND, aquatic: false },
-  estacion: { nombre: 'Estación', species: ['porg', 'gato_loth', 'tauntaun', 'bantha', 'purrgil', 'dewback'], cap: 10, cost: null, area: LAND, aquatic: false },
+  estacion: { nombre: 'Estación', species: ['porg', 'gato_loth', 'tauntaun', 'bantha', 'purrgil', 'dewback', 'ewok', 'grogu', 'bb8'], cap: 12, cost: null, area: LAND, aquatic: false },
   valle: { nombre: 'Valle', species: ['triceratops', 'estegosaurio', 'pterodactilo'], cap: 6, cost: null, area: LAND, aquatic: false },
 };
 export const CORRAL_TYPE_ORDER = ['pradera', 'bosque', 'estanque', 'jurasico', 'valle', 'estacion'];
@@ -238,6 +238,27 @@ export const SPECIES = {
     variants: ['Pantano', 'Duna', 'Terracota', 'Zafiro'],
     names: ['Arenoso', 'Dúne', 'Colita', 'Roca', 'Sol'],
   },
+  ewok: {
+    nombre: 'Ewok', food: 'bayas', product: 'hilo_peludo', price: 380,
+    dato: 'Pequeño, valiente y muy leal con quien lo cuida.',
+    grow: 7 * MIN, prod: 250 * 1000, breed: 6 * MIN, aquatic: false,
+    variants: ['Pardo', 'Bosque', 'Atardecer', 'Nieve'],
+    names: ['Teddy', 'Ramita', 'Capucha', 'Pelusín', 'Lanza'],
+  },
+  grogu: {
+    nombre: 'Grogu', food: 'racion', product: 'chispa_verde', price: 600,
+    dato: 'Curioso y sereno: parece saber lo que sientes.',
+    grow: 9 * MIN, prod: 320 * 1000, breed: 8 * MIN, aquatic: false,
+    variants: ['Clásico', 'Menta', 'Lavanda', 'Dorado'],
+    names: ['Verdecito', 'Orejas', 'Pequeño', 'Sopa', 'Brote'],
+  },
+  bb8: {
+    nombre: 'BB-8', food: 'aceite', product: 'tuerquita', price: 560,
+    dato: 'Rueda a toda velocidad y siempre acompaña a sus amigos.',
+    grow: 8 * MIN, prod: 240 * 1000, breed: 7 * MIN, aquatic: false,
+    variants: ['Naranja', 'Azul', 'Verde', 'Dorado'],
+    names: ['Bolita', 'Rodante', 'Chispa', 'Tuerca', 'Redondo'],
+  },
 };
 export const ORDER = Object.keys(SPECIES);
 
@@ -262,6 +283,7 @@ export const FOODS = {
   zanahoria: { nombre: 'Zanahoria', price: 12 },
   helecho: { nombre: 'Helecho', price: 14 },
   racion: { nombre: 'Ración estelar', price: 18 },
+  aceite: { nombre: 'Aceite brillante', price: 20 },
 };
 
 export const PRODUCTS = {
@@ -287,6 +309,9 @@ export const PRODUCTS = {
   leche_azul: { nombre: 'Leche azul', price: 58 },
   polvo_estelar: { nombre: 'Polvo estelar', price: 64 },
   escama_duna: { nombre: 'Escama de duna', price: 54 },
+  hilo_peludo: { nombre: 'Hilo peludo', price: 56 },
+  chispa_verde: { nombre: 'Chispa verde', price: 70 },
+  tuerquita: { nombre: 'Tuerquita', price: 48 },
 };
 
 // Personajes: hablan en las misiones (campo `who`). `rol` explica su lugar en la historia.
@@ -425,7 +450,7 @@ export const QUESTS = [
     goal: { type: 'own', species: 'gato_loth', stage: 'adult', n: 1 }, reward: { coins: 250, unlock: ['purrgil', 'dewback'] } },
   { id: 'c8-leche', ch: 8, who: 'mia', title: 'Leche azul',
     text: 'Dicen que la leche del bantha es azul y dulce. Compra un bantha y recoge 2 leches azules: quiero probarla… ¡para mi cuaderno!',
-    goal: { type: 'collect', product: 'leche_azul', n: 2 }, reward: { coins: 350, foods: { racion: 6 } } },
+    goal: { type: 'collect', product: 'leche_azul', n: 2 }, reward: { coins: 350, foods: { racion: 6, bayas: 6, aceite: 6 }, unlock: ['ewok', 'grogu', 'bb8'] } },
   { id: 'c8-polvo', ch: 8, who: 'noa', title: 'Polvo de estrellas',
     text: 'El purrgil viaja entre las estrellas y deja polvo estelar a su paso. Compra uno y recoge 3 polvos estelares: con ellos mi antena avisará que todas llegaron bien.',
     goal: { type: 'collect', product: 'polvo_estelar', n: 3 }, reward: { coins: 1000 } },
@@ -538,6 +563,12 @@ export const SIDE_QUESTS = [
     goal: { type: 'collect', product: 'pelo_loth', n: 3 }, reward: { coins: 120 } },
   { id: 's-porg', minCh: 8, needs: 'porg', who: 'mia', title: 'Plumitas de porg', text: 'Con plumitas de porg se hacen los marcapáginas más monos. Recoge 3 plumas de porg.',
     goal: { type: 'collect', product: 'pluma_porg', n: 3 }, reward: { coins: 120 } },
+  { id: 's-hilo', minCh: 8, needs: 'ewok', who: 'mia', title: 'Hilo peludo', text: 'Con hilo peludo tejo bufandas para todo el pueblo. Recoge 3 hilos peludos.',
+    goal: { type: 'collect', product: 'hilo_peludo', n: 3 }, reward: { coins: 140 } },
+  { id: 's-chispa', minCh: 8, needs: 'grogu', who: 'noa', title: 'Chispas verdes', text: 'Su chispa verde brilla sin pilas ni enchufes: no entiendo cómo. Recoge 3 chispas verdes para mi cuaderno.',
+    goal: { type: 'collect', product: 'chispa_verde', n: 3 }, reward: { coins: 160 } },
+  { id: 's-tuerca', minCh: 8, needs: 'bb8', who: 'bruno', title: 'Tuerquitas rodantes', text: 'Las tuerquitas que suelta tu bolita naranja arreglan mi bicicleta de reparto. Recoge 3 tuerquitas.',
+    goal: { type: 'collect', product: 'tuerquita', n: 3 }, reward: { coins: 140 } },
 ];
 
 // Secretos (easter eggs): discretos, sin efecto en la economía; cuentan como logros en Misiones.
@@ -899,6 +930,13 @@ export const SCENES = [
     ['pita', 1, 'Calcio, vitaminas y cero culpa. Receta aprobada.'],
     ['mia', 1, 'Brindo por el bantha más peludo de la galaxia.'],
   ] },
+  { id: 'tres-visitantes', when: 'fin:c8-leche', title: 'Tres visitantes', lines: [
+    ['tomas', 1, '¡Miren! Por la puerta de la Estación asoman tres visitantes más.'],
+    ['mia', 1, 'Uno con capucha, uno con orejas enormes… ¡y una bolita naranja que rueda!'],
+    ['noa', 1, 'Mi antena no avisó de ellos. Qué bonito: llegaron sin invitación.'],
+    ['bruno', 2, 'La bolita me persigue. Creo que quiere mi correo.'],
+    ['abuela', 1, 'Que se queden. En esta granja nunca sobra un amigo.'],
+  ] },
   { id: 'hogar-entre-estrellas', when: 'fin:c8-polvo', title: 'Hogar entre estrellas', lines: [
     ['noa', 1, 'Mi antena ya avisó: «Todas llegaron bien».'],
     ['abuela', 1, 'Mi granja empezó con una gallinita y ahora tiene criaturas de las estrellas.'],
@@ -956,4 +994,7 @@ export const VISITS = [
   { id: 'v-lia-5', who: 'lia', minCh: 8, lines: [['lia', 0, 'El purrgil flota cerca del estanque como si supiera que el agua es de casa.']] },
   { id: 'v-bruno-5', who: 'bruno', minCh: 8, lines: [['bruno', 2, 'Un tauntaun se comió el sello de una carta. Digo… lo saboreó. Con cariño.']] },
   { id: 'v-cosi-4', who: 'abuela', minCh: 8, lines: [['abuela', 1, 'Vi a un dewback tomando el sol en la Estación. Ni en sueños me lo imaginaba.']] },
+  { id: 'v-tomas-8', who: 'tomas', minCh: 8, lines: [['tomas', 1, 'El ewok me enseñó a hacer nudos. Los míos parecen espaguetis.']] },
+  { id: 'v-noa-5', who: 'noa', minCh: 8, lines: [['noa', 0, 'Grogu me mira como si entendiera mis notas. Creo que corrige mi ortografía.']] },
+  { id: 'v-bruno-6', who: 'bruno', minCh: 8, lines: [['bruno', 1, 'BB-8 rodó detrás de mi bicicleta y llegamos a todas las casas en la mitad de tiempo.']] },
 ];
