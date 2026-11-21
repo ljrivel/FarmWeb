@@ -682,6 +682,50 @@ def chapter6(browser):
     ctx.close()
 
 
+def chapter7(browser):
+    print("\n== capítulo 7: pterodáctilo, plesiosaurio y la última carta")
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    page = ctx.new_page()
+    errors = []
+    page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(URL)
+    page.wait_for_function("document.getElementById('loading').hidden === true", timeout=15000)
+    page.evaluate("""(async () => {
+      const { QUESTS } = await import('/src/data.js');
+      const w = farmweb.app.w;
+      for (const q of QUESTS) { if (q.id === 'c7-cielo') break; w.quests.claimed[q.id] = true; }
+      for (const t of ['bosque', 'estanque', 'jurasico', 'valle']) if (!w.corrales.some((c) => c.tipo === t)) w.corrales.push({ id: t, tipo: t, nombre: t, nivel: 0 });
+      w.stats.sold = 60;
+    })()""")
+    page.click('[data-panel="quests"]')
+    check("Plumas en el cielo" in page.locator("#sheetBody").inner_text(), "el capítulo 7 empieza con Bruno")
+    page.locator('[data-key="claim"]').click()
+    page.wait_for_timeout(300)
+    check(page.evaluate("farmweb.app.w.animals.some((a) => a.species === 'pterodactilo' && a.corral === 'valle')"), "el pterodáctilo bebé llega al Valle")
+    check(page.evaluate("farmweb.app.w.unlocked.includes('plesiosaurio')"), "y se conoce al plesiosaurio")
+    page.keyboard.press("Escape")
+    page.evaluate("farmweb.app.w.animals.filter((a) => a.species === 'pterodactilo').forEach((a) => { a.stage = 'adult'; })")
+    page.click('[data-panel="quests"]')
+    page.locator('[data-key="claim"]').click()
+    page.wait_for_timeout(300)
+    check(page.evaluate("farmweb.app.w.animals.some((a) => a.species === 'plesiosaurio' && a.corral === 'estanque')"), "el plesiosaurio bebé llega al Estanque")
+    page.keyboard.press("Escape")
+    page.evaluate("farmweb.app.setLabels('todo')")
+    page.evaluate("farmweb.app.goTo('valle', true)")
+    page.wait_for_timeout(500)
+    page.screenshot(path=f"{SHOTS}/movil-38-pterodactilo.png")
+    page.evaluate("farmweb.app.goTo('estanque', true)")
+    page.wait_for_timeout(500)
+    page.screenshot(path=f"{SHOTS}/movil-39-plesiosaurio.png")
+    page.click('[data-panel="animals"]')
+    page.locator('[data-key="tab-guia"]').click()
+    texto = page.locator("#sheetBody").inner_text()
+    check("Pterodáctilo" in texto and "Plesiosaurio" in texto, "la Guía conoce a los dos nuevos")
+    check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
+    ctx.close()
+
+
 def main():
     server = subprocess.Popen([sys.executable, "-m", "http.server", str(PORT), "--bind", "127.0.0.1"],
                               cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -706,6 +750,7 @@ def main():
             visits_and_diary(browser)
             gift_labels_guide(browser)
             chapter6(browser)
+            chapter7(browser)
             browser.close()
     finally:
         server.terminate()

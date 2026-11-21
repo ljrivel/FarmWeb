@@ -399,6 +399,40 @@ def estego_face(c, p, blink):
     pxs(c, [(-2, -5), (-1, -4), (0, -4), (1, -4), (2, -5)], EYE)
 
 
+# --------------------------------------------------------------- pterodáctilo
+def ptero_body(c, p):
+    for sg in (-1, 1):
+        c.poly([(sg * 7, -13), (sg * 22, -19), (sg * 21, -9), (sg * 13, -5)], p["wing"])
+    c.poly([(2, -17), (11, -22), (6, -13)], p["crest"])
+    c.ell(0, -9, 9, 8, p["body"])
+    c.ell(0, -4, 6, 4, p["belly"])
+    c.rect(-5, -1, -3, 1, p["foot"])
+    c.rect(3, -1, 5, 1, p["foot"])
+
+
+def ptero_face(c, p, blink):
+    eyes(c, -11, 4, blink)
+    blush(c, -8, 7)
+    c.poly([(-3, -8), (3, -8), (0, -3)], p["beak"])
+
+
+# -------------------------------------------------------------- plesiosaurio
+def plesio_body(c, p):
+    c.ell(13, -5, 4, 3, p["body"])
+    c.poly([(15, -8), (19, -12), (18, -4)], p["fin"])
+    for sg in (-1, 1):
+        c.ell(sg * 10, -3, 4, 2, p["fin"])
+    c.ell(0, -7, 11, 6, p["body"])
+    c.ell(0, -4, 7, 3, p["belly"])
+    c.ell(0, -16, 4, 8, p["body"])                 # cuello largo
+    c.ell(0, -23, 6, 5, p["body"])                 # cabeza
+
+
+def plesio_face(c, p, blink):
+    eyes(c, -24, 3, blink)
+    pxs(c, [(-1, -21), (0, -20), (1, -21)], EYE)
+
+
 SPECIES = {
     "gallina": (gallina_body, gallina_face, [
         dict(body="#fffaf0", wing="#f1e0cc", comb="#ff7b8e", beak="#ffb347", feet="#ffb347"),
@@ -472,6 +506,18 @@ SPECIES = {
         dict(body="#ff9f8f", belly="#fff1ea", plate="#ffd9b8", foot="#e07a6a"),  # Coral
         dict(body="#4fb3a9", belly="#d9f7f2", plate="#ffe08a", foot="#3a968d"),  # Turquesa
     ]),
+    "pterodactilo": (ptero_body, ptero_face, [
+        dict(body="#8fd0f0", belly="#f0fbff", wing="#bfe4ff", crest="#ff9fb4", beak="#ffb347", foot="#ffb347"),
+        dict(body="#9fe0c0", belly="#f2fff8", wing="#d0f5e4", crest="#ffd95e", beak="#ffb347", foot="#ffb347"),
+        dict(body="#ffb3c8", belly="#fff3f7", wing="#ffd9e4", crest="#c9b6f2", beak="#ffb347", foot="#ffb347"),  # Rosado
+        dict(body="#6a6fa8", belly="#c8ccf0", wing="#9a9fd0", crest="#ffe08a", beak="#ffc15e", foot="#ffc15e"),  # Medianoche
+    ]),
+    "plesiosaurio": (plesio_body, plesio_face, [
+        dict(body="#6fc7d4", belly="#e6fbff", fin="#4aa2ba"),
+        dict(body="#ff9f8f", belly="#fff1ea", fin="#e07a6a"),
+        dict(body="#b79af0", belly="#f4eeff", fin="#9378d6"),  # Violeta
+        dict(body="#ffd36e", belly="#fff6d0", fin="#e8b84a"),  # Dorado
+    ]),
 }
 STAGES = {"baby": 0.74, "adult": 1.0}
 
@@ -489,6 +535,8 @@ SHINY = {
     "pato": dict(body="#fff6d0", wing="#ffd77a", beak="#7fe0d4", feet="#7fe0d4"),
     "triceratops": dict(body="#fff0b0", belly="#fffbe6", frill="#7fe3d6", spot="#c9f5ee", horn="#ffd04d", snout="#fff3c8", foot="#f5c562"),
     "estegosaurio": dict(body="#fff0b0", belly="#fffbe6", plate="#7fe3d6", foot="#f5c562"),
+    "pterodactilo": dict(body="#fff0b0", belly="#fffbe6", wing="#7fe3d6", crest="#ffd04d", beak="#ffd04d", foot="#ffd04d"),
+    "plesiosaurio": dict(body="#fff0b0", belly="#fffbe6", fin="#7fe3d6"),
 }
 
 
@@ -563,6 +611,18 @@ def ic_placa_dorada(c):
     c.poly([(8, 2), (13, 6), (11, 14), (5, 14), (3, 6)], hx("#ffd95e"))
     c.poly([(8, 2), (8, 14), (5, 14), (3, 6)], hx("#ffeb9a"))
     c.px(6, 7, WHITE)
+
+
+def ic_pluma_celeste(c):
+    c.poly([(11, 2), (13, 4), (5, 13), (3, 11)], hx("#8fd0f0"))
+    c.poly([(11, 2), (12, 3), (4, 12), (3, 11)], hx("#d6efff"))
+
+
+def ic_perla_marina(c):
+    c.poly([(2, 9), (8, 3), (14, 9), (12, 14), (4, 14)], hx("#ffc2d9"))
+    c.rect(8, 4, 8, 14, hx("#ff9fbd"))
+    c.ell(8, 8, 3, 3, hx("#fffdf8"))
+    c.px(7, 7, WHITE)
 
 
 def ic_huevo(c):
@@ -754,6 +814,7 @@ ICONS = [
     ("zanahoria", "#ff9a4d", ic_zanahoria), ("lana", "#e6dcf5", ic_lana), ("pluma", "#ffe9a8", ic_pluma),
     ("regalo", "#e0a866", ic_regalo),
     ("helecho", "#7cc68b", ic_helecho), ("cuerno_cristal", "#9fd8ff", ic_cuerno_cristal), ("placa_dorada", "#ffd95e", ic_placa_dorada),
+    ("pluma_celeste", "#8fd0f0", ic_pluma_celeste), ("perla_marina", "#ffc2d9", ic_perla_marina),
 ]
 
 

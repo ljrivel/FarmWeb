@@ -61,7 +61,7 @@ test('una partida de antes de las escenas no repite lo que ya pasó, pero sí la
 test('las visitas y las cartas están bien formadas', () => {
   assert.equal(new Set(VISITS.map((v) => v.id)).size, VISITS.length);
   for (const v of VISITS) {
-    assert.ok(CHARACTERS[v.who] && v.minCh >= 1 && v.minCh <= 6, v.id);
+    assert.ok(CHARACTERS[v.who] && v.minCh >= 1 && v.minCh <= Math.max(...QUESTS.map((q) => q.ch)) + 1, v.id);
     assert.ok([undefined, 'enfermo', 'sano'].includes(v.cond), v.id);
     assert.ok(v.lines.length >= 1 && v.lines.length <= 3, v.id);
     for (const [who, mood, text] of v.lines) assert.ok(CHARACTERS[who] && [0, 1, 2].includes(mood) && text, v.id);

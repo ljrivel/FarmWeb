@@ -32,7 +32,9 @@
   "regalo": 28,
   "helecho": 29,
   "cuerno_cristal": 30,
-  "placa_dorada": 31
+  "placa_dorada": 31,
+  "pluma_celeste": 32,
+  "perla_marina": 33
  },
- "version": "2e64b00b37"
+ "version": "fbc6f6bc57"
 }

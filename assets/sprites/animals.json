@@ -131,7 +131,27 @@
   "estegosaurio:3:baby": 116,
   "estegosaurio:3:adult": 117,
   "estegosaurio:shiny:baby": 118,
-  "estegosaurio:shiny:adult": 119
+  "estegosaurio:shiny:adult": 119,
+  "pterodactilo:0:baby": 120,
+  "pterodactilo:0:adult": 121,
+  "pterodactilo:1:baby": 122,
+  "pterodactilo:1:adult": 123,
+  "pterodactilo:2:baby": 124,
+  "pterodactilo:2:adult": 125,
+  "pterodactilo:3:baby": 126,
+  "pterodactilo:3:adult": 127,
+  "pterodactilo:shiny:baby": 128,
+  "pterodactilo:shiny:adult": 129,
+  "plesiosaurio:0:baby": 130,
+  "plesiosaurio:0:adult": 131,
+  "plesiosaurio:1:baby": 132,
+  "plesiosaurio:1:adult": 133,
+  "plesiosaurio:2:baby": 134,
+  "plesiosaurio:2:adult": 135,
+  "plesiosaurio:3:baby": 136,
+  "plesiosaurio:3:adult": 137,
+  "plesiosaurio:shiny:baby": 138,
+  "plesiosaurio:shiny:adult": 139
  },
  "species": {
   "gallina": 4,
@@ -145,7 +165,9 @@
   "conejo": 4,
   "pato": 4,
   "triceratops": 4,
-  "estegosaurio": 4
+  "estegosaurio": 4,
+  "pterodactilo": 4,
+  "plesiosaurio": 4
  },
- "version": "ee6f516bf9"
+ "version": "76f2ee7dcd"
 }

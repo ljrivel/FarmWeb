@@ -55,6 +55,9 @@ export const VOICES = {
   // triceratops: bufido grave con un «uuh» detrás; estegosaurio: retumbo lento y suave
   triceratops: [n('sawtooth', 0, 0.35, 180, 0.14, { f1: 140, lp: 700 }), n('sine', 0.05, 0.3, 360, 0.08, { f1: 280 })],
   estegosaurio: [n('triangle', 0, 0.5, 110, 0.18, { f1: 90, lp: 500 }), n('sine', 0.25, 0.3, 160, 0.09)],
+  // pterodáctilo: dos chillidos agudos; plesiosaurio: un canto de ballena suave que sube
+  pterodactilo: [n('square', 0, 0.08, 1400, 0.07, { f1: 2000, lp: 3000 }), n('square', 0.12, 0.08, 1500, 0.07, { f1: 2200, lp: 3000 })],
+  plesiosaurio: [n('sine', 0, 0.6, 300, 0.14, { f1: 520 }), n('sine', 0.1, 0.5, 450, 0.07, { f1: 700 })],
 };
 
 // ------------------------------------------------------------- programación

@@ -67,9 +67,9 @@ const LAND = { x0: 28, x1: 292, y0: 66, y1: 204 };
 export const CORRAL_TYPES = {
   pradera: { nombre: 'Pradera', species: ['gallina', 'gato', 'vaca', 'chanchito'], cap: 8, cost: 0, area: LAND, aquatic: false },
   bosque: { nombre: 'Bosque', species: ['mapache', 'conejo'], cap: 6, cost: 300, area: LAND, aquatic: false },
-  estanque: { nombre: 'Estanque', species: ['ajolote', 'spinosaurus', 'pato'], cap: 6, cost: 250, area: { x0: 52, x1: 268, y0: 104, y1: 196 }, aquatic: true },
+  estanque: { nombre: 'Estanque', species: ['ajolote', 'spinosaurus', 'pato', 'plesiosaurio'], cap: 6, cost: 250, area: { x0: 52, x1: 268, y0: 104, y1: 196 }, aquatic: true },
   jurasico: { nombre: 'Jurásico', species: ['carnotauro'], cap: 4, cost: null, area: LAND, aquatic: false },
-  valle: { nombre: 'Valle', species: ['triceratops', 'estegosaurio'], cap: 6, cost: null, area: LAND, aquatic: false },
+  valle: { nombre: 'Valle', species: ['triceratops', 'estegosaurio', 'pterodactilo'], cap: 6, cost: null, area: LAND, aquatic: false },
 };
 export const CORRAL_TYPE_ORDER = ['pradera', 'bosque', 'estanque', 'jurasico', 'valle'];
 export const MAX_CORRAL_LEVEL = CORRAL_COSTS.length;
@@ -167,6 +167,20 @@ export const SPECIES = {
     variants: ['Oliva', 'Lila', 'Coral', 'Turquesa'],
     names: ['Placas', 'Estego', 'Lomito', 'Rocío', 'Púas'],
   },
+  pterodactilo: {
+    nombre: 'Pterodáctilo', food: 'pescadito', product: 'pluma_celeste', price: null,
+    dato: 'Planea sobre el valle y deja plumas celestes al volar.',
+    grow: 10 * MIN, prod: 360 * 1000, breed: 8 * MIN, aquatic: false,
+    variants: ['Cielo', 'Menta', 'Rosado', 'Medianoche'],
+    names: ['Alita', 'Nube', 'Vuelo', 'Pío', 'Brisa'],
+  },
+  plesiosaurio: {
+    nombre: 'Plesiosaurio', food: 'gusanito', product: 'perla_marina', price: null,
+    dato: 'Con su cuello largo saluda a los patos desde el estanque.',
+    grow: 10 * MIN, prod: 360 * 1000, breed: 8 * MIN, aquatic: true,
+    variants: ['Marino', 'Coral', 'Violeta', 'Dorado'],
+    names: ['Ondina', 'Cuello', 'Ola', 'Perlita', 'Coco'],
+  },
 };
 export const ORDER = Object.keys(SPECIES);
 
@@ -205,6 +219,8 @@ export const PRODUCTS = {
   pluma: { nombre: 'Pluma', price: 22 },
   cuerno_cristal: { nombre: 'Cuernito de cristal', price: 45 },
   placa_dorada: { nombre: 'Placa dorada', price: 45 },
+  pluma_celeste: { nombre: 'Pluma celeste', price: 48 },
+  perla_marina: { nombre: 'Perla marina', price: 50 },
 };
 
 // Personajes: hablan en las misiones (campo `who`). `rol` explica su lugar en la historia.
@@ -313,6 +329,23 @@ export const QUESTS = [
   { id: 'c6-reserva', ch: 6, who: 'abuela', title: 'Una reserva para el valle',
     text: 'Noa quiere contarle al mundo lo que encontró y Lía teme que lo arruinen. Yo propongo una reserva, con ustedes de guardianes. Demuestren que pueden con muchos amigos: cuida a 18 animales a la vez.',
     goal: { type: 'owncount', n: 18 }, reward: { coins: 400 } },
+
+  // Capítulo 7 — Alas y mareas
+  { id: 'c7-cielo', ch: 7, who: 'bruno', title: 'Plumas en el cielo',
+    text: 'Cada mañana caen plumas azules del cielo, ¡y todas apuntan hacia el acantilado! Una expedición necesita provisiones: véndeme 60 productos en total y la preparo. (Si no me distraigo con una gallina.)',
+    goal: { type: 'sold', n: 60 }, reward: { coins: 200, unlock: ['pterodactilo', 'plesiosaurio'], gift: 'pterodactilo' } },
+  { id: 'c7-alas', ch: 7, who: 'noa', title: 'Alas de verdad',
+    text: '¡Es un pterodáctilo, el primero vivo en cien millones de años! No lo atosigues: cuídalo hasta que sea adulto y vuele con confianza.',
+    goal: { type: 'own', species: 'pterodactilo', stage: 'adult', n: 1 }, reward: { coins: 150, foods: { pescadito: 8 }, gift: 'plesiosaurio' } },
+  { id: 'c7-marea', ch: 7, who: 'lia', title: 'Un guardián para el estanque',
+    text: 'Ese plesiosaurio es de los del lago de mi infancia. Si crece contento en el estanque, el río tendrá un nuevo guardián. Cuídalo hasta que sea adulto.',
+    goal: { type: 'own', species: 'plesiosaurio', stage: 'adult', n: 1 }, reward: { coins: 250, foods: { gusanito: 6 } } },
+  { id: 'c7-corazones', ch: 7, who: 'noa', title: 'Cinco corazones',
+    text: 'Los guardianes de la reserva se ganan la confianza de los animales de verdad. Consigue que uno tenga 5 corazones y lo anoto en el informe.',
+    goal: { type: 'hearts', n: 5 }, reward: { coins: 300 } },
+  { id: 'c7-final', ch: 7, who: 'abuela', title: 'La última carta',
+    text: 'Queridos guardianes: el valle duerme tranquilo, el río canta y la granja está llena de vida. Les dejo una última tarea, la más fácil y la más importante: acaricien a sus animales 150 veces en total. Con cariño se cuida todo lo demás. —Cosi',
+    goal: { type: 'petted', n: 150 }, reward: { coins: 800 } },
 ];
 
 
@@ -323,6 +356,7 @@ export const CHAPTERS = {
   4: 'El río perdido',
   5: 'El festival de la granja',
   6: 'El valle escondido',
+  7: 'Alas y mareas',
 };
 // Misiones secundarias: independientes, varias activas a la vez. Aparecen cuando la historia llega a
 // `minCh` (y, si tienen `needs`, cuando ya conoces esa especie). Las metas de contador (fed, petted,
@@ -394,6 +428,12 @@ export const SIDE_QUESTS = [
   { id: 's-zoologico', minCh: 4, who: 'tomas', title: '¡Parece un zoológico!',
     text: 'Mis amigos no me creen cuántos animales tienes. Cuida a 15 animales a la vez.',
     goal: { type: 'owncount', n: 15 }, reward: { coins: 200 } },
+  { id: 's-cielo', minCh: 7, needs: 'pterodactilo', who: 'lia', title: 'Plumas del acantilado',
+    text: 'Con plumas celestes se adornan las boyas del río. Recoge 3 plumas celestes.',
+    goal: { type: 'collect', product: 'pluma_celeste', n: 3 }, reward: { coins: 120 } },
+  { id: 's-perlas', minCh: 7, needs: 'plesiosaurio', who: 'mia', title: 'Un collar de perlas',
+    text: 'Quiero hacerle un collar a la señora Cosi con perlas marinas. Recoge 2 perlas marinas.',
+    goal: { type: 'collect', product: 'perla_marina', n: 2 }, reward: { coins: 150 } },
 ];
 
 // Secretos (easter eggs): discretos, sin efecto en la economía; cuentan como logros en Misiones.
@@ -410,7 +450,7 @@ export const SECRETS = {
 export const SECRET_ORDER = Object.keys(SECRETS);
 
 /** Epílogo que se muestra al terminar la historia. */
-export const EPILOGUE = 'La abuela Cosi se quedó a vivir en la casita junto al estanque. Cada tarde se sienta con Tomás, Lía y la Dra. Pita a mirar cómo juegan los animales, y dice que esta es la granja más feliz que conoció. La historia terminó, pero la granja sigue: quedan misiones secundarias, crías raras y secretos por descubrir.';
+export const EPILOGUE = 'La abuela Cosi se quedó a vivir en la casita junto al estanque. Cada tarde se sienta con Tomás, Mía, Lía, Noa, la Dra. Pita y Don Ramón a mirar jugar a los animales, mientras Bruno reparte la noticia de que el valle duerme tranquilo. Dicen que es la granja más feliz que conocieron. La historia terminó, pero la granja sigue: quedan misiones secundarias, crías raras y secretos por descubrir.';
 
 // Escenas con diálogo (guion en docs/GUION_HISTORIA.md). `when`: `inicio:<misión>` (cuando pasa a ser la activa),
 // `fin:<misión>` (al reclamarla) o `evento:primera-enfermedad`. Si dos se cumplen a la vez sale primero la de
@@ -639,10 +679,68 @@ export const SCENES = [
     ['noa', 1, '¿Amigas?'],
     ['lia', 1, 'Amigas.'],
   ] },
+  { id: 'plumas-en-el-aire', when: 'inicio:c7-cielo', title: 'Plumas en el aire', lines: [
+    ['bruno', 1, '¡Atención! Hoy llovieron plumas azules. Una me cayó en el sombrero.'],
+    ['noa', 1, '¡Déjame ver! No es de ninguna ave que conozca.'],
+    ['tomas', 0, 'Todas apuntan hacia el acantilado, como flechas.'],
+    ['noa', 0, 'Algo vive allá arriba. Algo que vuela.'],
+    ['bruno', 2, 'Yo prefiero lo que no vuela. Es más fácil de entregarle las cartas.'],
+  ] },
+  { id: 'el-acantilado', when: 'fin:c7-cielo', title: 'El acantilado', lines: [
+    ['noa', 1, '¡Un pterodáctilo! Un pterodáctilo de verdad, con sus alas y todo.'],
+    ['bruno', 2, '¡Me mira! ¿Por qué me mira?'],
+    ['lia', 0, 'Quiere saber si traes comida. Todos los visitantes traen comida.'],
+    ['mia', 2, 'Yo no quiero acercarme. Está muy alto.'],
+    ['noa', 0, 'No hace falta. Él vendrá a la granja si lo cuidamos bien.'],
+  ] },
+  { id: 'primer-vuelo', when: 'inicio:c7-alas', title: 'Primer vuelo', lines: [
+    ['noa', 0, 'Anoto: «Las alas se pliegan como un abanico. Planea antes de aletear.»'],
+    ['mia', 2, 'Me da vértigo solo de mirarlo.'],
+    ['tomas', 1, 'Mía, tú dibujas nubes. ¡Tienes más altura que cualquiera!'],
+    ['mia', 1, '…Tengo más altura que cualquiera.'],
+    ['noa', 1, 'Eso también va en mi cuaderno.'],
+  ] },
+  { id: 'ola-y-cuello', when: 'fin:c7-alas', title: 'Ola y cuello', lines: [
+    ['lia', 0, 'Algo se acerca al estanque. Algo con el cuello larguísimo.'],
+    ['noa', 1, '¡Un plesiosaurio! ¡Pero si son de mar, no de río!'],
+    ['lia', 1, 'Este es de agua dulce. Mi abuela decía que el lago de aquí los guardaba.'],
+    ['pita', 1, '¡Qué cuello! Con razón le encanta el gusanito.'],
+    ['lia', 0, 'Ahora el estanque tiene guardián. Y el río, compañía.'],
+  ] },
+  { id: 'noche-de-estrellas', when: 'fin:c7-marea', title: 'Noche de estrellas', lines: [
+    ['lia', 0, 'Cosi, ¿recuerdas cuando creí que había perdido el río?'],
+    ['abuela', 0, 'Lo recuerdo. Te sentaste conmigo tres noches seguidas.'],
+    ['lia', 2, 'Nunca te dije que me sentía culpable.'],
+    ['abuela', 1, 'No hacía falta, mi niña. Los ríos cambian. Lo que importa es quién los cuida.'],
+    ['lia', 1, 'Gracias por no dejarme sola.'],
+    ['abuela', 1, 'Gracias por no irte tú.'],
+  ] },
+  { id: 'cinco-corazones', when: 'inicio:c7-corazones', title: 'Cinco corazones', lines: [
+    ['pita', 1, 'He medido el cariño con mi método científico. Es… un abrazo largo.'],
+    ['noa', 0, 'Eso no es un método.'],
+    ['pita', 0, 'Funciona. Los animales con cinco corazones casi no se enferman.'],
+    ['tomas', 1, 'Entonces el truco es quererlos mucho.'],
+    ['pita', 1, 'Eso. Escríbelo, Noa.'],
+  ] },
+  { id: 'la-gran-guardia', when: 'inicio:c7-final', title: 'La gran guardia', lines: [
+    ['abuela', 0, 'Está todo en orden. El valle duerme tranquilo y el río canta.'],
+    ['noa', 1, 'Mi informe ya está publicado. Cuenta que hay huellas, pero no dónde.'],
+    ['ramon', 1, 'Y el pueblo lo celebra sin preguntar nada. Así se cuidan las cosas.'],
+    ['bruno', 1, '¡Y yo llevo la noticia a todos los que quieran creerme!'],
+    ['abuela', 0, 'Falta lo último: una carta para quienes vengan después de nosotros.'],
+  ] },
+  { id: 'epilogo-del-valle', when: 'fin:c7-final', title: 'Epílogo del valle', lines: [
+    ['abuela', 1, 'Escribí una carta para quien cuide esta granja cuando yo ya no esté.'],
+    ['mia', 1, '¿Eso significa que te quedas mucho tiempo?'],
+    ['abuela', 1, 'Significa que tengo muchas historias. Cobro un té por cada una.'],
+    ['lia', 1, 'Yo traigo el río.'],
+    ['noa', 1, 'Y yo, las preguntas. Siempre tengo preguntas.'],
+    ['tomas', 1, 'Y yo las llaves del granero. ¡Y los abrazos!'],
+  ] },
 ];
 
 // Cartas de Cosi: misiones cuyo texto es una carta. Se releen en el Diario cuando ya las recibiste.
-export const LETTERS = ['c1-carta', 'c1-cria', 'c2-estanque', 'c5-carta'];
+export const LETTERS = ['c1-carta', 'c1-cria', 'c2-estanque', 'c5-carta', 'c7-final'];
 
 // Visitas ocasionales: charlas cortas de un personaje que pasa por la granja. `minCh`: capítulo desde el que salen
 // (6 = después del final). `cond`: 'enfermo' (hay un animal enfermo) o 'sano' (ninguno). Línea = [quién, ánimo, texto].
@@ -674,4 +772,12 @@ export const VISITS = [
   { id: 'v-lia-3', who: 'lia', minCh: 6, lines: [['lia', 0, 'El valle está más tranquilo desde que Noa lo cuida con nosotras.']] },
   { id: 'v-pita-4', who: 'pita', minCh: 6, lines: [['pita', 0, 'Noa y yo comparamos notas: ella sabe de huesos y yo de achaques. Equipo perfecto.']] },
   { id: 'v-ramon-4', who: 'ramon', minCh: 6, lines: [['ramon', 0, 'Cosi dice que ya no vende nada que no pueda mirar a los ojos. Yo sigo vendiendo huevos, pero con cariño.']] },
+  { id: 'v-bruno-4', who: 'bruno', minCh: 7, lines: [['bruno', 1, 'Entregué una carta en lo alto del acantilado. Me la devolvió un pterodáctilo, sin sello.'], ['bruno', 0, 'Creo que es un pedido de más comida.']] },
+  { id: 'v-lia-4', who: 'lia', minCh: 7, lines: [['lia', 0, 'El plesiosaurio nada despacito, como si midiera el estanque. Creo que ya lo considera suyo.']] },
+  { id: 'v-noa-3', who: 'noa', minCh: 7, lines: [['noa', 0, 'Hoy dibujé nubes. Pasó un pterodáctilo y me arruinó el dibujo. Valió la pena.']] },
+  { id: 'v-tomas-6', who: 'tomas', minCh: 7, lines: [['tomas', 1, '¿Sabías que el pterodáctilo duerme con una pata levantada? ¡Igual que yo!']] },
+  { id: 'v-mia-5', who: 'mia', minCh: 7, lines: [['mia', 1, 'Hoy subí al mirador a dibujar al pterodáctilo. Casi me mareo, pero valió la pena.']] },
+  { id: 'v-pita-5', who: 'pita', minCh: 7, lines: [['pita', 1, 'Chequeo de rutina al plesiosaurio: cuello perfecto, aletas perfectas y mucho apetito.']] },
+  { id: 'v-ramon-5', who: 'ramon', minCh: 7, lines: [['ramon', 0, 'Vendo huevos, lana y plumas celestes. Todo con certificado de cariño.']] },
+  { id: 'v-cosi-3', who: 'abuela', minCh: 7, lines: [['abuela', 1, 'El valle respira tranquilo. Eso se oye, si uno se queda quieto.']] },
 ];
