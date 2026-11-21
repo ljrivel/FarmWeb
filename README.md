@@ -85,3 +85,11 @@ docs/                    Diseño y vista previa
 ## Publicación
 
 Es un sitio estático: en Cloudflare Pages se conecta este repositorio, sin comando de compilación y con el directorio de salida en la raíz (`/`).
+
+## Publicar en línea (Cloudflare Pages)
+
+El juego es estático. `npm run build` deja en `dist/` solo lo necesario (`index.html`, `styles.css`, `src/`,
+`assets/` y `_headers`, que fija el caché). En Cloudflare Pages: *Framework preset* = None,
+*Build command* = `npm run build`, *Build output directory* = `dist`. Cada push a `main` publica solo.
+El guardado sigue en el navegador de cada persona (localStorage y archivo `.farmweb.json`): no se
+sincroniza entre dispositivos, y cambiar la dirección del sitio no traslada las partidas.
