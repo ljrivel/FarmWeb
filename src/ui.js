@@ -250,8 +250,8 @@ export function createUI(app) {
   function trapTab(e) {
     if (e.key === 'Escape' && current) { e.preventDefault(); closeSheet(); return; }
     if (e.key !== 'Tab' || !current) return;
-    const f = [...backdrop().querySelectorAll('button:not([disabled]), input, [href], select, textarea, [tabindex]:not([tabindex="-1"])')]
-      .filter((el) => !el.closest('[hidden]'));
+    const f = [...backdrop().querySelectorAll('button:not([disabled]), input, [href], select, textarea, [tabindex]:not([tabindex="-1"])'),
+      ...(tutoEl ? tutoEl.querySelectorAll('button:not([disabled])') : [])].filter((el) => !el.closest('[hidden]'));
     if (!f.length) return;
     const first = f[0], last = f[f.length - 1];
     if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
@@ -533,6 +533,7 @@ export function createUI(app) {
   function startTutorial(onDone) {
     if (tutoEl) return;
     let i = 0, base = {}, timer = 0, celebrating = 0, raf = 0;
+    const sceneBefore = app.scene === 'mapa' ? (W().animals[0]?.corral || 'pradera') : app.scene;
     const faceBox = h('div', { class: 'tuto-face' });
     const textEl = h('p', { class: 'tuto-text' });
     const stepEl = h('span', { class: 'muted small' });
@@ -545,6 +546,16 @@ export function createUI(app) {
     tutoEl = h('div', { class: 'tuto' }, hole, card);
     const step = () => TUTORIAL_STEPS[i];
     function place() {
+      const sheetOpen = !!current;
+      // con un panel abierto el foco es el panel: nada se oscurece encima y la tarjeta se va arriba
+      tutoEl.classList.toggle('quiet', sheetOpen);
+      document.body.classList.toggle('tuto-sheet', sheetOpen);
+      if (sheetOpen) {
+        tutoEl.classList.remove('dim');
+        hole.hidden = true;
+        card.classList.add('top');
+        return;
+      }
       const r = tutorialRect(step());
       tutoEl.classList.toggle('dim', !r);
       hole.hidden = !r;
@@ -559,7 +570,9 @@ export function createUI(app) {
       const st = step();
       base = { fed: W().stats.fed, petted: W().stats.petted };
       celebrating = 0;
-      if (current) closeSheet();
+      if (st.panel) { if (current?.name !== st.panel) openPanel(st.panel); } else if (current) closeSheet();
+      if (st.scene) app.goTo(st.scene, true);
+      else if (app.scene === 'mapa') app.goTo(sceneBefore, true);
       if (st.act === 'select') { app.selectedId = null; refresh(); }
       faceBox.replaceChildren(face('tomas', 2, st.mood || 0));
       textEl.textContent = st.text;
@@ -590,6 +603,9 @@ export function createUI(app) {
       clearTimeout(celebrating);
       cancelAnimationFrame(raf);
       document.removeEventListener('keydown', onKey);
+      if (current) closeSheet(); // el panel que abrió el tutorial no se queda abierto
+      if (app.scene === 'mapa') app.goTo(sceneBefore, true);
+      document.body.classList.remove('tuto-sheet');
       tutoEl?.remove();
       tutoEl = null;
       onDone?.();

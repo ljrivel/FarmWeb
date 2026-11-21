@@ -69,7 +69,7 @@ export const CORRAL_TYPES = {
   bosque: { nombre: 'Bosque', species: ['mapache', 'conejo', 'zorro'], cap: 6, cost: 300, area: LAND, aquatic: false },
   estanque: { nombre: 'Estanque', species: ['ajolote', 'spinosaurus', 'pato', 'plesiosaurio'], cap: 6, cost: 250, area: { x0: 52, x1: 268, y0: 104, y1: 196 }, aquatic: true },
   jurasico: { nombre: 'Jurásico', species: ['carnotauro'], cap: 4, cost: null, area: LAND, aquatic: false },
-  estacion: { nombre: 'Estación', species: ['porg', 'gato_loth', 'tauntaun', 'bantha', 'purrgil', 'dewback'], cap: 8, cost: null, area: LAND, aquatic: false },
+  estacion: { nombre: 'Estación', species: ['porg', 'gato_loth', 'tauntaun', 'bantha', 'purrgil', 'dewback'], cap: 10, cost: null, area: LAND, aquatic: false },
   valle: { nombre: 'Valle', species: ['triceratops', 'estegosaurio', 'pterodactilo'], cap: 6, cost: null, area: LAND, aquatic: false },
 };
 export const CORRAL_TYPE_ORDER = ['pradera', 'bosque', 'estanque', 'jurasico', 'valle', 'estacion'];

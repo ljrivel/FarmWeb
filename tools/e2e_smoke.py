@@ -801,11 +801,26 @@ def tutorial_flow(browser, name, viewport, dpr, mobile):
     page.locator('#selected [data-key="pet"]').click()
     page.wait_for_function("document.querySelector('.tuto-text').textContent.includes('100 de cariño')", timeout=4000)
     check(page.evaluate("farmweb.app.w.stats.petted") >= 1, "acariciar avanza al paso de los corazones")
+    ids = page.evaluate("import('/src/tutorial.js').then((m) => m.TUTORIAL_STEPS.map((s) => s.id))")
     for _ in range(total):
         if page.locator(".tuto").count() == 0:
             break
+        sid = ids[int(page.locator(".tuto-card .muted").inner_text().split()[1]) - 1]
+        page.wait_for_timeout(350)
+        if sid in ("mochila", "tienda", "misiones", "vet", "guardado"):
+            check(page.locator("#backdrop").is_visible(), f"paso {sid}: el tutorial abre el panel")
+            check(page.evaluate("document.querySelector('.tuto').classList.contains('quiet')") and page.locator(".tuto-hole").is_hidden(),
+                  f"paso {sid}: no se oscurece nada encima del panel")
+            cb, sb = page.locator(".tuto-card").bounding_box(), page.locator(".sheet").bounding_box()
+            check(sb["y"] >= cb["y"] + cb["height"] - 2, f"paso {sid}: la tarjeta de Tomás no tapa el panel")
+            if sid in ("tienda", "guardado"):
+                page.screenshot(path=f"{SHOTS}/{name}-53-tutorial-{sid}.png")
+        if sid == "mapa":
+            check(page.evaluate("farmweb.app.scene") == "mapa" and page.locator("#backdrop").is_hidden(), "paso mapa: cierra el panel y viaja al mapa")
+            page.screenshot(path=f"{SHOTS}/{name}-54-tutorial-mapa.png")
         page.locator('[data-key="tuto-next"]').click()
         page.wait_for_timeout(120)
+    check(page.evaluate("farmweb.app.scene") != "mapa" and page.locator("#backdrop").is_hidden(), "al terminar vuelve al corral y no deja paneles abiertos")
     check(page.locator(".tuto").count() == 0, "al terminar los pasos el tutorial se cierra")
     check(page.evaluate("JSON.parse(localStorage.getItem('farmweb:ui:v1')).tutorial") is True, "queda marcado como visto en el dispositivo")
     page.reload()

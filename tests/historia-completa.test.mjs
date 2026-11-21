@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { QUESTS, SIDE_QUESTS, SPECIES, corralTypeOf } from '../src/data.js';
 import { newWorld, addAnimal, addCorral, getCorral } from '../src/state.js';
 import { claim, claimSide, activeSide, activeQuest, syncSide } from '../src/quests.js';
+import { buyAnimal, tick } from '../src/sim.js';
 
 function satisfy(w, g) {
   const st = w.stats;
@@ -73,4 +74,30 @@ test('las secundarias se pueden cumplir una por una cuando aparecen', () => {
     syncSide(w);
   }
   assert.equal(activeSide(w).length, 0, 'ninguna secundaria queda sin poder cumplirse');
+});
+
+const ESTACION = ['porg', 'gato_loth', 'tauntaun', 'bantha', 'purrgil', 'dewback'];
+
+test('al terminar la historia las 6 criaturas de la Estación se compran y viven ahí', () => {
+  const w = newWorld('T', 1, 1);
+  addAnimal(w, 'gallina', 0, 'adult');
+  for (const q of QUESTS) { satisfy(w, q.goal); assert.ok(claim(w).ok, q.id); }
+  w.coins = 100_000;
+  for (const s of ESTACION) {
+    assert.ok(w.unlocked.includes(s), `${s} se conoce`);
+    const r = buyAnimal(w, s);
+    assert.ok(r.ok, `${s}: ${r.msg}`);
+    assert.equal(r.animal.corral, 'estacion', s);
+  }
+});
+
+test('las criaturas de la Estación crían (dos adultos felices ponen un huevo)', () => {
+  for (const s of ESTACION) {
+    const w = newWorld('T', 1, 1);
+    addCorral(w, 'estacion');
+    const a = addAnimal(w, s, 0, 'adult'), b = addAnimal(w, s, 0, 'adult');
+    a.fed = b.fed = a.happy = b.happy = 100;
+    tick(w, 1000);
+    assert.equal(w.eggs.filter((e) => e.species === s).length, 1, `${s} no cría`);
+  }
 });

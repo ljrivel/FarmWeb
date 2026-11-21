@@ -452,3 +452,7 @@ body.sheet-open .toast.show { animation: none; }
 .tuto-card.top { bottom: auto; top: calc(12px + env(safe-area-inset-top)); }
 .tuto-head { display: flex; align-items: center; gap: 10px; }
 .tuto-text { margin: 0; line-height: 1.5; }
+.tuto.quiet { background: none; }
+/* con el tutorial y un panel abierto, el panel se acorta y se pega abajo para dejar sitio a la tarjeta de Tomás */
+body.tuto-sheet .backdrop { align-items: flex-end; }
+body.tuto-sheet .sheet { max-height: calc(100dvh - 275px); border-radius: 22px 22px 0 0; border-bottom: 0; }

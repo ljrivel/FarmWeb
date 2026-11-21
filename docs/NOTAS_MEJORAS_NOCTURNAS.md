@@ -155,3 +155,17 @@ arreglo: la tarjeta de un animal sano mostraba «null» desde el sub-paso 2 de l
 - Marca `tutorial: true` en `farmweb:ui:v1` (por dispositivo, no dentro del mundo): quien ya tenía partida lo ve una vez.
   Sin localStorage sale una vez por sesión. En una partida nueva empieza después de la escena de Bruno; las visitas esperan.
 - Las preferencias del dispositivo ahora se fusionan (antes guardar etiquetas pisaba todo el objeto).
+
+## Estación Estelar y mejora del tutorial
+- Capítulo 8 (5 misiones, 6 escenas): la señal de Noa abre la Estación (corral `estacion`, 10 lugares, solo por historia).
+  Las 6 criaturas se conocen en tres tandas (porg y gato loth; tauntaun y bantha; purrgil y dewback) y se compran
+  (300 a 520 monedas) para poder criarlas, a diferencia de los dinosaurios, que llegan de uno en uno.
+- Comida nueva «ración estelar» (tauntaun, bantha, purrgil, dewback); porg y gato loth comen pescadito. 6 productos nuevos
+  y 4 secundarias. Suelo propio (metal con estrellas) y lugar en el mapa arriba a la derecha.
+- Arte rehecho según referencias del dueño. Ewok, Grogu y BB-8 quedan en `CANDIDATES` (sin registrar). El bantha y el
+  tauntaun son los menos fieles: un sprite de 32 px solo captura los rasgos principales.
+- Tutorial: los pasos de panel abren el panel; con una hoja abierta no se oscurece nada encima (`.tuto.quiet`), la hoja se
+  acorta (`body.tuto-sheet`) y la tarjeta de Tomás va arriba. El paso del mapa viaja al mapa y al terminar se vuelve al
+  corral. Antes el recuadro iluminado dejaba el panel opaco.
+- Derechos: nombres y criaturas de Star Wars son de Lucasfilm/Disney. Aviso en el README; si el sitio es público conviene
+  mantenerlo privado o sustituir los nombres.

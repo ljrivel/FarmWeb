@@ -32,6 +32,14 @@ test('lo que ilumina el tutorial existe en index.html o en la interfaz', () => {
   }
 });
 
+test('los pasos con panel abren un panel que existe', () => {
+  const ui = readFileSync(new URL('../src/ui.js', import.meta.url), 'utf8');
+  const paneles = TUTORIAL_STEPS.filter((x) => x.panel);
+  assert.deepEqual(paneles.map((x) => x.panel), ['pack', 'shop', 'quests', 'vet', 'world']);
+  for (const x of paneles) assert.ok(ui.includes(`${x.panel}: [`), `${x.id}: el panel ${x.panel} no existe`);
+  assert.deepEqual(TUTORIAL_STEPS.filter((x) => x.scene).map((x) => x.scene), ['mapa']);
+});
+
 test('sin animales se saltan los pasos de la tarjeta; sin comida, el de comer', () => {
   const vacio = newWorld('T', 1, 1);
   vacio.animals = []; // una partida nueva ya trae animales
