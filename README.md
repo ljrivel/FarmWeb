@@ -15,12 +15,12 @@ El diseño completo está en [`docs/DISENO.md`](docs/DISENO.md). Vista previa de
 
 ## Probar en local
 
-Sin dependencias ni compilación. Necesita un servidor estático (los módulos ES no funcionan abriendo el archivo directamente):
+Sin dependencias ni compilación. Necesita un servidor estático (los módulos ES no funcionan abriendo `index.html` directamente). Hay uno incluido:
 
-```bash
-python3 -m http.server 8080
-# abrir http://localhost:8080
-```
+- **Windows:** doble clic en `iniciar.bat`.
+- **Cualquier sistema:** `node tools/serve.mjs` (o `npm start`; puerto opcional: `node tools/serve.mjs 9000`).
+
+Al arrancar imprime dos direcciones: `http://localhost:8080` para la PC y `http://<IP-de-tu-PC>:8080` para el celular conectado al mismo Wi-Fi. La primera vez, Windows pregunta si permites el acceso en redes privadas: acepta. Cada dispositivo guarda su propio mundo (se puede pasar de uno a otro con *Descargar mundo / Cargar mundo*).
 
 ## Pruebas
 
