@@ -43,18 +43,30 @@ const server = createServer(async (req, res) => {
   }
 });
 
+// Si el puerto está ocupado por otro programa, prueba con el siguiente (hasta 20 intentos).
+const MAX_TRIES = 20;
+let current = port;
+
 server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE' && current < port + MAX_TRIES) {
+    console.log(`  El puerto ${current} está ocupado, probando ${current + 1}…`);
+    current++;
+    server.listen(current, '0.0.0.0');
+    return;
+  }
   console.error(err.code === 'EADDRINUSE'
-    ? `\nEl puerto ${port} ya está en uso. Prueba otro:  node tools/serve.mjs ${port + 1}\n`
+    ? `\nNo encontré un puerto libre entre ${port} y ${port + MAX_TRIES}.\n`
     : err);
   process.exit(1);
 });
 
-server.listen(port, '0.0.0.0', () => {
+server.on('listening', () => {
   const lan = Object.values(networkInterfaces()).flat()
     .filter((i) => i && i.family === 'IPv4' && !i.internal).map((i) => i.address);
   console.log('\n  FarmWeb está corriendo 🐔\n');
-  console.log(`  En esta PC:        http://localhost:${port}`);
-  for (const ip of lan) console.log(`  En tu celular:     http://${ip}:${port}   (misma red Wi-Fi)`);
+  console.log(`  En esta PC:        http://localhost:${current}`);
+  for (const ip of lan) console.log(`  En tu celular:     http://${ip}:${current}   (misma red Wi-Fi)`);
   console.log('\n  Para detenerlo: Ctrl+C\n');
 });
+
+server.listen(current, '0.0.0.0');
