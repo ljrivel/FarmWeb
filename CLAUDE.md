@@ -22,7 +22,7 @@ El dueño es Luis Josué; **responde siempre en español**.
 | Qué | Comando |
 |---|---|
 | Jugar en local (PC y celular en la misma Wi-Fi) | doble clic a `iniciar.bat` o `npm start` |
-| Pruebas unitarias | `npm test` (deben pasar todas; hoy 186) |
+| Pruebas unitarias | `npm test` (deben pasar todas; hoy 187) |
 | Regenerar sprites | `npm run sprites` (Python + Pillow; escribe `assets/sprites/*`) |
 | Recorrido en navegador | `python tools/e2e_smoke.py <carpeta_capturas>` (Playwright + Chrome; hoy 364 comprobaciones) |
 
@@ -86,7 +86,7 @@ doctora de turno): los dinosaurios ya no se compran, se **replican** (`replicate
 (migración en `validateWorld`, sin subir `VERSION`). Personaje nuevo `helice` (Señor Hélice). Sin hacer: las «lagunas de ADN de rana» del guion.
 Vender animales (`sellPrice`, `canSellAnimal`, `sellAnimal` en `sim.js`; `BALANCE.sell*`; `stats.soldAnimals`): bebé 25 % y adulto 50 % del precio de la
 especie, por la rareza (poco ×1,5, raro ×2,5, brillante ×4); no se vende un enfermo, uno del nido ni el último animal. Botón en la tarjeta y en la lista de
-Animales, con confirmación (`askSell` en `ui.js`). La etapa se ve como etiqueta (`stageBadge`: Bebé / Adulto).
+Animales, con confirmación (`askSell` en `ui.js`). Tras vender, ese corral no cría solo 60 s (`corral.breedPause`, `BALANCE.sellBreedPauseMs`, no se guarda). La etapa se ve como etiqueta (`stageBadge`: Bebé / Adulto).
 Mini lecciones por mecánica nueva (`LESSONS` en `src/tutorial.js`: vender, Criadero, enfermedades, Laboratorio, Mao Mao y Estación; las cuentan Tomás, Pita,
 el Señor Hélice, Mao Mao y Noa): salen solas al llegar a su capítulo (el Laboratorio, al abrirse), tras el tutorial y las escenas, y se guardan en
 `farmweb:ui:v1` (`lessons`); una partida avanzada no repite las de capítulos anteriores y las repite desde Mundo → Lecciones. `startTutorial(onDone, lesson)`

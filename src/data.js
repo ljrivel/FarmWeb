@@ -61,6 +61,7 @@ export const BALANCE = {
   // ---- Venta de animales: un bebé vale el 25 % del precio de su especie y un adulto el 50 %, por la rareza del color.
   sellBabyPct: 0.25,
   sellAdultPct: 0.5,
+  sellBreedPauseMs: 60 * 1000, // tras vender, ese corral no cría solo por un rato: el lugar libre no se llena al instante con un huevo
   sellRarityMul: { comun: 1, poco: 1.5, raro: 2.5, brillante: 4 },
   // ---- Laboratorio Hélice (lugar único del mapa, se abre en el capítulo 4): los dinosaurios se «replican» con el minijuego de la hebra.
   labUpgradeCosts: [600, 1200, 2200],              // costo de pasar al nivel 1, 2 y 3

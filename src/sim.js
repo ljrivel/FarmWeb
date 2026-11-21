@@ -125,10 +125,12 @@ export function tick(w, dt, opts = {}) {
     }
   }
 
+  for (const c of w.corrales) if (c.breedPause > 0) c.breedPause = Math.max(0, c.breedPause - dt);
+
   // cría: parejas de la misma especie, felices y comidas
   for (const species of Object.keys(SPECIES)) {
     const corral = corralOfSpecies(w, species);
-    if (!corral || corral.breed === 'manual') continue; // en manual solo se cría en el Criadero
+    if (!corral || corral.breed === 'manual' || corral.breedPause > 0) continue; // en manual solo se cría en el Criadero
     const ready = w.animals.filter((a) =>
       a.species === species && a.stage === 'adult' && a.cool <= 0 && !a.sick && !a.away &&
       a.fed >= B.minFedToBreed && a.happy >= B.minHappyToBreed);
@@ -556,6 +558,8 @@ export function sellAnimal(w, id) {
   if (!c.ok) return c;
   const gain = sellPrice(a);
   w.animals.splice(w.animals.indexOf(a), 1);
+  const corral = getCorral(w, a.corral);
+  if (corral) corral.breedPause = BALANCE.sellBreedPauseMs;
   w.coins += gain;
   w.stats.soldAnimals++;
   return ok(`Vendiste a ${a.name} por ${gain} monedas.`, { gain });
