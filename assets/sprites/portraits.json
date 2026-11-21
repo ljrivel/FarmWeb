@@ -1,0 +1,18 @@
+{
+ "cell": 32,
+ "expressions": [
+  "normal",
+  "contento",
+  "triste"
+ ],
+ "index": {
+  "abuela": 0,
+  "tomas": 1,
+  "pita": 2,
+  "ramon": 3,
+  "lia": 4,
+  "mia": 5,
+  "bruno": 6
+ },
+ "version": "038a3275cf"
+}

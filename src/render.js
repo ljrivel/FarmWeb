@@ -27,13 +27,13 @@ const loadJson = (src) => fetch(src, { cache: 'no-cache' }).then((r) => {
 
 export async function loadSprites() {
   // El JSON se revalida siempre (barato); la imagen lleva ?v=<hash> para no mezclar un PNG viejo con el JS nuevo.
-  const names = ['animals', 'icons', 'tiles', 'places'];
+  const names = ['animals', 'icons', 'tiles', 'places', 'portraits'];
   const metas = await Promise.all(names.map((n) => loadJson(`assets/sprites/${n}.json`)));
   const urls = Object.fromEntries(names.map((n, i) => [n, `assets/sprites/${n}.png${metas[i].version ? `?v=${metas[i].version}` : ''}`]));
   const imgs = await Promise.all(names.map((n) => loadImg(urls[n])));
-  const [animals, icons, tiles, places] = metas;
-  const [animalsImg, iconsImg, tilesImg, placesImg] = imgs;
-  return { animalsImg, iconsImg, tilesImg, placesImg, animals, icons, tiles, places, urls };
+  const [animals, icons, tiles, places, portraits] = metas;
+  const [animalsImg, iconsImg, tilesImg, placesImg, portraitsImg] = imgs;
+  return { animalsImg, iconsImg, tilesImg, placesImg, portraitsImg, animals, icons, tiles, places, portraits, urls };
 }
 
 /** Ajusta el lienzo al contenedor con escala entera en píxeles de dispositivo. */

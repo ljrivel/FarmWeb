@@ -2,7 +2,7 @@
 """Genera el pixel art de FarmWeb: animales (32x32), iconos y tiles (16x16) y lugares del mapa (48x48).
 
 Uso:  python3 tools/gen_sprites.py
-Salida: assets/sprites/{animals,icons,tiles,places}.png + .json, docs/preview-sprites.png
+Salida: assets/sprites/{animals,icons,tiles,places,portraits}.png + .json, docs/preview-sprites.png
 
 Estilo kawaii: formas redondas, ojos grandes con brillo, mejillas rosadas,
 contorno con el tono oscuro del propio color (nunca negro).
@@ -874,6 +874,153 @@ PLACES = [("pradera", pl_pradera), ("bosque", pl_bosque), ("estanque", pl_estanq
 EXTRA_PLACES = [("vet", pl_vet)]  # lugares que no son corrales (sin versión bloqueada)
 
 
+# ------------------------------------------------------------------ retratos
+# Busto 32x32 de cada personaje, centrado en x=16. Tres expresiones: normal, contento y triste.
+EXPRESSIONS = ["normal", "contento", "triste"]
+MOUTH = (200, 90, 110, 255)
+
+
+def _head(c, p, my=19):
+    c.ell(0, 14, 10, 9.5, p["skin"])
+    return my
+
+
+def _fringe(c, p):
+    c.ell(0, 7, 10.5, 5.2, p["hair"])
+    c.poly([(-10, 8), (-10, 12), (-6, 10), (-3, 13), (0, 10), (3, 13), (6, 10), (10, 12), (10, 8)], p["hair"])
+
+
+def _shoulders(c, p):
+    c.ell(0, 32, 13, 8, p["cloth"])
+
+
+def pt_abuela(c, p):
+    c.ell(0, 3, 5, 4, p["hair"])  # moño
+    c.ell(0, 16, 11.5, 11, p["hair"])
+    _shoulders(c, p)
+    _head(c, p)
+    _fringe(c, p)
+    c.rect(-4, 24, 4, 25, p["trim"])  # cuello del chal
+
+
+def pt_tomas(c, p):
+    _shoulders(c, p)
+    _head(c, p)
+    c.ell(0, 7, 10.5, 5, p["hair"])
+    c.poly([(-10, 8), (-10, 12), (-7, 11), (-4, 12), (-1, 10), (4, 12), (8, 11), (10, 12), (10, 8)], p["hair"])
+    c.ell(0, 5, 14, 2.6, p["hat"])  # sombrero de paja
+    c.ell(0, 2, 8, 4.5, p["hat"])
+    c.rect(-8, 4, 8, 5, p["trim"])
+
+
+def pt_pita(c, p):
+    c.ell(0, 16, 12, 11, p["hair"])
+    _shoulders(c, p)
+    _head(c, p)
+    _fringe(c, p)
+    c.ell(0, 3, 6.5, 3, WHITE)  # gorrito
+    c.rect(-1, 2, 1, 3, p["trim"])
+    c.rect(0, 1, 0, 4, p["trim"])
+    c.rect(-4, 24, 4, 24, p["trim"])
+    c.rect(-6, 28, -5, 29, p["trim"])  # insignia del delantal
+
+
+def pt_ramon(c, p):
+    _shoulders(c, p)
+    _head(c, p)
+    c.ell(-9.5, 13, 2.6, 4, p["hair"])
+    c.ell(9.5, 13, 2.6, 4, p["hair"])
+    c.ell(0, 5.5, 5, 1.6, p["hair"])
+    c.ell(0, 18.5, 5.5, 1.8, p["hair"])  # bigote
+    c.poly([(-2, 25), (0, 28), (2, 25)], p["trim"])  # pajarita
+
+
+def pt_lia(c, p):
+    c.ell(0, 17, 13, 13, p["hair"])
+    c.ell(-11, 27, 3, 5, p["hair"])  # trenza
+    _shoulders(c, p)
+    _head(c, p)
+    _fringe(c, p)
+    c.ell(0, 25, 9, 2.4, p["trim"])  # bufanda
+
+
+def pt_mia(c, p):
+    c.ell(-12, 17, 3.5, 6.5, p["hair"])  # coletas
+    c.ell(12, 17, 3.5, 6.5, p["hair"])
+    _shoulders(c, p)
+    _head(c, p)
+    _fringe(c, p)
+    c.ell(-9, 8, 2.6, 2, p["trim"])
+    c.ell(9, 8, 2.6, 2, p["trim"])  # lazos
+    c.ell(0, 25, 6, 1.6, WHITE)
+
+
+def pt_bruno(c, p):
+    _shoulders(c, p)
+    c.poly([(-12, 24), (-8, 24), (8, 38), (4, 38)], p["trim"])  # correa de la bolsa
+    _head(c, p)
+    c.ell(0, 8, 10.5, 4.5, p["hair"])
+    c.ell(0, 5, 10.5, 4, p["hat"])  # gorra de cartero
+    c.rect(-10, 6, 10, 8, p["hat"])
+    c.rect(-6, 8, 6, 9, p["trim"])  # visera
+
+
+PORTRAITS = [
+    ("abuela", pt_abuela, dict(skin="#ffe0c8", hair="#e8e2f2", cloth="#ff8fb0", trim="#ffc4d6"), dict(glasses=True)),
+    ("tomas", pt_tomas, dict(skin="#ffd9b8", hair="#8a5a3c", cloth="#8fdcc0", hat="#f3d27a", trim="#d9a85a"), dict(freckles=True)),
+    ("pita", pt_pita, dict(skin="#ffe3d0", hair="#3b3350", cloth="#bfe4ff", trim="#ff8fb0"), {}),
+    ("ramon", pt_ramon, dict(skin="#f2c9a0", hair="#d8d2cc", cloth="#ffe08a", trim="#e0606a"), dict(my=22)),
+    ("lia", pt_lia, dict(skin="#efc4a4", hair="#8d6fd1", cloth="#c9b6f2", trim="#7fd8c8"), {}),
+    ("mia", pt_mia, dict(skin="#ffe0c8", hair="#a0643e", cloth="#ffc9dc", trim="#ff7fa8"), dict(freckles=True)),
+    ("bruno", pt_bruno, dict(skin="#f3cfae", hair="#5b4636", cloth="#ffd3a8", hat="#6aa5d8", trim="#a0643e"), {}),
+]
+
+
+def _portrait_face(c, expr, opts):
+    my = opts.get("my", 19)
+    for sx in (-1, 1):  # el lado derecho es el espejo exacto del izquierdo
+        if expr == 1:  # contento: ojos cerrados en arco
+            for x, y in ((6, 16), (5, 15), (4, 15), (3, 16)):
+                c.px(sx * x, y, EYE)
+        else:
+            lo, hi = sorted((sx * 4, sx * 5))
+            c.rect(lo, 14, hi, 16, EYE)
+            c.px(lo, 14, WHITE)
+            if expr == 2:  # cejas preocupadas
+                for x, y in ((6, 13), (5, 12), (4, 11)):
+                    c.px(sx * x, y, EYE)
+        lo, hi = sorted((sx * 6, sx * 8))
+        c.rect(lo, 17, hi, 18, BLUSH)
+        if opts.get("freckles"):
+            c.px(sx * 4, 18, shade(BLUSH, 0.85))
+            c.px(sx * 6, 19, shade(BLUSH, 0.85))
+    if expr == 1:
+        c.rect(-2, my - 1, 2, my, MOUTH)
+        c.px(0, my, BLUSH)
+    elif expr == 2:
+        for x, y in ((-2, my + 1), (-1, my), (0, my), (1, my), (2, my + 1)):
+            c.px(x, y, MOUTH)
+        c.px(-5, 18, hx("#9fd6ff"))
+    else:
+        for x, y in ((-2, my - 1), (-1, my), (0, my), (1, my), (2, my - 1)):
+            c.px(x, y, MOUTH)
+    if opts.get("glasses"):
+        for x0, x1 in ((-7, -2), (2, 7)):
+            a, b = c.P(x0, 13), c.P(x1, 17)
+            c.d.rectangle([a[0], a[1], b[0], b[1]], outline=hx("#8a6a9a"))
+        c.rect(-1, 14, 1, 14, hx("#8a6a9a"))
+
+
+def render_portrait(fn, look, opts, expr):
+    pal = {k: hx(v) for k, v in look.items()}
+    c = Canvas(CELL, ox=16, oy=0)
+    fn(c, pal)
+    c.img = outline(shade_pass(c.img), auto_line(pal["cloth"]))
+    c.d = ImageDraw.Draw(c.img)
+    _portrait_face(c, expr, opts)
+    return c.img
+
+
 # --------------------------------------------------------------------- salida
 def save_sheet(img, name, meta):
     """Guarda el PNG y su JSON; `version` (hash del PNG) sirve de ?v= para que el navegador no mezcle caché vieja."""
@@ -914,6 +1061,13 @@ def build():
         tsheet.paste(im, (i * 16, 0))
     save_sheet(tsheet, "tiles", {"cell": 16, "index": {n: i for i, (n, _) in enumerate(TILES)}})
 
+    psz = [(n, [render_portrait(f, look, o, e) for e in range(len(EXPRESSIONS))]) for n, f, look, o in PORTRAITS]
+    ptsheet = Image.new("RGBA", (CELL * len(EXPRESSIONS), CELL * len(psz)), (0, 0, 0, 0))
+    for r, (_, ims) in enumerate(psz):
+        for e, im in enumerate(ims):
+            ptsheet.paste(im, (e * CELL, r * CELL))
+    save_sheet(ptsheet, "portraits", {"cell": CELL, "expressions": EXPRESSIONS, "index": {n: i for i, (n, _) in enumerate(psz)}})
+
     places = [(n, _place(f)) for n, f in PLACES]
     places += [(n + "_bloq", desaturate(im)) for n, im in places[:len(PLACES)]]
     places += [(n, _place(f)) for n, f in EXTRA_PLACES]
@@ -944,6 +1098,11 @@ def build():
     for i, (_, im) in enumerate(places):
         prev.alpha_composite(im.resize((96, 96), Image.NEAREST), (pad + i * (96 + pad), places_y))
     prev.save(os.path.join(DOCS, "preview-sprites.png"))
+    pv = Image.new("RGBA", (len(EXPRESSIONS) * (CELL * 5 + pad) + pad, len(psz) * (CELL * 5 + pad) + pad), hx("#fff6e5"))
+    for r, (_, ims) in enumerate(psz):
+        for e, im in enumerate(ims):
+            pv.alpha_composite(im.resize((CELL * 5, CELL * 5), Image.NEAREST), (pad + e * (CELL * 5 + pad), pad + r * (CELL * 5 + pad)))
+    pv.save(os.path.join(DOCS, "preview-retratos.png"))
     render_animal("gallina", 0, "adult", 0).save(os.path.join(ROOT, "assets", "favicon.png"))
     print(f"animals.png {atlas.size}, {len(keys)} filas; icons {len(icons)}; tiles {len(TILES)}; places {len(places)}")
 

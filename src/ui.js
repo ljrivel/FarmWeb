@@ -408,13 +408,28 @@ export function createUI(app) {
         : h('p', { class: 'muted', text: 'Sin comida. Puedes comprar en la tienda.' }));
   }
 
-  /** Quién habla en una misión: inicial en un círculo de color (decorativo) y su nombre y rol en texto. */
-  function speaker(id, short = false) {
+  /** Retrato pixel art de un personaje (`mood`: 0 normal, 1 contento, 2 triste); sin retrato, la inicial de color. */
+  function face(id, z = 2, mood = 0) {
+    const c = CHARACTERS[id];
+    const row = S().portraits?.index[id];
+    const el = h('span', { class: 'ico face', 'aria-hidden': 'true' });
+    if (row == null) {
+      el.className = 'avatar';
+      el.textContent = c.nombre.replace(/^(Dra\.|Don|Abuela)\s+/, '')[0];
+      el.style.background = c.color;
+      return el;
+    }
+    const cols = S().portraits.expressions.length, rows = Object.keys(S().portraits.index).length;
+    el.style.cssText = `width:${32 * z}px;height:${32 * z}px;background-image:url(${S().urls.portraits});` +
+      `background-size:${32 * cols * z}px ${32 * rows * z}px;background-position:-${mood * 32 * z}px -${row * 32 * z}px;background-color:${c.color}55;`;
+    return el;
+  }
+
+  /** Quién habla en una misión: su retrato y su nombre y rol en texto. */
+  function speaker(id, short = false, mood = 0) {
     const c = CHARACTERS[id];
     if (!c) return null;
-    const dot = h('span', { class: 'avatar', 'aria-hidden': 'true', text: c.nombre.replace(/^(Dra\.|Don|Abuela)\s+/, '')[0] });
-    dot.style.background = c.color;
-    return h('p', { class: 'speaker' }, dot, h('span', null, h('strong', { text: c.nombre }), !short && h('span', { class: 'muted small', text: ` · ${c.rol}` })));
+    return h('p', { class: 'speaker' }, face(id, short ? 1 : 2, mood), h('span', null, h('strong', { text: c.nombre }), !short && h('span', { class: 'muted small', text: ` · ${c.rol}` })));
   }
 
   // ---- panel: misiones

@@ -436,7 +436,7 @@ def care_flow(browser, name, viewport, dpr, mobile):
     page.locator(f'[data-key="cure-{aid}"]').click()
     page.wait_for_timeout(300)
     check(page.evaluate(f"farmweb.app.w.animals.find(a => a.id === {aid}).sick") is None, "curar deja al animal sano")
-    check(page.evaluate("farmweb.app.w.coins") == 70, "y descuenta el costo (100 - 30 = 70)")
+    check(page.evaluate("farmweb.app.w.coins") == 40, "y descuenta el costo del resfriado (100 - 60 = 40)")
     check("sanos" in page.locator("#sheetBody").inner_text(), "la hoja queda sin enfermos")
     page.keyboard.press("Escape")
     check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))

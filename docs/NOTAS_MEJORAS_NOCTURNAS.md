@@ -120,3 +120,10 @@ arreglo: la tarjeta de un animal sano mostraba «null» desde el sub-paso 2 de l
 - Escuchar los sonidos nuevos (`heart`, `sick`, `heal`) y las voces de conejo y pato.
 - Limpieza ligera de corrales (opcional de la 2B), no hecha.
 - Hacer push (ver arriba).
+
+## Ajuste de equilibrio y retratos (sesión posterior)
+- `BALANCE`: resfriado y pulgas 0,012 → 0,03 por hora; `cureCost` ×2 (60, 50, 40, 30). Corazones sin cambios.
+  Medido con una simulación de perfiles de jugador: un jugador atento pasa de ~1 enfermedad cada 5 h a ~1 cada 1,7 h
+  con 10 animales.
+- Retratos: atlas `portraits` (32×32, 7 personajes × normal/contento/triste), generado por `gen_sprites.py`,
+  mostrado en `speaker()` de `ui.js`. Sin retrato, cae a la inicial de color.

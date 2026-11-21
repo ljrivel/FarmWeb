@@ -28,3 +28,13 @@ test('el PNG mide 4 cuadros de ancho y 100 filas de alto', () => {
   assert.equal(png.readUInt32BE(20), 100 * 32);
   for (const [s, n] of Object.entries(json.species)) assert.equal(n, SPECIES[s].variants.length, s);
 });
+
+test('los retratos cubren a todos los personajes con 3 expresiones', async () => {
+  const { CHARACTERS } = await import('../src/data.js');
+  const pj = JSON.parse(readFileSync(new URL('../assets/sprites/portraits.json', import.meta.url), 'utf8'));
+  const pp = readFileSync(new URL('../assets/sprites/portraits.png', import.meta.url));
+  assert.deepEqual(Object.keys(pj.index).sort(), Object.keys(CHARACTERS).sort());
+  assert.equal(pj.expressions.length, 3);
+  assert.equal(pp.readUInt32BE(16), 3 * 32);
+  assert.equal(pp.readUInt32BE(20), Object.keys(CHARACTERS).length * 32);
+});

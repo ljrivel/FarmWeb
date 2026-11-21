@@ -373,6 +373,7 @@ input.text {
   width: 28px; height: 28px; border-radius: 50%;
   border: 2px solid var(--line); font-weight: 800; font-size: .85rem; color: var(--ink);
 }
+.face { border-radius: 12px; border: 2px solid var(--line); flex: none; box-sizing: content-box; }
 .quest-text-body { line-height: 1.5; }
 
 /* ---------- secundarias e historial ---------- */
