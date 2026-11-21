@@ -351,3 +351,17 @@ input.text {
 /* ---------- animales agrupados por corral ---------- */
 .group + .group { margin-top: 12px; }
 .group h3 { margin: 0; }
+
+/* ---------- fase 2B: corazones, enfermedad y veterinaria ---------- */
+.hearts { display: inline-block; color: var(--pink-d); font-size: .95rem; letter-spacing: .08em; line-height: 1.2; vertical-align: middle; }
+.sel-title .hearts { margin: 2px 0 4px; }
+.sick-note {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 4px 8px;
+  padding: 8px 10px; margin-top: 4px;
+  background: #fff1f4; border: 2px dashed var(--pink); border-radius: 12px;
+}
+.sick-note strong { color: var(--pink-d); }
+.sick-note .btn { grid-column: 1 / -1; justify-self: start; }
+.meters.tight + .sick-note, .group .sick-note { padding: 4px 8px; }
+.sick-line { display: flex; align-items: center; gap: 6px; font-weight: 700; color: var(--pink-d); }
+.empty { display: grid; justify-items: center; gap: 8px; padding: 18px 8px; text-align: center; color: var(--ink-soft); }

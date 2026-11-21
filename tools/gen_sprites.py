@@ -545,6 +545,43 @@ def ic_candado(c):
     c.px(8, 11, EYE)
 
 
+# ---- fase 2B: enfermedades y veterinaria
+def ic_gota(c):  # resfriado
+    c.poly([(8, 2), (4, 9), (12, 9)], hx("#8fd0ff"))
+    c.ell(8, 10, 4, 4, hx("#8fd0ff"))
+    c.px(6, 9, WHITE)
+    c.px(6, 10, WHITE)
+
+
+def ic_pancita(c):  # dolor de pancita
+    c.ell(8, 9, 6, 5, hx("#ffc9a8"))
+    for x, y in ((6, 8), (7, 7), (9, 7), (10, 8), (9, 10), (7, 10), (8, 9)):
+        c.px(x, y, hx("#e07a5f"))
+
+
+def ic_pulga(c):  # pulgas
+    c.ell(8, 9, 4, 3, hx("#b08968"))
+    c.ell(5, 7, 2, 2, hx("#b08968"))
+    for x0, x1 in ((6, 4), (9, 11), (10, 13)):
+        c.px(x0, 12, hx("#7f5539"))
+        c.px(x1, 13, hx("#7f5539"))
+    c.px(4, 6, WHITE)
+
+
+def ic_nube(c):  # tristeza
+    c.ell(6, 8, 4, 3, hx("#c9cbe0"))
+    c.ell(10, 7, 4, 4, hx("#c9cbe0"))
+    c.rect(3, 9, 13, 10, hx("#c9cbe0"))
+    for x in (5, 8, 11):
+        c.px(x, 13, hx("#8fd0ff"))
+
+
+def ic_vet(c):  # cruz de la veterinaria
+    c.ell(8, 8, 6, 6, hx("#fffdf8"))
+    c.rect(7, 4, 8, 11, hx("#ff6f91"))
+    c.rect(4, 7, 11, 8, hx("#ff6f91"))
+
+
 ICONS = [
     ("coin", "#ffd95e", ic_coin), ("heart", "#ff6f91", ic_heart),
     ("huevo", "#fffaf0", ic_huevo), ("huevo_dino", "#cfeee0", ic_huevo_dino),
@@ -556,6 +593,8 @@ ICONS = [
     ("bayas", "#ff6a8a", ic_bayas), ("carnita", "#d9744f", ic_carnita),
     ("gusanito", "#ff9fb4", ic_gusanito), ("destello", "#fff3a8", ic_destello),
     ("mapa", "#fff1cf", ic_mapa), ("candado", "#d9c7e6", ic_candado),
+    ("gota", "#8fd0ff", ic_gota), ("pancita", "#ffc9a8", ic_pancita), ("pulga", "#b08968", ic_pulga),
+    ("nube", "#c9cbe0", ic_nube), ("vet", "#ff6f91", ic_vet),
 ]
 
 

@@ -20,7 +20,12 @@
   "gusanito": 16,
   "destello": 17,
   "mapa": 18,
-  "candado": 19
+  "candado": 19,
+  "gota": 20,
+  "pancita": 21,
+  "pulga": 22,
+  "nube": 23,
+  "vet": 24
  },
- "version": "c5f7cfa67e"
+ "version": "7010f32062"
 }

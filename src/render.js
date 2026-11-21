@@ -2,7 +2,7 @@
 // a un múltiplo entero de píxeles de pantalla para que el pixel art quede nítido.
 // Hay dos tipos de escena: el mapa de la granja y cada corral (según su tipo).
 
-import { SPECIES, CORRAL_TYPES, CORRAL_TYPE_ORDER, MAP_SPOTS, spriteKey } from './data.js';
+import { SPECIES, CORRAL_TYPES, CORRAL_TYPE_ORDER, MAP_SPOTS, DISEASES, spriteKey } from './data.js';
 import { getCorral } from './state.js';
 import { corralStatus } from './sim.js';
 
@@ -225,7 +225,13 @@ export function draw(ctx, S, w, view, t) {
     if (a.id === view.selectedId) ring(ctx, x, y, t);
     const row = spriteRow(S.animals.rows, a.species, a.variant, a.shiny, a.stage);
     const frame = idle[(Math.floor(t / 220) + a.id * 3) % idle.length];
-    ctx.drawImage(S.animalsImg, frame * 32, row * 32, 32, 32, x - 16, y - 29, 32, 32);
+    if (a.sick) ctx.globalAlpha = 0.82; // enfermo: un poco apagado, con su icono al lado
+    ctx.drawImage(S.animalsImg, a.sick ? 0 : frame * 32, row * 32, 32, 32, x - 16, y - 29, 32, 32);
+    ctx.globalAlpha = 1;
+    if (a.sick) {
+      icon(ctx, S, DISEASES[a.sick].icon, x - 19, y - 30 + Math.round(Math.sin(t / 500 + a.id)), 12);
+      if (a.id === view.selectedId) pill(ctx, DISEASES[a.sick].nombre, x, y + 5, '#ffe3ea');
+    }
     if (a.shiny && Math.sin(t / 180 + a.id) > -0.3) icon(ctx, S, 'destello', x + 7, y - 33 + Math.round(Math.sin(t / 400)), 9);
   }
   for (const a of sorted) {

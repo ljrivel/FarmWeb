@@ -34,6 +34,10 @@ export const SOUNDS = {
   map: [n('noise', 0, 0.18, 800, 0.12, { lp: 1200 }), n('sine', 0, 0.15, 392, 0.12, { f1: 523 })],
   open: [n('sine', 0, 0.09, 520, 0.14, { f1: 700 })],
   close: [n('sine', 0, 0.09, 700, 0.12, { f1: 480 })],
+  // fase 2B: corazón ganado, enfermar (suave, nada alarmante) y curarse
+  heart: [n('sine', 0, 0.1, 784, 0.16), n('sine', 0.08, 0.18, 1175, 0.16), n('sine', 0.08, 0.18, 1568, 0.06)],
+  sick: [n('sine', 0, 0.16, 523, 0.12, { f1: 440 }), n('sine', 0.15, 0.24, 440, 0.12, { f1: 392 })],
+  heal: [n('triangle', 0, 0.1, 659, 0.16), n('triangle', 0.09, 0.1, 880, 0.16), n('sine', 0.18, 0.3, 1319, 0.14)],
 };
 
 export const VOICES = {

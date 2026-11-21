@@ -50,7 +50,7 @@ async function ready(opts = {}) {
   return { audio, ctx: instances[0], instances, storage };
 }
 
-const EFFECTS = ['tap', 'pet', 'feed', 'feedFav', 'collect', 'sell', 'buy', 'build', 'upgrade', 'quest', 'hatch', 'egg', 'grown', 'named', 'rare', 'shiny', 'warn', 'map', 'open', 'close'];
+const EFFECTS = ['tap', 'pet', 'feed', 'feedFav', 'collect', 'sell', 'buy', 'build', 'upgrade', 'quest', 'hatch', 'egg', 'grown', 'named', 'rare', 'shiny', 'warn', 'map', 'open', 'close', 'heart', 'sick', 'heal'];
 
 test('SOUNDS y VOICES tienen exactamente los nombres pedidos y cada nota es válida', () => {
   assert.deepEqual(Object.keys(SOUNDS).sort(), [...EFFECTS].sort());

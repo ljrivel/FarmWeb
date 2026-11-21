@@ -6,7 +6,7 @@ import * as sim from './sim.js';
 import { claim } from './quests.js';
 import { newWorld, getCorral, resolveScene } from './state.js';
 import { store, downloadWorld, readWorldFile } from './storage.js';
-import { MAX_OFFLINE_MS, SPECIES, rarityOf } from './data.js';
+import { MAX_OFFLINE_MS, SPECIES, DISEASES, rarityOf } from './data.js';
 import { createAudio } from './audio.js';
 
 const app = { w: null, sprites: null, scene: 'pradera', selectedId: null, fx: [], lastSaved: 0, k: 1, audio: null };
@@ -33,11 +33,12 @@ app.feed = (id, food) => {
   const r = sim.feed(app.w, id, food);
   const a = sim.find(app.w, id);
   report(r, a && [a.x, a.y, r.fav ? 'heart' : food], r.fav ? 'feedFav' : 'feed');
+  if (r.heartUp) setTimeout(() => app.audio.play('heart'), 300);
 };
 app.pet = (id) => {
   const r = sim.pet(app.w, id);
   const a = sim.find(app.w, id);
-  report(r, a && [a.x, a.y, 'heart'], 'pet');
+  report(r, a && [a.x, a.y, 'heart'], r.heartUp ? 'heart' : 'pet');
   if (r.ok && a) app.audio.voice(a.species);
 };
 app.collect = (id) => {
@@ -56,6 +57,11 @@ app.renameAnimal = (id, raw) => {
   const r = sim.renameAnimal(app.w, id, raw);
   report(r, undefined, 'named'); // primero se redibuja la tarjeta; así closeSheet sabe si el botón de antes sigue
   if (r.ok) ui.closeSheet();
+};
+app.cure = (id) => {
+  const r = sim.cure(app.w, id);
+  const a = sim.find(app.w, id);
+  report(r, a && a.corral === app.scene && [a.x, a.y, 'heart'], 'heal');
 };
 app.buyFood = (f, n) => report(sim.buyFood(app.w, f, n), undefined, 'buy');
 app.buildCorral = (tipo) => report(sim.buildCorral(app.w, tipo), undefined, 'build');
@@ -136,12 +142,21 @@ function advance(now) {
   const summary = {};
   const babies = [];
   for (let left = dt; left > 0; left -= 30_000) {
-    for (const e of sim.tick(w, Math.min(left, 30_000))) {
+    for (const e of sim.tick(w, Math.min(left, 30_000), { live: !away })) {
       summary[e.type] = (summary[e.type] || 0) + 1;
       if (away) continue;
       if (e.type === 'hatch') { babies.push(e.animal); continue; }
       else if (e.type === 'egg') { ui.toast(`${SPECIES[e.species].nombre} puso un huevo.`); app.audio.play('egg'); }
       else if (e.type === 'grown') { ui.toast(`¡${e.animal.name} creció!`); app.audio.play('grown'); }
+      else if (e.type === 'sick') {
+        const a = e.animal;
+        ui.toast(`${a.name} tiene ${DISEASES[e.disease].nombre.toLowerCase()}. Toca para verlo.`, 'ok', () => {
+          if (!sim.isCurrent(app.w, a)) return;
+          app.goTo(a.corral); app.selectedId = a.id; ui.refresh();
+        });
+        app.audio.play('sick');
+      }
+      else if (e.type === 'healed') { ui.toast(`¡${e.animal.name} se curó con tus cuidados!`); app.audio.play('heal'); }
     }
   }
   w.lastTick = now;

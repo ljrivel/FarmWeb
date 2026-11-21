@@ -3,7 +3,7 @@
 
 import {
   SPECIES, ORDER, FOODS, PRODUCTS, QUESTS, CHAPTERS, BALANCE, CORRAL_TYPES, corralTypeOf,
-  rarityOf, rarityLabel,
+  rarityOf, rarityLabel, MAX_HEARTS, DISEASES,
 } from './data.js';
 import { spriteRow } from './render.js';
 import * as sim from './sim.js';
@@ -81,6 +81,19 @@ export function createUI(app) {
   const rarityBadge = (a) => (rarityOf(a) === 'comun' ? null
     : h('span', { class: `rarity ${rarityOf(a)}`, text: rarityLabel(a) }));
 
+  const heartsText = (a) => `Corazones ${a.hearts} de ${MAX_HEARTS}`;
+  /** Corazones: forma llena/vacía (no solo color) y el texto «Corazones N de 5» para lectores de pantalla. */
+  const hearts = (a) => h('span', { class: 'hearts', title: heartsText(a) },
+    h('span', { 'aria-hidden': 'true', text: '♥'.repeat(a.hearts) + '♡'.repeat(MAX_HEARTS - a.hearts) }),
+    h('span', { class: 'visually-hidden', text: heartsText(a) }));
+  /** Aviso de enfermedad con icono y texto. */
+  const sickNote = (a, full) => a.sick && h('div', { class: 'sick-note', role: 'status' },
+    icon(DISEASES[a.sick].icon, 1),
+    h('div', { class: 'grow' },
+      h('strong', { text: `Enfermo: ${DISEASES[a.sick].nombre}` }),
+      full && h('div', { class: 'small', text: `${DISEASES[a.sick].hint} No produce ni crece hasta curarse.` })),
+    full && btn('Veterinaria', () => openPanel('vet'), { key: `vet-${a.id}`, icon: icon('vet', 1) }));
+
   // ------------------------------------------------------------- barras vivas
   function bar(kind, a) {
     const label = kind === 'fed' ? 'Saciedad' : 'Felicidad';
@@ -93,11 +106,12 @@ export function createUI(app) {
   }
   function liveInfo(a) {
     const sp = SPECIES[a.species];
+    if (a.sick) return `Está enfermo (${DISEASES[a.sick].nombre.toLowerCase()}): no ${a.stage === 'baby' ? 'crece' : 'produce'}.`;
     if (a.stage === 'baby') return a.fed > 0 ? `Será adulto en ~${fmtTime(sp.grow - a.growth)}` : 'Tiene hambre y no crece.';
     if (a.ready >= BALANCE.maxReady) return 'Ya no le caben más productos: ¡recógelos!';
     if (a.fed <= 0) return 'Con hambre no produce.';
     if (a.happy < 30) return 'Está triste: dale comida y mimos.';
-    const rate = a.happy >= 60 ? 1 : 0.5;
+    const rate = (a.happy >= 60 ? 1 : 0.5) * sim.heartBonus(a);
     return `Próximo ${PRODUCTS[sp.product].nombre.toLowerCase()} en ~${fmtTime((sp.prod - a.prod) / rate)}`;
   }
   function updateLive() {
@@ -139,8 +153,9 @@ export function createUI(app) {
       const { used } = totals(w);
       $('spaceInfo').textContent = `${used} ${plural(used, 'animal', 'animales')}`;
     }
+    const sickHere = here ? w.animals.filter((a) => a.corral === here.id && a.sick).length : 0;
     const label = here
-      ? `Corral ${here.nombre}. Toca un animal para cuidarlo o usa el menú de abajo.`
+      ? `Corral ${here.nombre}.${sickHere ? ` ${sickHere} ${plural(sickHere, 'animal enfermo', 'animales enfermos')}.` : ''} Toca un animal para cuidarlo o usa el menú de abajo.`
       : 'Mapa de la granja. Toca un lugar para visitarlo o construirlo.';
     if ($('game').getAttribute('aria-label') !== label) $('game').setAttribute('aria-label', label);
   }
@@ -157,7 +172,7 @@ export function createUI(app) {
       selectedSig = '';
       return;
     }
-    const sig = JSON.stringify([a.id, a.stage, a.ready > 0, a.petCd > 0, a.fed >= 95, w.foods, a.name, a.named]);
+    const sig = JSON.stringify([a.id, a.stage, a.ready > 0, a.petCd > 0, a.fed >= 95, w.foods, a.name, a.named, a.hearts, a.sick]);
     root.hidden = false;
     if (sig === selectedSig) return;
     selectedSig = sig;
@@ -169,8 +184,10 @@ export function createUI(app) {
         h('div', { class: 'sel-title' },
           h('h2', { text: a.name }),
           h('p', { class: 'muted' }, `${kindName(a)} · ${stageName(a)} `, rarityBadge(a)),
+          hearts(a),
           h('p', { class: 'small', 'data-live': 'info', 'data-id': String(a.id), text: liveInfo(a) })),
         h('button', { class: 'btn small', type: 'button', 'aria-label': 'Cerrar tarjeta', onclick: () => { app.selectedId = null; refresh(); } }, '✕')),
+      sickNote(a, true),
       h('div', { class: 'meters' }, bar('fed', a), bar('happy', a)),
       h('div', { class: 'actions' },
         a.ready > 0 && h('button', { class: 'btn primary', type: 'button', onclick: () => app.collect(a.id) },
@@ -277,8 +294,9 @@ export function createUI(app) {
         list.length ? list.map((a) => row(
           portrait(a.species, a.variant, a.stage, 2, a.shiny),
           h('div', { class: 'grow' },
-            h('strong', { text: a.name }),
+            h('strong', { text: a.name }), ' ', hearts(a),
             h('div', { class: 'muted small', text: `${kindName(a)} · ${stageName(a)}${rarityOf(a) === 'comun' ? '' : ` · ${rarityLabel(a)}`}${a.ready ? ` · ${a.ready} listo${a.ready > 1 ? 's' : ''}` : ''}${a.named === false ? ' · sin bautizar' : ''}` }),
+            sickNote(a, false),
             h('div', { class: 'meters tight' }, bar('fed', a), bar('happy', a))),
           btn('Ver', () => { closeSheet(); app.goTo(a.corral); app.selectedId = a.id; refresh(); }, { key: `ver-${a.id}` })))
           : h('p', { class: 'muted small', text: 'Aún no hay animales aquí.' }));
@@ -344,6 +362,29 @@ export function createUI(app) {
     }
     return h('div', null, tabBar, h('div', { class: 'tabpanel', role: 'tabpanel' }, content));
   }
+
+  // ---- panel: veterinaria (lista de enfermos y curar por monedas)
+  function panelVet() {
+    const w = W();
+    const sick = w.animals.filter((a) => a.sick).sort((a, b) => a.id - b.id);
+    return h('div', null,
+      h('p', { class: 'muted', text: 'La Dra. Pita revisa a tus animales. Curar aquí es inmediato; en casa también se curan solos, más despacio, si están bien comidos y contentos.' }),
+      sick.length ? sick.map((a) => {
+        const d = DISEASES[a.sick];
+        const cost = BALANCE.cureCost[a.sick];
+        return row(
+          portrait(a.species, a.variant, a.stage, 2, a.shiny),
+          h('div', { class: 'grow' },
+            h('strong', { text: a.name }),
+            h('div', { class: 'small sick-line' }, icon(d.icon, 1), d.nombre),
+            h('div', { class: 'muted small', text: `En ${getCorralName(a)} · ${d.hint}` })),
+          price(cost),
+          btn('Curar', () => app.cure(a.id), { cls: 'primary', disabled: w.coins < cost, key: `cure-${a.id}` }));
+      }) : h('div', { class: 'empty' },
+        icon('vet', 3),
+        h('p', { text: 'Todos tus animales están sanos. ¡Buen trabajo!' })));
+  }
+  const getCorralName = (a) => W().corrales.find((c) => c.id === a.corral)?.nombre || '';
 
   // ---- panel: mochila
   function panelPack() {
@@ -473,6 +514,7 @@ export function createUI(app) {
     shop: ['Tienda', panelShop],
     pack: ['Mochila', panelPack],
     quests: ['Misiones', panelQuests],
+    vet: ['Veterinaria', panelVet],
     world: ['Mundo', panelWorld],
   };
   function openPanel(name, tab) {
