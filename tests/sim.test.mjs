@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { newWorld, addAnimal, addCorral, getCorral, capacityOf } from '../src/state.js';
 import * as sim from '../src/sim.js';
-import { SPECIES, MIN, BALANCE, CORRAL_COSTS, CORRAL_TYPES, CORRAL_TYPE_ORDER } from '../src/data.js';
+import { SPECIES, PRODUCTS, MIN, BALANCE, CORRAL_COSTS, CORRAL_TYPES, CORRAL_TYPE_ORDER } from '../src/data.js';
 
 const NOW = 1_700_000_000_000;
 const fresh = (seed = 5) => newWorld('T', NOW, seed);
@@ -106,8 +106,8 @@ test('vender convierte productos en monedas', () => {
   const w = fresh();
   w.products = { huevo: 5, leche: 1 };
   const r = sim.sell(w, 'huevo');
-  assert.equal(r.gain, 40);
-  assert.equal(w.coins, 140);
+  assert.equal(r.gain, 5 * PRODUCTS.huevo.price);
+  assert.equal(w.coins, 100 + 5 * PRODUCTS.huevo.price);
   assert.equal(w.products.huevo, undefined);
   assert.equal(w.stats.sold, 5);
   assert.equal(sim.sell(w, 'huevo').ok, false);

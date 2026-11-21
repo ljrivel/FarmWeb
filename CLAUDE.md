@@ -24,7 +24,7 @@ El dueño es Luis Josué; **responde siempre en español**.
 | Jugar en local (PC y celular en la misma Wi-Fi) | doble clic a `iniciar.bat` o `npm start` |
 | Pruebas unitarias | `npm test` (deben pasar todas; hoy 186) |
 | Regenerar sprites | `npm run sprites` (Python + Pillow; escribe `assets/sprites/*`) |
-| Simulación de economía (dinero activo vs AFK) | `node tools/economia.mjs` |
+| Simulación de economía (dinero activo vs AFK; tiempo de producción y precios) | `node tools/economia.mjs` y `node tools/economia-precios.mjs` |
 | Recorrido en navegador | `python tools/e2e_smoke.py <carpeta_capturas>` (Playwright + Chrome; hoy 368 comprobaciones) |
 
 Tras un cambio visible, recarga con Ctrl+F5. El servidor local envía `Cache-Control: no-store`.
@@ -95,6 +95,7 @@ sirve para ambos. Una mecánica nueva en el futuro = una lección más en `LESSO
 Juego ocasional: la saciedad llena dura ~3 h (`fedDecayPerSec`), con hambre el ánimo cae en ~33 min, cada animal acumula hasta 3 productos (`maxReady`), pero solo 1 si el jugador está ausente (`afkMaxReady`: sin conexión o sin tocar nada `afkMs` = 5 min; `opts.afk` en `tick`, `app.lastInput` en `main.js`), y
 sin conexión la saciedad no baja de `offlineFedFloor` (25) y el ánimo no cae: ausentarse no castiga (solo con el juego abierto se vacía, enferma o pierde corazones).
 Los animales **no crían solos**: toda cría pasa por el Criadero (`pairAnimals`). El Criadero se abre con la misión `c1-cria` (`criaderoOpen`) y es gratis en el capítulo 1 (`criaderoPrice`); después cuesta `criaderoCost`. Ya no hay cría automática, pausa por venta ni pausa por AFK; `corral.breed` queda en el guardado pero no hace nada.
+Economía medida con esas simulaciones: los precios de los productos están en ×0,4 del diseño original (granja mediana ~1.900 monedas/h jugando activo; un dinosaurio cada ~25 min). No se alargó el tiempo de producción porque las misiones piden cantidades de productos y se estirarían.
 `tests/historia-completa.test.mjs` recorre toda la historia: añade ahí cualquier capítulo nuevo sin tocar más.
 
 ## Pendiente
