@@ -111,6 +111,10 @@ const GROUND = {
     for (const [c, r] of [[8, 3], [11, 3], [2, 10], [17, 5]]) tile(ctx, S, 'fern', c * 16, r * 16);
     entrance(ctx, S);
     fence(ctx, S);
+  },  estacion(ctx, S) {
+    field(ctx, S, ['metal', 'metal_luz', 'metal_junta']);
+    for (let c = 0; c < COLS; c++) { tile(ctx, S, 'estrella', c * 16, 0); if (c !== 9 && c !== 10) tile(ctx, S, 'estrella', c * 16, (ROWS - 1) * 16); }
+    for (let r = 1; r < ROWS - 1; r++) { tile(ctx, S, 'estrella', 0, r * 16); tile(ctx, S, 'estrella', (COLS - 1) * 16, r * 16); }
   },
 };
 

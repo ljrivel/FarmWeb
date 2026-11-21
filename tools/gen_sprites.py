@@ -26,6 +26,7 @@ EYE = (58, 39, 64, 255)
 WHITE = (255, 255, 255, 255)
 BLUSH = (255, 159, 180, 255)
 PLUM = (95, 60, 90)
+CLEAR = (0, 0, 0, 0)  # borra píxeles (para huecos como el rizo de los cuernos del bantha)
 
 
 def hx(h):
@@ -472,6 +473,210 @@ def zorro_face(c, p, blink):
     pxs(c, [(-2, -6), (-1, -5), (0, -5), (1, -5), (2, -6)], EYE)
 
 
+# ---------------------------------------------------------------------- porg
+def porg_body(c, p):
+    c.ell(-10, -8, 3, 7, p["wing"])               # alas oscuras que cuelgan a los lados
+    c.ell(10, -8, 3, 7, p["wing"])
+    c.ell(0, -9, 9, 9, p["body"])                 # cuerpo claro, redondo
+    c.ell(0, -18, 5, 3, p["wing"])                # coronilla oscura
+    c.ell(-4, -13, 4, 4, p["patch"])              # manchas naranjas alrededor de los ojos
+    c.ell(4, -13, 4, 4, p["patch"])
+    c.ell(-4, -1, 3, 2, p["foot"])
+    c.ell(4, -1, 3, 2, p["foot"])
+    for x, y in ((-3, -6), (0, -4), (3, -6), (2, -3), (-2, -3)):
+        c.px(x, y, p["speck"])                    # plumón moteado en la pancita
+
+
+def porg_face(c, p, blink):
+    for sg in (-1, 1):
+        if blink:
+            c.rect(sg * 4 - 2, -12, sg * 4 + 2, -12, EYE)
+        else:
+            c.ell(sg * 4, -12, 3, 3, EYE)         # ojos negros enormes y brillantes
+            c.px(sg * 4 - 1, -13, WHITE)
+            c.px(sg * 4 + 1, -11, WHITE)
+    c.poly([(-2, -9), (2, -9), (0, -6)], p["beak"])
+    c.px(0, -6, shade(p["beak"], 0.7))
+
+
+# ---------------------------------------------------------------------- ewok
+def ewok_body(c, p):
+    c.rect(13, -23, 13, -1, p["wood"])            # lanza
+    c.poly([(12, -23), (14, -23), (13, -28)], p["stone"])
+    c.ell(-9, -8, 3, 4, p["body"])                # brazos peludos
+    c.ell(9, -8, 3, 4, p["body"])
+    c.ell(0, -7, 9, 7, p["body"])                 # cuerpo de pelo
+    c.ell(0, -14, 11, 9, p["hood"])               # capucha de cuero
+    c.poly([(3, -21), (11, -27), (9, -19)], p["hood"])
+    c.ell(0, -10, 7, 6, p["face"])                # carita de pelo gris
+    c.ell(0, -7, 4, 3, p["muzzle"])               # hocico claro
+    c.ell(0, -18, 8, 2, p["trim"])                # borde de pelo de la capucha
+    c.ell(-8, -14, 2, 3, p["trim"])
+    c.ell(8, -14, 2, 3, p["trim"])
+
+
+def ewok_face(c, p, blink):
+    for sg in (-1, 1):
+        if blink:
+            c.rect(sg * 3 - 1, -12, sg * 3 + 1, -12, EYE)
+        else:
+            c.ell(sg * 3, -12, 2, 2, p["eye"])
+            c.px(sg * 3, -12, EYE)
+            c.px(sg * 3 - 1, -13, WHITE)
+    c.rect(-1, -9, 1, -8, EYE)                    # nariz oscura
+    pxs(c, [(-2, -6), (-1, -5), (0, -5), (1, -5), (2, -6)], EYE)
+    pxs(c, [(-1, -5), (1, -5)], WHITE)            # dientecitos
+
+
+# --------------------------------------------------------------------- grogu
+def grogu_body(c, p):
+    c.ell(0, -6, 8, 6, p["robe"])                 # túnica
+    c.rect(-6, -11, 6, -10, p["collar"])
+    for sg in (-1, 1):
+        c.poly([(sg * 7, -16), (sg * 16, -20), (sg * 15, -13), (sg * 7, -11)], p["body"])    # orejas enormes
+        c.poly([(sg * 8, -15), (sg * 14, -18), (sg * 14, -14), (sg * 8, -12)], p["ear"])
+    c.ell(0, -15, 9, 8, p["body"])                # cabezota verde
+    for x, y in ((0, -24), (-1, -23), (1, -23)):
+        c.px(x, y, p["dark"])                     # mechoncitos
+
+
+def grogu_face(c, p, blink):
+    for sg in (-1, 1):
+        if blink:
+            c.rect(sg * 4 - 2, -14, sg * 4 + 2, -14, EYE)
+        else:
+            c.ell(sg * 4, -14, 3, 3, hx("#3a2a28"))   # ojos grandes y oscuros
+            c.px(sg * 4 - 1, -15, WHITE)
+            c.px(sg * 4 + 1, -13, WHITE)
+    c.px(0, -11, p["dark"])
+    pxs(c, [(-1, -9), (0, -9), (1, -9)], p["dark"])
+
+
+# ---------------------------------------------------------------------- bb-8
+def bb8_body(c, p):
+    for x in (0, 4):
+        c.rect(x, -27 if x == 0 else -25, x, -22, p["gray"])      # antenas
+    c.ell(0, -8, 9, 9, p["body"])                 # esfera blanca
+    c.ell(0, -8, 6, 6, p["accent"])               # círculo naranja
+    c.ell(0, -8, 4, 4, p["body"])
+    c.ell(0, -8, 1, 1, p["gray"])
+    for x, y in ((-8, -8), (8, -8), (0, -16), (0, 0)):
+        c.px(x, y, p["accent"])
+    c.ell(2, -18, 5, 4, p["body"])                # cabeza de cúpula
+    c.rect(-2, -16, 6, -16, p["accent"])
+    c.rect(-3, -19, -3, -18, p["gray"])
+
+
+def bb8_face(c, p, blink):
+    if blink:
+        c.rect(1, -19, 4, -19, p["lens"])
+    else:
+        c.ell(3, -19, 2, 2, p["lens"])            # lente oscura con destello rojo
+        c.px(3, -19, p["glint"])
+    c.px(6, -17, hx("#4aa0ff"))
+
+
+# ----------------------------------------------------------------- gato loth
+def lothcat_body(c, p):
+    c.ell(12, -6, 3, 7, p["body"])                # cola larga rayada
+    c.ell(12, -12, 2, 3, p["dark"])
+    c.poly([(-9, -14), (-8, -25), (-2, -16)], p["body"])
+    c.poly([(9, -14), (8, -25), (2, -16)], p["body"])
+    c.poly([(-8, -16), (-8, -22), (-4, -16)], p["ear"])
+    c.poly([(8, -16), (8, -22), (4, -16)], p["ear"])
+    c.ell(0, -9, 10, 8, p["body"])
+    for x in (-5, 0, 5):
+        c.rect(x, -16, x, -14, p["dark"])         # rayitas en la frente
+    c.ell(0, -5, 6, 4, p["belly"])
+    c.ell(-5, -1, 3, 2, p["belly"])
+    c.ell(5, -1, 3, 2, p["belly"])
+
+
+def lothcat_face(c, p, blink):
+    eyes(c, -11, 5, blink)
+    blush(c, -8, 8)
+    c.rect(-1, -8, 1, -8, p["nose"])
+    pxs(c, [(-1, -6), (0, -5), (1, -6)], EYE)
+
+
+# ------------------------------------------------------------------- tauntaun
+def tauntaun_body(c, p):
+    c.ell(12, -5, 4, 3, p["body"])                # cola
+    c.poly([(-4, -20), (-10, -29), (-6, -19)], p["horn"])        # cuernos curvos hacia adelante
+    c.poly([(4, -20), (10, -29), (6, -19)], p["horn"])
+    c.ell(0, -9, 10, 8, p["body"])                # cuerpo peludo
+    c.ell(0, -5, 7, 4, p["belly"])
+    c.ell(0, -16, 6, 6, p["body"])                # cabeza alta
+    c.ell(0, -12, 4, 3, p["snout"])               # hocico largo
+    c.ell(-8, -17, 2, 3, p["body"])
+    c.ell(8, -17, 2, 3, p["body"])
+    c.ell(-5, -1, 3, 2, p["foot"])
+    c.ell(5, -1, 3, 2, p["foot"])
+
+
+def tauntaun_face(c, p, blink):
+    eyes(c, -17, 4, blink)
+    pxs(c, [(-1, -12), (1, -12)], p["nose"])
+    pxs(c, [(-2, -10), (-1, -9), (0, -9), (1, -9), (2, -10)], EYE)
+
+
+# -------------------------------------------------------------------- bantha
+def bantha_body(c, p):
+    for sg in (-1, 1):
+        c.ell(sg * 11, -17, 5, 5, p["horn"])      # cuernos enroscados hacia atrás
+        c.ell(sg * 11, -17, 2, 2, CLEAR)
+    c.ell(0, -6, 13, 7, p["fur"])                 # pelo largo que casi toca el suelo
+    for x in (-11, -7, -3, 2, 6, 10):
+        c.poly([(x - 2, -4), (x, 0), (x + 2, -4)], p["fur"])
+    c.ell(0, -11, 11, 9, p["body"])               # cabezota peluda
+    c.ell(0, -8, 5, 3, p["snout"])
+
+
+def bantha_face(c, p, blink):
+    eyes(c, -12, 5, blink)
+    pxs(c, [(-1, -9), (1, -9)], p["nose"])
+    pxs(c, [(-2, -7), (-1, -6), (0, -6), (1, -6), (2, -7)], EYE)
+
+
+# ------------------------------------------------------------------- purrgil
+def purrgil_body(c, p):
+    c.poly([(10, -12), (19, -17), (17, -10), (19, -5), (10, -8)], p["fin"])
+    c.ell(0, -10, 12, 8, p["body"])
+    c.ell(0, -5, 9, 4, p["belly"])
+    c.poly([(-4, -5), (-10, -1), (-1, -3)], p["fin"])
+    for x, y in ((-12, -19), (13, -22), (-13, -8), (15, -2)):
+        c.px(x, y, p["spark"])                    # chispitas de estrellas
+
+
+def purrgil_face(c, p, blink):
+    eyes(c, -11, 6, blink)
+    blush(c, -8, 9)
+    pxs(c, [(-2, -6), (-1, -5), (0, -5), (1, -5), (2, -6)], EYE)
+
+
+# ------------------------------------------------------------------- dewback
+def dewback_body(c, p):
+    c.poly([(9, -7), (20, -4), (9, -2)], p["body"])              # cola gruesa
+    c.ell(0, -9, 11, 8, p["body"])                # cuerpo macizo
+    c.ell(0, -4, 8, 3, p["belly"])
+    for x in (-3, 1, 5, 9):
+        c.ell(x, -16, 2, 2, p["ridge"])           # lomo con bultitos
+    c.ell(-10, -11, 5, 4, p["body"])              # cabeza al frente
+    c.ell(-13, -9, 3, 2, p["snout"])              # hocico largo
+    c.ell(-6, -1, 3, 2, p["foot"])
+    c.ell(6, -1, 3, 2, p["foot"])
+
+
+def dewback_face(c, p, blink):
+    if blink:
+        c.rect(-11, -13, -9, -13, EYE)
+    else:
+        c.ell(-10, -13, 2, 2, EYE)
+        c.px(-11, -14, WHITE)
+    c.px(-14, -10, p["nostril"])
+    pxs(c, [(-12, -7), (-11, -7), (-10, -7)], EYE)
+
+
 SPECIES = {
     "gallina": (gallina_body, gallina_face, [
         dict(body="#fffaf0", wing="#f1e0cc", comb="#ff7b8e", beak="#ffb347", feet="#ffb347"),
@@ -569,6 +774,42 @@ SPECIES = {
         dict(body="#f4f6fb", tip="#8fb0d9", ear="#ffd6e0", cheek="#ffffff", dark="#8aa0c0", nose="#5a6a8a"),  # Nieve
         dict(body="#5c5f8c", tip="#bfc7ff", ear="#ffb3d1", cheek="#c8ccf0", dark="#3f4270", nose="#ffe08a"),  # Luna
     ]),
+    "porg": (porg_body, porg_face, [
+        dict(body="#f2eee6", wing="#3f3f48", patch="#e08a4a", beak="#f0d2bc", foot="#c9a070", speck="#cfc2ae"),
+        dict(body="#cfd2da", wing="#2f3038", patch="#d9663a", beak="#e8cdb8", foot="#b89060", speck="#b8bcc6"),
+        dict(body="#f1dfc4", wing="#6b4f3a", patch="#f2a45a", beak="#f0d2bc", foot="#d9a870", speck="#d8c4a4"),  # Canela
+        dict(body="#e6f4ff", wing="#4a6aa8", patch="#7fd8e8", beak="#f0e0d0", foot="#a0c0d8", speck="#bcd4e8"),  # Aurora
+    ]),
+    "gato_loth": (lothcat_body, lothcat_face, [
+        dict(body="#e8c88a", dark="#b98f52", belly="#fff1d6", ear="#ffc4cf", nose="#c07a6a"),
+        dict(body="#aeb6c4", dark="#7f8aa0", belly="#f4f6fa", ear="#ffc4cf", nose="#8a7080"),
+        dict(body="#d9c8f0", dark="#a994d0", belly="#f6f0ff", ear="#ffc4e0", nose="#b07a9a"),  # Bruma
+        dict(body="#7fe0d0", dark="#4fb8a8", belly="#e6fff9", ear="#ffd0e0", nose="#c07a8a"),  # Aurora
+    ]),
+    "tauntaun": (tauntaun_body, tauntaun_face, [
+        dict(body="#c4d2de", belly="#eef3f8", horn="#e8dcc0", snout="#e0e8f0", foot="#8fa4b8", nose="#6a7a88"),
+        dict(body="#f0f3f8", belly="#ffffff", horn="#e8dcc0", snout="#e0e6ee", foot="#b5bfd2", nose="#8a7a80"),
+        dict(body="#d8c4a0", belly="#fff2d6", horn="#f4e8cc", snout="#efd9ac", foot="#b89c68", nose="#7a5a48"),  # Ocre
+        dict(body="#7fc4e8", belly="#e6f7ff", horn="#fff0b8", snout="#b4e2f5", foot="#5aa4cc", nose="#4a6a88"),  # Glaciar
+    ]),
+    "bantha": (bantha_body, bantha_face, [
+        dict(body="#8a6a48", fur="#6f5238", horn="#e8dcc0", snout="#d4b48a", nose="#4a3020"),
+        dict(body="#c8a878", fur="#a88858", horn="#f4ead0", snout="#e4cc9c", nose="#6a4a30"),
+        dict(body="#8f8a86", fur="#6e6a66", horn="#f4ead0", snout="#c4beb4", nose="#4a4642"),  # Ceniza
+        dict(body="#b8643a", fur="#8e4a28", horn="#fff0d0", snout="#e8a478", nose="#5a2a18"),  # Cobre
+    ]),
+    "purrgil": (purrgil_body, purrgil_face, [
+        dict(body="#7a8cf0", belly="#dfe5ff", fin="#5a6ad0", spark="#fff3a8"),
+        dict(body="#6fd4e0", belly="#e0fbff", fin="#4ab4c4", spark="#fff3a8"),
+        dict(body="#c49af0", belly="#f2e6ff", fin="#a070d0", spark="#fff3a8"),  # Nebulosa
+        dict(body="#ff9fcf", belly="#fff0f8", fin="#e070a8", spark="#fff3a8"),  # Aurora
+    ]),
+    "dewback": (dewback_body, dewback_face, [
+        dict(body="#8a9a7a", belly="#d4dcc4", ridge="#6a7a5a", snout="#a8b898", foot="#6a7a5a", nostril="#3a4a2a"),
+        dict(body="#b8a478", belly="#eee4c4", ridge="#988458", snout="#d0c098", foot="#988458", nostril="#5a4a2a"),
+        dict(body="#c98a6a", belly="#ffe6d6", ridge="#a86a4a", snout="#e4b09a", foot="#a86a4a", nostril="#6a3a2a"),  # Terracota
+        dict(body="#6aa0d8", belly="#e0f0ff", ridge="#4a80b8", snout="#a4c8ec", foot="#4a80b8", nostril="#2a4a7a"),  # Zafiro
+    ]),
 }
 STAGES = {"baby": 0.74, "adult": 1.0}
 
@@ -590,8 +831,49 @@ SHINY = {
     "plesiosaurio": dict(body="#fff0b0", belly="#fffbe6", fin="#7fe3d6"),
     "oveja": dict(body="#fff3c4", face="#fff6dc", leg="#c9a85a"),
     "zorro": dict(body="#fff0b0", tip="#7fe3d6", ear="#ffe39a", cheek="#fffbe6", dark="#f0c85a", nose="#d9a24a"),
+    "porg": dict(body="#fff6c8", wing="#ffd77a", patch="#7fe3d6", beak="#ffd04d", foot="#ffd04d", speck="#ffe9a8"),
+    "gato_loth": dict(body="#fff0b0", dark="#f0c85a", belly="#fffbe6", ear="#9fe8e0", nose="#d9a24a"),
+    "tauntaun": dict(body="#fff0b0", belly="#fffbe6", horn="#7fe3d6", snout="#fff3c8", foot="#f5c562", nose="#d9a24a"),
+    "bantha": dict(body="#ffe39a", fur="#f0c85a", horn="#7fe3d6", snout="#fff3c8", nose="#d9a24a"),
+    "purrgil": dict(body="#fff0b0", belly="#fffbe6", fin="#7fe3d6", spark="#ffffff"),
+    "dewback": dict(body="#fff0b0", belly="#fffbe6", ridge="#7fe3d6", snout="#fff3c8", foot="#f5c562", nostril="#d9a24a"),
 }
 
+
+
+# Candidatos (porg aparte, ya registrado): se previsualizan con `render_entry` y se registran cuando se aprueben.
+CANDIDATES = {
+    "ewok": (ewok_body, ewok_face, [
+        dict(body="#8a7a6c", hood="#b88a5a", trim="#d8d0c4", face="#6f625a", muzzle="#d9d2c8", eye="#c0742a", wood="#8a6244", stone="#c9c9d0"),
+        dict(body="#7a6a5a", hood="#8a9a5a", trim="#cfd6c0", face="#665a50", muzzle="#d4cec0", eye="#c0742a", wood="#8a6244", stone="#c9c9d0"),
+        dict(body="#8a7a7a", hood="#d98a6a", trim="#e8d8d0", face="#6f625f", muzzle="#ddd2cc", eye="#c0742a", wood="#8a6244", stone="#c9c9d0"),
+        dict(body="#b8c0cc", hood="#dfe6f0", trim="#ffffff", face="#8a94a4", muzzle="#eef2f8", eye="#7a8ab8", wood="#8a6244", stone="#c9c9d0"),
+    ]),
+    "grogu": (grogu_body, grogu_face, [
+        dict(body="#a9bd84", robe="#b99a6e", collar="#8a6a48", ear="#e8b8a0", dark="#7f9560"),
+        dict(body="#8fd8b0", robe="#c8b490", collar="#9a7a58", ear="#f0c8b8", dark="#5fb888"),
+        dict(body="#c0a8e0", robe="#e0d0b8", collar="#a08868", ear="#f0c8d8", dark="#9078b8"),
+        dict(body="#f0c888", robe="#d8b890", collar="#a88858", ear="#ffd8b8", dark="#d0a060"),
+    ]),
+    "bb8": (bb8_body, bb8_face, [
+        dict(body="#f4f4f2", accent="#f08a2a", gray="#9aa0a8", lens="#2a2a30", glint="#ff4a4a"),
+        dict(body="#f4f4f2", accent="#3a8ae8", gray="#9aa0a8", lens="#2a2a30", glint="#ffd04a"),
+        dict(body="#f4f4f2", accent="#3aa86a", gray="#9aa0a8", lens="#2a2a30", glint="#ff4a4a"),
+        dict(body="#fffaf0", accent="#e8b830", gray="#b8a888", lens="#2a2a30", glint="#ff4a4a"),
+    ]),
+}
+
+
+def render_entry(entry, variant, stage, frame=0):
+    """Como render_animal, pero para una entrada suelta (candidatos que aún no están en SPECIES)."""
+    body_fn, face_fn, variants = entry
+    pal = {k: hx(v) for k, v in variants[variant].items()}
+    c = Canvas(CELL, ox=16, oy=29, s=STAGES[stage], sy=IDLE_SY[frame])
+    body_fn(c, pal)
+    c.img = outline(shade_pass(c.img), auto_line(pal["body"]))
+    c.d = ImageDraw.Draw(c.img)
+    face_fn(c, pal, frame == BLINK_FRAME)
+    return c.img
 
 def render_animal(species, variant, stage, frame):
     body_fn, face_fn, variants = SPECIES[species]
@@ -689,6 +971,47 @@ def ic_pelo_dorado(c):
     c.poly([(8, 2), (12, 9), (10, 14), (6, 14), (4, 9)], hx("#ffb347"))
     c.poly([(8, 2), (8, 14), (6, 14), (4, 9)], hx("#ffd88a"))
     c.px(7, 6, WHITE)
+
+
+def ic_racion(c):
+    c.rect(4, 5, 11, 10, hx("#fffdf8"))
+    c.rect(4, 5, 7, 10, hx("#ff9fbd"))
+    c.px(5, 6, WHITE)
+
+
+def ic_pluma_porg(c):
+    c.poly([(11, 2), (13, 4), (5, 13), (3, 11)], hx("#8a6a52"))
+    c.poly([(11, 2), (12, 3), (4, 12), (3, 11)], hx("#c9a98a"))
+
+
+def ic_pelo_loth(c):
+    c.poly([(8, 2), (12, 9), (10, 14), (6, 14), (4, 9)], hx("#e8c88a"))
+    c.poly([(8, 2), (8, 14), (6, 14), (4, 9)], hx("#f6e2b8"))
+    c.px(7, 6, WHITE)
+
+
+def ic_pelaje_helado(c):
+    for x, y in ((5, 8), (8, 6), (11, 8), (8, 10)):
+        c.ell(x, y, 3, 3, hx("#dff0ff"))
+    c.px(5, 6, WHITE)
+    c.px(8, 4, hx("#bfe4ff"))
+
+
+def ic_leche_azul(c):
+    c.poly([(4, 3), (11, 3), (10, 14), (5, 14)], hx("#bfe4ff"))
+    c.poly([(4, 6), (11, 6), (10, 14), (5, 14)], hx("#8fc4ff"))
+    c.rect(4, 2, 11, 3, hx("#e6f3ff"))
+
+
+def ic_polvo_estelar(c):
+    c.poly([(8, 1), (10, 6), (15, 8), (10, 10), (8, 15), (6, 10), (1, 8), (6, 6)], hx("#ffe08a"))
+    c.ell(8, 8, 2, 2, hx("#fffbe0"))
+
+
+def ic_escama_duna(c):
+    c.ell(8, 8, 5, 6, hx("#c9b27a"))
+    c.rect(8, 4, 8, 12, hx("#a8905a"))
+    c.px(6, 6, hx("#f2e6bf"))
 
 
 def ic_huevo(c):
@@ -882,6 +1205,9 @@ ICONS = [
     ("helecho", "#7cc68b", ic_helecho), ("cuerno_cristal", "#9fd8ff", ic_cuerno_cristal), ("placa_dorada", "#ffd95e", ic_placa_dorada),
     ("pluma_celeste", "#8fd0f0", ic_pluma_celeste), ("perla_marina", "#ffc2d9", ic_perla_marina),
     ("vellon", "#fffdf8", ic_vellon), ("pelo_dorado", "#ffb347", ic_pelo_dorado),
+    ("racion", "#ff9fbd", ic_racion), ("pluma_porg", "#8a6a52", ic_pluma_porg), ("pelo_loth", "#e8c88a", ic_pelo_loth),
+    ("pelaje_helado", "#dff0ff", ic_pelaje_helado), ("leche_azul", "#8fc4ff", ic_leche_azul),
+    ("polvo_estelar", "#ffe08a", ic_polvo_estelar), ("escama_duna", "#c9b27a", ic_escama_duna),
 ]
 
 
@@ -992,12 +1318,34 @@ def tile_tree():
     return outline(img, auto_line(hx("#7cc68b")))
 
 
+def tile_metal(variant):
+    img = _speckled("#c9d0e6", "#b9c2de", "#dfe5f5", 210 + variant, 5, 2)
+    d = ImageDraw.Draw(img)
+    d.rectangle([0, 0, 15, 0], fill=hx("#aab4d4"))
+    d.rectangle([0, 0, 0, 15], fill=hx("#aab4d4"))
+    if variant == 1:
+        for x, y in ((7, 7), (8, 7), (7, 8), (8, 8)):
+            img.putpixel((x, y), hx("#fff3a8"))
+    if variant == 2:
+        d.rectangle([0, 8, 15, 8], fill=hx("#aab4d4"))
+    return img
+
+
+def tile_star():
+    rng = random.Random(220)
+    img = Image.new("RGBA", (16, 16), hx("#2d2a5a"))
+    for _ in range(6):
+        img.putpixel((rng.randrange(16), rng.randrange(16)), hx(rng.choice(["#ffffff", "#fff3a8", "#bfc7ff"])))
+    return img
+
+
 TILES = [
     ("grass0", tile_grass(0)), ("grass1", tile_grass(1)), ("grass2", tile_grass(2)),
     ("path", tile_path()), ("water", tile_water()),
     ("fence_h", tile_fence(True)), ("fence_v", tile_fence(False)),
     ("moss", tile_moss()), ("fern", tile_fern()), ("sand", tile_sand()),
     ("rock", tile_rock()), ("tree", tile_tree()),
+    ("metal", tile_metal(0)), ("metal_luz", tile_metal(1)), ("metal_junta", tile_metal(2)), ("estrella", tile_star()),
 ]
 
 
@@ -1066,6 +1414,18 @@ def pl_valle(c):
     c.ell(24, 35, 4, 5, hx("#5a4a72"))
 
 
+def pl_estacion(c):
+    c.ell(24, 43, 21, 4, hx("#9aa3c0"))
+    c.ell(24, 30, 17, 10, hx("#cfd6ee"))
+    c.ell(24, 28, 12, 7, hx("#8fa0d8"))
+    c.rect(22, 10, 23, 22, hx("#b9c2de"))
+    c.ell(23, 9, 3, 3, hx("#ff9fb4"))
+    c.rect(19, 32, 29, 42, hx("#7a86b8"))
+    c.px(8, 14, WHITE)
+    c.px(40, 18, WHITE)
+    c.px(42, 8, hx("#fff3a8"))
+
+
 def pl_vet(c):
     """Veterinaria: casita blanca con techo rosa, cruz y un huellita en la puerta."""
     c.ell(24, 43, 21, 4, hx("#a9d98a"))
@@ -1094,7 +1454,7 @@ def desaturate(img):
     return out
 
 
-PLACES = [("pradera", pl_pradera), ("bosque", pl_bosque), ("estanque", pl_estanque), ("jurasico", pl_jurasico), ("valle", pl_valle)]
+PLACES = [("pradera", pl_pradera), ("bosque", pl_bosque), ("estanque", pl_estanque), ("jurasico", pl_jurasico), ("valle", pl_valle), ("estacion", pl_estacion)]
 EXTRA_PLACES = [("vet", pl_vet)]  # lugares que no son corrales (sin versión bloqueada)
 
 

@@ -69,13 +69,14 @@ export const CORRAL_TYPES = {
   bosque: { nombre: 'Bosque', species: ['mapache', 'conejo', 'zorro'], cap: 6, cost: 300, area: LAND, aquatic: false },
   estanque: { nombre: 'Estanque', species: ['ajolote', 'spinosaurus', 'pato', 'plesiosaurio'], cap: 6, cost: 250, area: { x0: 52, x1: 268, y0: 104, y1: 196 }, aquatic: true },
   jurasico: { nombre: 'Jurásico', species: ['carnotauro'], cap: 4, cost: null, area: LAND, aquatic: false },
+  estacion: { nombre: 'Estación', species: ['porg', 'gato_loth', 'tauntaun', 'bantha', 'purrgil', 'dewback'], cap: 8, cost: null, area: LAND, aquatic: false },
   valle: { nombre: 'Valle', species: ['triceratops', 'estegosaurio', 'pterodactilo'], cap: 6, cost: null, area: LAND, aquatic: false },
 };
-export const CORRAL_TYPE_ORDER = ['pradera', 'bosque', 'estanque', 'jurasico', 'valle'];
+export const CORRAL_TYPE_ORDER = ['pradera', 'bosque', 'estanque', 'jurasico', 'valle', 'estacion'];
 export const MAX_CORRAL_LEVEL = CORRAL_COSTS.length;
 // Posición de cada lugar en el mapa (lienzo lógico 320x224).
 export const MAP_SPOTS = {
-  pradera: { x: 96, y: 156 }, bosque: { x: 232, y: 84 }, estanque: { x: 232, y: 160 }, jurasico: { x: 96, y: 80 }, valle: { x: 164, y: 124 },
+  pradera: { x: 96, y: 156 }, bosque: { x: 232, y: 84 }, estanque: { x: 232, y: 160 }, jurasico: { x: 96, y: 80 }, valle: { x: 164, y: 124 }, estacion: { x: 276, y: 34 },
 };
 // La Veterinaria no es un corral: siempre está abierta y no cuenta para las metas de corrales.
 export const VET_SPOT = { x: 164, y: 48 };
@@ -195,6 +196,48 @@ export const SPECIES = {
     variants: ['Naranja', 'Canela', 'Nieve', 'Luna'],
     names: ['Foxi', 'Chispa', 'Rojito', 'Fuego', 'Colita'],
   },
+  porg: {
+    nombre: 'Porg', food: 'pescadito', product: 'pluma_porg', price: 300,
+    dato: 'Es pequeño, redondo y curioso, con unos ojos enormes.',
+    grow: 6 * MIN, prod: 220 * 1000, breed: 5 * MIN, aquatic: false,
+    variants: ['Clásico', 'Hollín', 'Canela', 'Aurora'],
+    names: ['Pipo', 'Plum', 'Bolita', 'Chiqui', 'Pingo'],
+  },
+  gato_loth: {
+    nombre: 'Gato loth', food: 'pescadito', product: 'pelo_loth', price: 340,
+    dato: 'Ágil y silencioso, ronronea bajito cuando está contento.',
+    grow: 6 * MIN, prod: 230 * 1000, breed: 5 * MIN, aquatic: false,
+    variants: ['Arena', 'Ceniza', 'Bruma', 'Aurora'],
+    names: ['Luna', 'Zafiro', 'Sombra', 'Bigotes', 'Astro'],
+  },
+  tauntaun: {
+    nombre: 'Tauntaun', food: 'racion', product: 'pelaje_helado', price: 420,
+    dato: 'Aguanta el frío como nadie con su pelaje espeso.',
+    grow: 8 * MIN, prod: 260 * 1000, breed: 6 * MIN, aquatic: false,
+    variants: ['Glaciar', 'Nieve', 'Ocre', 'Escarcha'],
+    names: ['Copo', 'Escarcha', 'Nevado', 'Cornelio', 'Hielito'],
+  },
+  bantha: {
+    nombre: 'Bantha', food: 'racion', product: 'leche_azul', price: 480,
+    dato: 'Enorme, peludo y tranquilo: su leche azul es famosa.',
+    grow: 8 * MIN, prod: 280 * 1000, breed: 7 * MIN, aquatic: false,
+    variants: ['Pardo', 'Arena', 'Ceniza', 'Cobre'],
+    names: ['Lanudo', 'Gran Pelo', 'Duna', 'Peludo', 'Titán'],
+  },
+  purrgil: {
+    nombre: 'Purrgil', food: 'racion', product: 'polvo_estelar', price: 520,
+    dato: 'Nada entre las estrellas y viaja siempre en manada.',
+    grow: 9 * MIN, prod: 300 * 1000, breed: 7 * MIN, aquatic: false,
+    variants: ['Cósmico', 'Turquesa', 'Nebulosa', 'Aurora'],
+    names: ['Nebulosa', 'Cometa', 'Orión', 'Estela', 'Nube'],
+  },
+  dewback: {
+    nombre: 'Dewback', food: 'racion', product: 'escama_duna', price: 450,
+    dato: 'Camina despacio por las dunas y adora el sol.',
+    grow: 8 * MIN, prod: 270 * 1000, breed: 6 * MIN, aquatic: false,
+    variants: ['Pantano', 'Duna', 'Terracota', 'Zafiro'],
+    names: ['Arenoso', 'Dúne', 'Colita', 'Roca', 'Sol'],
+  },
 };
 export const ORDER = Object.keys(SPECIES);
 
@@ -218,6 +261,7 @@ export const FOODS = {
   gusanito: { nombre: 'Gusanitos', price: 14 },
   zanahoria: { nombre: 'Zanahoria', price: 12 },
   helecho: { nombre: 'Helecho', price: 14 },
+  racion: { nombre: 'Ración estelar', price: 18 },
 };
 
 export const PRODUCTS = {
@@ -237,6 +281,12 @@ export const PRODUCTS = {
   perla_marina: { nombre: 'Perla marina', price: 50 },
   vellon: { nombre: 'Vellón', price: 16 },
   pelo_dorado: { nombre: 'Pelo dorado', price: 24 },
+  pluma_porg: { nombre: 'Pluma de porg', price: 40 },
+  pelo_loth: { nombre: 'Pelo de loth', price: 44 },
+  pelaje_helado: { nombre: 'Pelaje helado', price: 52 },
+  leche_azul: { nombre: 'Leche azul', price: 58 },
+  polvo_estelar: { nombre: 'Polvo estelar', price: 64 },
+  escama_duna: { nombre: 'Escama de duna', price: 54 },
 };
 
 // Personajes: hablan en las misiones (campo `who`). `rol` explica su lugar en la historia.
@@ -362,6 +412,23 @@ export const QUESTS = [
   { id: 'c7-final', ch: 7, who: 'abuela', title: 'La última carta',
     text: 'Queridos guardianes: el valle duerme tranquilo, el río canta y la granja está llena de vida. Les dejo una última tarea, la más fácil y la más importante: acaricien a sus animales 150 veces en total. Con cariño se cuida todo lo demás. —Cosi',
     goal: { type: 'petted', n: 150 }, reward: { coins: 800 } },
+
+  // Capítulo 8 — Más allá del cielo (las criaturas de la Estación se compran una vez que se conocen)
+  { id: 'c8-senal', ch: 8, who: 'noa', title: 'Una señal desde las estrellas',
+    text: 'Mi antena captó algo imposible: una señal de muy, muy lejos que pide un hogar para unas criaturas viajeras. Para recibirlas, la granja tiene que demostrar que sabe cuidar a muchos amigos: cuida a 24 animales a la vez.',
+    goal: { type: 'owncount', n: 24 }, reward: { coins: 300, corral: 'estacion', unlock: ['porg', 'gato_loth'], gift: 'porg' } },
+  { id: 'c8-huesped', ch: 8, who: 'bruno', title: 'Un huésped muy redondo',
+    text: 'Llegó un paquete sin remitente… ¡y se mueve! Es un porg: chilla fuerte y tiene unos ojos enormes. Cuídalo hasta que sea adulto y yo se lo cuento a todo el pueblo (si no me distraigo).',
+    goal: { type: 'own', species: 'porg', stage: 'adult', n: 1 }, reward: { coins: 200, foods: { racion: 6, pescadito: 6 }, unlock: ['tauntaun', 'bantha'] } },
+  { id: 'c8-manada', ch: 8, who: 'lia', title: 'Una manada en la Estación',
+    text: 'Estas criaturas viajan en grupo. Compra un gato loth en la tienda y cuídalo hasta que sea adulto: es silencioso, pero se le oye ronronear desde lejos.',
+    goal: { type: 'own', species: 'gato_loth', stage: 'adult', n: 1 }, reward: { coins: 250, unlock: ['purrgil', 'dewback'] } },
+  { id: 'c8-leche', ch: 8, who: 'mia', title: 'Leche azul',
+    text: 'Dicen que la leche del bantha es azul y dulce. Compra un bantha y recoge 2 leches azules: quiero probarla… ¡para mi cuaderno!',
+    goal: { type: 'collect', product: 'leche_azul', n: 2 }, reward: { coins: 350, foods: { racion: 6 } } },
+  { id: 'c8-polvo', ch: 8, who: 'noa', title: 'Polvo de estrellas',
+    text: 'El purrgil viaja entre las estrellas y deja polvo estelar a su paso. Compra uno y recoge 3 polvos estelares: con ellos mi antena avisará que todas llegaron bien.',
+    goal: { type: 'collect', product: 'polvo_estelar', n: 3 }, reward: { coins: 1000 } },
 ];
 
 
@@ -373,6 +440,7 @@ export const CHAPTERS = {
   5: 'El festival de la granja',
   6: 'El valle escondido',
   7: 'Alas y mareas',
+  8: 'Más allá del cielo',
 };
 // Misiones secundarias: independientes, varias activas a la vez. Aparecen cuando la historia llega a
 // `minCh` (y, si tienen `needs`, cuando ya conoces esa especie). Las metas de contador (fed, petted,
@@ -462,6 +530,14 @@ export const SIDE_QUESTS = [
   { id: 's-pelo', minCh: 4, needs: 'zorro', who: 'bruno', title: 'Colitas doradas',
     text: 'Dicen que el pelo dorado del zorro da suerte con el correo. Recoge 3 pelos dorados y lo compruebo.',
     goal: { type: 'collect', product: 'pelo_dorado', n: 3 }, reward: { coins: 100 } },
+  { id: 's-pelaje', minCh: 8, needs: 'tauntaun', who: 'tomas', title: 'Pelaje helado', text: 'Con pelaje helado se hacen los guantes más calentitos. Recoge 3 pelajes helados.',
+    goal: { type: 'collect', product: 'pelaje_helado', n: 3 }, reward: { coins: 150 } },
+  { id: 's-duna', minCh: 8, needs: 'dewback', who: 'lia', title: 'Escamas de duna', text: 'Las escamas de duna brillan al sol como pequeños espejos. Recoge 3 escamas de duna.',
+    goal: { type: 'collect', product: 'escama_duna', n: 3 }, reward: { coins: 150 } },
+  { id: 's-loth', minCh: 8, needs: 'gato_loth', who: 'bruno', title: 'Pelo de loth', text: 'Quiero un cojín rellenito para mis siestas entre reparto y reparto. Recoge 3 pelos de loth.',
+    goal: { type: 'collect', product: 'pelo_loth', n: 3 }, reward: { coins: 120 } },
+  { id: 's-porg', minCh: 8, needs: 'porg', who: 'mia', title: 'Plumitas de porg', text: 'Con plumitas de porg se hacen los marcapáginas más monos. Recoge 3 plumas de porg.',
+    goal: { type: 'collect', product: 'pluma_porg', n: 3 }, reward: { coins: 120 } },
 ];
 
 // Secretos (easter eggs): discretos, sin efecto en la economía; cuentan como logros en Misiones.
@@ -478,7 +554,7 @@ export const SECRETS = {
 export const SECRET_ORDER = Object.keys(SECRETS);
 
 /** Epílogo que se muestra al terminar la historia. */
-export const EPILOGUE = 'La abuela Cosi se quedó a vivir en la casita junto al estanque. Cada tarde se sienta con Tomás, Mía, Lía, Noa, la Dra. Pita y Don Ramón a mirar jugar a los animales, mientras Bruno reparte la noticia de que el valle duerme tranquilo. Dicen que es la granja más feliz que conocieron. La historia terminó, pero la granja sigue: quedan misiones secundarias, crías raras y secretos por descubrir.';
+export const EPILOGUE = 'La abuela Cosi se quedó a vivir en la casita junto al estanque. Cada tarde se sienta con Tomás, Mía, Lía, Noa, la Dra. Pita y Don Ramón a mirar jugar a los animales: los de la granja, los del valle y hasta los que llegaron de las estrellas. Bruno reparte la noticia de que todo está en calma. Dicen que es la granja más feliz que conocieron. La historia terminó, pero la granja sigue: quedan misiones secundarias, crías raras y secretos por descubrir.';
 
 // Escenas con diálogo (guion en docs/GUION_HISTORIA.md). `when`: `inicio:<misión>` (cuando pasa a ser la activa),
 // `fin:<misión>` (al reclamarla) o `evento:primera-enfermedad`. Si dos se cumplen a la vez sale primero la de
@@ -789,6 +865,48 @@ export const SCENES = [
     ['bruno', 1, '¡Quiero un llavero de pelo dorado!'],
     ['ramon', 0, 'No se vende, Bruno.'],
   ] },
+  { id: 'una-senal', when: 'inicio:c8-senal', title: 'Una señal', lines: [
+    ['noa', 1, '¡Silencio, silencio! Mi antena está recibiendo algo.'],
+    ['bruno', 2, '¿Es una carta? Yo no recibí ninguna carta.'],
+    ['noa', 0, 'No es una carta. Es una señal de muy, muy lejos: piden un hogar para unas criaturas viajeras.'],
+    ['tomas', 1, '¿Criaturas de las estrellas? ¡Yo me apunto!'],
+    ['mia', 2, '¿Y si son muy grandes?'],
+    ['noa', 0, 'Entonces tendremos que demostrar que esta granja sabe cuidar a muchos amigos.'],
+  ] },
+  { id: 'la-estacion', when: 'fin:c8-senal', title: 'La Estación', lines: [
+    ['lia', 0, 'Aparecieron luces sobre el prado. Una puerta redonda se abrió en el cielo.'],
+    ['noa', 1, '¡Una estación! Pequeñita, pero con suelo de metal y todo.'],
+    ['abuela', 1, 'Tantos años cuidando animales y todavía me sorprenden.'],
+    ['mia', 1, '¡Mira! Algo redondo con ojos enormes asoma por la puerta.'],
+    ['abuela', 0, 'Que pase. Aquí hay sitio para todos.'],
+  ] },
+  { id: 'un-huesped-redondo', when: 'fin:c8-huesped', title: 'Un huésped redondo', lines: [
+    ['bruno', 1, '¡Entregado! Y sin que se escapara por el camino.'],
+    ['tomas', 1, '¡Chilla como un silbato chiquitito!'],
+    ['mia', 1, 'Tiene los ojos más grandes que la cabeza. Lo adoro.'],
+    ['bruno', 2, 'Se comió mi sombrero. No se lo digan a nadie.'],
+    ['tomas', 1, 'Te compramos otro, Bruno.'],
+  ] },
+  { id: 'en-la-manada', when: 'fin:c8-manada', title: 'En la manada', lines: [
+    ['lia', 0, 'Es la primera vez que escucho este ronroneo. Suena a viento lejano.'],
+    ['noa', 1, 'Lo anoto: «ronronea con la cola enroscada».'],
+    ['lia', 1, 'Se sienten seguros. Eso es lo que importa.'],
+    ['noa', 0, 'Seguros, y con ganas de explorar.'],
+  ] },
+  { id: 'leche-azul', when: 'fin:c8-leche', title: 'Leche azul', lines: [
+    ['mia', 1, '¡Es azul de verdad! Y huele a vainilla.'],
+    ['ramon', 0, 'Eso se vende… digo, se bebe. Se bebe con mucho respeto.'],
+    ['pita', 1, 'Calcio, vitaminas y cero culpa. Receta aprobada.'],
+    ['mia', 1, 'Brindo por el bantha más peludo de la galaxia.'],
+  ] },
+  { id: 'hogar-entre-estrellas', when: 'fin:c8-polvo', title: 'Hogar entre estrellas', lines: [
+    ['noa', 1, 'Mi antena ya avisó: «Todas llegaron bien».'],
+    ['abuela', 1, 'Mi granja empezó con una gallinita y ahora tiene criaturas de las estrellas.'],
+    ['lia', 1, 'El río, el valle y ahora el cielo. Todo cuidado.'],
+    ['tomas', 1, '¿Y si algún día llegan más?'],
+    ['mia', 1, 'Entonces les haremos sitio. Siempre hay sitio.'],
+    ['bruno', 1, '¡Y yo repartiré el correo… intergaláctico!'],
+  ] },
 ];
 
 // Cartas de Cosi: misiones cuyo texto es una carta. Se releen en el Diario cuando ya las recibiste.
@@ -832,4 +950,10 @@ export const VISITS = [
   { id: 'v-pita-5', who: 'pita', minCh: 7, lines: [['pita', 1, 'Chequeo de rutina al plesiosaurio: cuello perfecto, aletas perfectas y mucho apetito.']] },
   { id: 'v-ramon-5', who: 'ramon', minCh: 7, lines: [['ramon', 0, 'Vendo huevos, lana y plumas celestes. Todo con certificado de cariño.']] },
   { id: 'v-cosi-3', who: 'abuela', minCh: 7, lines: [['abuela', 1, 'El valle respira tranquilo. Eso se oye, si uno se queda quieto.']] },
+  { id: 'v-noa-4', who: 'noa', minCh: 8, lines: [['noa', 1, 'El suelo de la Estación zumba suavecito. Creo que es de contento.']] },
+  { id: 'v-tomas-7', who: 'tomas', minCh: 8, lines: [['tomas', 1, 'Los porgs me persiguen por el prado. Siempre quieren compañía.']] },
+  { id: 'v-mia-6', who: 'mia', minCh: 8, lines: [['mia', 1, 'Dibujé al bantha en tres páginas: no cabía en una.']] },
+  { id: 'v-lia-5', who: 'lia', minCh: 8, lines: [['lia', 0, 'El purrgil flota cerca del estanque como si supiera que el agua es de casa.']] },
+  { id: 'v-bruno-5', who: 'bruno', minCh: 8, lines: [['bruno', 2, 'Un tauntaun se comió el sello de una carta. Digo… lo saboreó. Con cariño.']] },
+  { id: 'v-cosi-4', who: 'abuela', minCh: 8, lines: [['abuela', 1, 'Vi a un dewback tomando el sol en la Estación. Ni en sueños me lo imaginaba.']] },
 ];

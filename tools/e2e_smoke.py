@@ -843,6 +843,49 @@ def tutorial_returning_player(browser):
     ctx.close()
 
 
+def chapter8(browser):
+    print("\n== capítulo 8: la Estación Estelar")
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    page = ctx.new_page()
+    errors = []
+    page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(URL)
+    page.wait_for_function("document.getElementById('loading').hidden === true", timeout=15000)
+    page.evaluate("""(async () => {
+      const { QUESTS } = await import('/src/data.js');
+      const w = farmweb.app.w;
+      for (const q of QUESTS) { if (q.id === 'c8-senal') break; w.quests.claimed[q.id] = true; }
+      for (const t of ['bosque', 'estanque', 'jurasico', 'valle']) if (!w.corrales.some((c) => c.tipo === t)) w.corrales.push({ id: t, tipo: t, nombre: t, nivel: 0 });
+      while (w.animals.length < 24) w.animals.push({ ...w.animals[0], id: w.nextId++ });
+      w.coins = 5000;
+    })()""")
+    page.click('[data-panel="quests"]')
+    check("Una señal desde las estrellas" in page.locator("#sheetBody").inner_text(), "el capítulo 8 empieza con la señal de Noa")
+    page.locator('[data-key="claim"]').click()
+    page.wait_for_timeout(300)
+    check(page.evaluate("farmweb.app.w.corrales.some((c) => c.tipo === 'estacion')"), "reclamarla abre la Estación")
+    check(page.evaluate("farmweb.app.w.animals.some((a) => a.species === 'porg' && a.corral === 'estacion')"), "el porg bebé llega a la Estación")
+    check(page.evaluate("['porg', 'gato_loth'].every((s) => farmweb.app.w.unlocked.includes(s))"), "y se conocen el porg y el gato loth")
+    page.keyboard.press("Escape")
+    r = page.evaluate("farmweb.sim.buyAnimal(farmweb.app.w, 'gato_loth')")
+    check(r["ok"], "el gato loth se puede comprar con monedas (así se puede criar)")
+    check(page.evaluate("farmweb.app.w.animals.find((a) => a.species === 'gato_loth').corral") == "estacion", "y vive en la Estación")
+    page.evaluate("farmweb.app.setLabels('todo')")
+    page.evaluate("farmweb.app.goTo('estacion', true)")
+    page.wait_for_timeout(500)
+    page.screenshot(path=f"{SHOTS}/movil-42-estacion.png")
+    page.click('[data-goto="mapa"]')
+    page.wait_for_timeout(400)
+    page.screenshot(path=f"{SHOTS}/movil-43-mapa-estacion.png")
+    page.click('[data-panel="animals"]')
+    page.locator('[data-key="tab-guia"]').click()
+    texto = page.locator("#sheetBody").inner_text()
+    check("Porg" in texto and "Gato loth" in texto, "la Guía conoce a las criaturas de la Estación")
+    check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
+    ctx.close()
+
+
 def main():
     server = subprocess.Popen([sys.executable, "-m", "http.server", str(PORT), "--bind", "127.0.0.1"],
                               cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -869,6 +912,7 @@ def main():
             chapter6(browser)
             chapter7(browser)
             sheep_and_fox(browser)
+            chapter8(browser)
             tutorial_flow(browser, "movil", {"width": 390, "height": 844}, 3, True)
             tutorial_flow(browser, "pc", {"width": 1280, "height": 800}, 1, False)
             tutorial_returning_player(browser)

@@ -6,12 +6,14 @@
   "estanque": 2,
   "jurasico": 3,
   "valle": 4,
-  "pradera_bloq": 5,
-  "bosque_bloq": 6,
-  "estanque_bloq": 7,
-  "jurasico_bloq": 8,
-  "valle_bloq": 9,
-  "vet": 10
+  "estacion": 5,
+  "pradera_bloq": 6,
+  "bosque_bloq": 7,
+  "estanque_bloq": 8,
+  "jurasico_bloq": 9,
+  "valle_bloq": 10,
+  "estacion_bloq": 11,
+  "vet": 12
  },
- "version": "6cc202bab4"
+ "version": "a434d6b352"
 }

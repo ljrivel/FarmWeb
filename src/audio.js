@@ -61,6 +61,14 @@ export const VOICES = {
   // oveja: un «beee» con vibrato; zorro: dos ladridos agudos y cortos
   oveja: [n('sawtooth', 0, 0.45, 380, 0.1, { f1: 340, lp: 1400 }), n('sawtooth', 0.1, 0.4, 400, 0.06, { f1: 360, lp: 1400 })],
   zorro: [n('square', 0, 0.06, 900, 0.07, { f1: 1300, lp: 2500 }), n('square', 0.1, 0.06, 1000, 0.07, { f1: 1400, lp: 2500 })],
+  // criaturas de la Estación: porg = chillidos agudos; gato loth = ronroneo que baja; tauntaun = bramido medio;
+  // bantha = mugido muy grave; purrgil = canto largo que sube; dewback = gruñido corto y grave
+  porg: [n('triangle', 0, 0.05, 2000, 0.1, { f1: 2600 }), n('triangle', 0.08, 0.05, 2100, 0.1, { f1: 2700 }), n('triangle', 0.16, 0.05, 2000, 0.1, { f1: 2500 })],
+  gato_loth: [n('sine', 0, 0.25, 520, 0.14, { f1: 760 }), n('sine', 0.22, 0.3, 760, 0.14, { f1: 440 })],
+  tauntaun: [n('sawtooth', 0, 0.3, 260, 0.12, { f1: 200, lp: 900 }), n('sawtooth', 0.32, 0.25, 300, 0.1, { f1: 240, lp: 900 })],
+  bantha: [n('sawtooth', 0, 0.8, 100, 0.2, { f1: 80, lp: 500 }), n('sine', 0, 0.8, 100, 0.14)],
+  purrgil: [n('sine', 0, 0.9, 250, 0.14, { f1: 600 }), n('sine', 0.2, 0.8, 380, 0.08, { f1: 800 })],
+  dewback: [n('square', 0, 0.2, 160, 0.1, { f1: 120, lp: 600 }), n('square', 0.25, 0.2, 150, 0.1, { f1: 110, lp: 600 })],
 };
 
 // ------------------------------------------------------------- programación

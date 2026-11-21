@@ -36,7 +36,14 @@
   "pluma_celeste": 32,
   "perla_marina": 33,
   "vellon": 34,
-  "pelo_dorado": 35
+  "pelo_dorado": 35,
+  "racion": 36,
+  "pluma_porg": 37,
+  "pelo_loth": 38,
+  "pelaje_helado": 39,
+  "leche_azul": 40,
+  "polvo_estelar": 41,
+  "escama_duna": 42
  },
- "version": "5c8bbcee3c"
+ "version": "1ac7266c96"
 }

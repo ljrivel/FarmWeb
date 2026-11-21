@@ -12,7 +12,11 @@
   "fern": 8,
   "sand": 9,
   "rock": 10,
-  "tree": 11
+  "tree": 11,
+  "metal": 12,
+  "metal_luz": 13,
+  "metal_junta": 14,
+  "estrella": 15
  },
- "version": "7feded8910"
+ "version": "abd3a18a5c"
 }
