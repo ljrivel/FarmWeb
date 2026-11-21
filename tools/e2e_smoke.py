@@ -442,6 +442,33 @@ def care_flow(browser, name, viewport, dpr, mobile):
     ctx.close()
 
 
+def side_quests(browser):
+    """Etapa b: varias secundarias activas, reclamar una y que pase al Historial."""
+    print("\n== secundarias en paralelo e historial")
+    ctx, page, errors = new_page(browser, {"width": 360, "height": 740}, 2, True)
+    page.click('[data-panel="quests"]')
+    page.wait_for_timeout(250)
+    n = page.locator(".quest-card.side").count()
+    check(n >= 3, f"hay varias secundarias activas a la vez ({n})")
+    check(page.locator("details.history").count() == 1, "el Historial está aparte")
+    page.keyboard.press("Escape")
+    page.evaluate("farmweb.app.w.stats.petted += 10")
+    page.click('[data-panel="quests"]')
+    page.wait_for_timeout(250)
+    coins = page.evaluate("farmweb.app.w.coins")
+    page.locator('[data-key="side-s-mimos"]').click()
+    page.wait_for_timeout(300)
+    check(page.evaluate("farmweb.app.w.coins") == coins + 30, "reclamar «Ronda de mimos» da 30 monedas")
+    check(page.locator('[data-key="side-s-mimos"]').count() == 0, "y deja de estar entre las activas")
+    page.locator("details.history summary").click()
+    page.wait_for_timeout(200)
+    check("Ronda de mimos" in page.locator("details.history").inner_text(), "y aparece en el Historial")
+    check(page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1"), "sin desbordamiento horizontal")
+    page.screenshot(path=f"{SHOTS}/chico-4-misiones.png")
+    check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
+    ctx.close()
+
+
 def main():
     server = subprocess.Popen([sys.executable, "-m", "http.server", str(PORT), "--bind", "127.0.0.1"],
                               cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -458,6 +485,7 @@ def main():
             stage0(browser)
             care_flow(browser, "movil", {"width": 360, "height": 740}, 3, True)
             care_flow(browser, "pc", {"width": 1280, "height": 800}, 1, False)
+            side_quests(browser)
             browser.close()
     finally:
         server.terminate()

@@ -211,6 +211,7 @@ export function renameAnimal(w, id, raw) {
   if (!name) return no('Escribe un nombre.');
   a.name = name;
   a.named = true;
+  w.stats.named = (w.stats.named || 0) + 1;
   return ok(`Ahora se llama ${name}.`, { animal: a });
 }
 

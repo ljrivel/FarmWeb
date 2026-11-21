@@ -2,7 +2,7 @@
 // exportación/importación con suma de verificación.
 
 import {
-  VERSION, SPECIES, FOODS, PRODUCTS, QUESTS, CORRAL_TYPES, MAX_CORRAL_LEVEL, corralTypeOf,
+  VERSION, SPECIES, FOODS, PRODUCTS, QUESTS, SIDE_QUESTS, CORRAL_TYPES, MAX_CORRAL_LEVEL, corralTypeOf,
   MAX_ANIMALS_IMPORT, MAX_OFFLINE_MS, MAX_HEARTS, DISEASES,
 } from './data.js';
 import { rand, randInt } from './rng.js';
@@ -71,8 +71,8 @@ export function newWorld(name = 'Granja de la familia', now = Date.now(), seed =
     foods: { grano: 10 }, products: {},
     corrales: [{ id: 'pradera', tipo: 'pradera', nombre: CORRAL_TYPES.pradera.nombre, nivel: 0 }],
     animals: [], eggs: [], nextId: 1,
-    stats: { fed: 0, petted: 0, sold: 0, collected: {}, born: {}, bornTotal: 0, bought: {}, breedStarted: 0, cured: 0 },
-    quests: { claimed: {} },
+    stats: { fed: 0, petted: 0, sold: 0, collected: {}, born: {}, bornTotal: 0, bought: {}, breedStarted: 0, cured: 0, named: 0 },
+    quests: { claimed: {}, side: {}, sideBase: {} },
     unlocked: [...INITIAL_UNLOCKED],
     players: [{ id: 'local', name: 'Jugador 1' }],
     maxPlayers: 4,
@@ -139,8 +139,9 @@ export function validateWorld(raw, now = Date.now()) {
       bought: countMap(raw.stats?.bought, SPECIES, 1e9),
       breedStarted: int(raw.stats?.breedStarted, 0, 1e9, 0),
       cured: int(raw.stats?.cured, 0, 1e9, 0),
+      named: int(raw.stats?.named, 0, 1e9, 0),
     },
-    quests: { claimed: {} },
+    quests: { claimed: {}, side: {}, sideBase: {} },
     unlocked: [...INITIAL_UNLOCKED],
     players: [{ id: 'local', name: text(raw.players?.[0]?.name, 24, 'Jugador 1') }],
     maxPlayers: 4,
@@ -159,6 +160,10 @@ export function validateWorld(raw, now = Date.now()) {
   }
   if (isObj(raw.quests?.claimed)) {
     for (const q of QUESTS) if (raw.quests.claimed[q.id] === true) w.quests.claimed[q.id] = true;
+  }
+  for (const q of SIDE_QUESTS) {
+    if (raw.quests?.side?.[q.id] === true) w.quests.side[q.id] = true;
+    else if (isObj(raw.quests?.sideBase) && Object.hasOwn(raw.quests.sideBase, q.id)) w.quests.sideBase[q.id] = int(raw.quests.sideBase[q.id], 0, 1e9, 0);
   }
 
   const usedIds = new Set();

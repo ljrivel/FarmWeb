@@ -374,3 +374,17 @@ input.text {
   border: 2px solid var(--line); font-weight: 800; font-size: .85rem; color: var(--ink);
 }
 .quest-text-body { line-height: 1.5; }
+
+/* ---------- secundarias e historial ---------- */
+.side-list { display: grid; gap: 10px; }
+.quest-card.side { gap: 4px; padding: 12px; }
+.quest-card.side h4 { margin: 0; font-size: 1rem; }
+.quest-card.side.ready { border-color: var(--butter-d); background: #fffaf0; }
+.side-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.side-foot p { margin: 0; }
+.history { margin-top: 16px; border-top: 2px dashed var(--line); padding-top: 8px; }
+.history summary {
+  cursor: pointer; font-weight: 800; min-height: 44px; display: flex; align-items: center;
+  list-style-position: inside;
+}
+.history summary::marker { color: var(--pink-d); }

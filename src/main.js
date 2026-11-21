@@ -3,7 +3,7 @@
 import { loadSprites, fit, draw, hitTest, hitMap, W, H } from './render.js';
 import { createUI } from './ui.js';
 import * as sim from './sim.js';
-import { claim } from './quests.js';
+import { claim, claimSide, syncSide } from './quests.js';
 import { newWorld, getCorral, resolveScene } from './state.js';
 import { store, downloadWorld, readWorldFile } from './storage.js';
 import { MAX_OFFLINE_MS, SPECIES, DISEASES, rarityOf } from './data.js';
@@ -77,7 +77,17 @@ app.claimQuest = () => {
   if (r.ok && r.animal) { app.goTo(r.animal.corral, true); app.selectedId = r.animal.id; }
   report(r, undefined, 'quest');
   if (r.ok && r.animal) ui.askName(r.animal.id, true);
+  const nuevas = r.ok ? syncSide(app.w) : [];
+  if (nuevas.length) setTimeout(() => announceSide(nuevas), 1800); // el aviso del premio se lee primero
 };
+app.claimSide = (id) => report(claimSide(app.w, id), undefined, 'quest');
+
+/** Avisa de secundarias nuevas (tocar el aviso abre Misiones). */
+function announceSide(nuevas) {
+  if (!nuevas.length) return;
+  ui.toast(nuevas.length === 1 ? `Nueva misión secundaria: «${nuevas[0].title}».` : `¡${nuevas.length} misiones secundarias nuevas!`, 'ok', () => ui.openPanel('quests'));
+  ui.refresh();
+}
 /** Cambia de escena ('mapa' o el id de un corral); una escena inválida vuelve a la Pradera. */
 app.goTo = (scene, quiet = false) => {
   const before = app.scene;
@@ -160,6 +170,7 @@ function advance(now) {
     }
   }
   w.lastTick = now;
+  syncSide(w); // las que aparezcan por otra vía (p. ej. al conocer una especie) empiezan a contar ya
   if (away) ui.toast(welcomeBack(summary));
   else if (babies.length) announceBirths(babies);
 }
@@ -226,6 +237,7 @@ async function boot() {
     app.sprites = await loadSprites();
     app.w = (await store.load()) || newWorld();
     app.scene = resolveScene(app.w, app.scene);
+    syncSide(app.w);
   } catch (err) {
     loading.textContent = 'No se pudo cargar el juego. Revisa tu conexión y recarga la página.';
     console.error(err);

@@ -7,7 +7,7 @@ import {
 } from './data.js';
 import { spriteRow } from './render.js';
 import * as sim from './sim.js';
-import { activeQuest, progress, rewardText } from './quests.js';
+import { activeQuest, progress, rewardText, activeSide, doneSide, sideProgress } from './quests.js';
 
 export function h(tag, props, ...kids) {
   const el = document.createElement(tag);
@@ -144,6 +144,8 @@ export function createUI(app) {
       $('questProg').textContent = p.done ? '¡Reclama tu premio!' : `${p.current}/${p.target}`;
       chip.classList.toggle('done', p.done);
     }
+    const sideReady = activeSide(w).filter((x) => sideProgress(w, x).done).length;
+    if (sideReady) $('questProg').textContent += ` · ${sideReady} ${plural(sideReady, 'secundaria lista', 'secundarias listas')}`;
     const ready = w.animals.reduce((n, a) => n + a.ready, 0);
     $('collectAll').hidden = ready === 0;
     $('readyCount').textContent = String(ready);
@@ -406,40 +408,73 @@ export function createUI(app) {
   }
 
   /** Quién habla en una misión: inicial en un círculo de color (decorativo) y su nombre y rol en texto. */
-  function speaker(id) {
+  function speaker(id, short = false) {
     const c = CHARACTERS[id];
     if (!c) return null;
     const dot = h('span', { class: 'avatar', 'aria-hidden': 'true', text: c.nombre.replace(/^(Dra\.|Don|Abuela)\s+/, '')[0] });
     dot.style.background = c.color;
-    return h('p', { class: 'speaker' }, dot, h('span', null, h('strong', { text: c.nombre }), h('span', { class: 'muted small', text: ` · ${c.rol}` })));
+    return h('p', { class: 'speaker' }, dot, h('span', null, h('strong', { text: c.nombre }), !short && h('span', { class: 'muted small', text: ` · ${c.rol}` })));
   }
 
   // ---- panel: misiones
+  let historyOpen = false;
+  /** Barra de progreso de una misión (con su texto). */
+  function questBar(p, label) {
+    const fill = h('i');
+    fill.style.width = `${(p.current / p.target) * 100}%`;
+    return [
+      h('div', { class: 'bar quest', role: 'progressbar', 'aria-label': label, 'aria-valuemin': '0', 'aria-valuemax': String(p.target), 'aria-valuenow': String(p.current) }, fill),
+      h('p', { class: 'small', text: `Progreso: ${p.current} de ${p.target}` }),
+    ];
+  }
   function panelQuests() {
     const w = W();
     const q = activeQuest(w);
-    const done = QUESTS.filter((x) => w.quests.claimed[x.id]);
     const card = q ? (() => {
       const p = progress(w, q);
-      const fill = h('i');
-      fill.style.width = `${(p.current / p.target) * 100}%`;
       return h('div', { class: 'quest-card' },
         h('p', { class: 'chapter', text: `Capítulo ${q.ch} · ${CHAPTERS[q.ch]}` }),
         h('h3', { text: q.title }),
         speaker(q.who),
         h('p', { class: 'quest-text-body', text: q.text }),
-        h('div', { class: 'bar quest', role: 'progressbar', 'aria-label': 'Progreso de la misión', 'aria-valuemin': '0', 'aria-valuemax': String(p.target), 'aria-valuenow': String(p.current) }, fill),
-        h('p', { class: 'small', text: `Progreso: ${p.current} de ${p.target}` }),
+        questBar(p, 'Progreso de la misión'),
         h('p', { class: 'small' }, h('strong', { text: 'Premio: ' }), rewardText(q.reward)),
         btn(p.done ? '¡Reclamar premio!' : 'Aún falta', () => app.claimQuest(), { cls: 'primary', disabled: !p.done, key: 'claim' }));
     })() : h('div', { class: 'quest-card' },
       h('p', { class: 'chapter', text: 'Epílogo' }),
       h('h3', { text: '¡Historia completa!' }),
       h('p', { text: EPILOGUE }));
+
+    const side = activeSide(w);
+    const sideCards = side.map((x) => {
+      const p = sideProgress(w, x);
+      return h('div', { class: `quest-card side${p.done ? ' ready' : ''}` },
+        h('h4', { text: x.title }),
+        speaker(x.who, true),
+        h('p', { class: 'small', text: x.text }),
+        questBar(p, `Progreso de ${x.title}`),
+        h('div', { class: 'side-foot' },
+          h('p', { class: 'small grow' }, h('strong', { text: 'Premio: ' }), rewardText(x.reward)),
+          btn(p.done ? 'Reclamar' : 'Aún falta', () => app.claimSide(x.id), { cls: p.done ? 'primary' : '', disabled: !p.done, key: `side-${x.id}` })));
+    });
+
+    const done = [...QUESTS.filter((x) => w.quests.claimed[x.id]).map((x) => ['Historia', x]), ...doneSide(w).map((x) => ['Secundaria', x])];
+    const history = h('details', { class: 'history', open: historyOpen },
+      h('summary', null, `Historial (${done.length})`),
+      done.length ? h('ul', { class: 'done-list' }, done.map(([kind, x]) => h('li', null,
+        h('span', { class: 'ok', 'aria-hidden': 'true', text: '✓ ' }), x.title, h('span', { class: 'muted small', text: ` · ${kind}` }))))
+        : h('p', { class: 'muted small', text: 'Aquí verás las misiones que vayas completando.' }));
+    history.addEventListener('toggle', () => { historyOpen = history.open; });
+
     return h('div', null, card,
-      done.length > 0 && h('h3', { text: 'Completadas' }),
-      h('ul', { class: 'done-list' }, done.map((x) => h('li', null, h('span', { class: 'ok', 'aria-hidden': 'true', text: '✓ ' }), x.title))));
+      h('h3', { text: `Secundarias${side.length ? ` (${side.length} activas)` : ''}` }),
+      sideCards.length ? h('div', { class: 'side-list' }, sideCards)
+        : h('p', { class: 'muted small', text: 'No hay secundarias activas ahora. Avanza en la historia para que aparezcan más.' }),
+      secretsSection(),
+      history);
   }
+
+  const secretsSection = () => null; // etapa c
 
   // ---- sección de sonido del panel Mundo (se guarda en este dispositivo, no en el archivo del mundo)
   function soundSection() {
