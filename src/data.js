@@ -48,7 +48,7 @@ export const SPECIES = {
   gallina: {
     nombre: 'Gallina', food: 'grano', product: 'huevo', price: 40,
     grow: 3 * MIN, prod: 90 * 1000, breed: 2 * MIN, aquatic: false,
-    variants: ['Blanca', 'Marrón', 'Dorada', 'Lavanda'],
+    variants: ['Blanca', 'Marrón', 'Durazno', 'Lavanda'],
     names: ['Pepita', 'Cocó', 'Plumita', 'Huevito', 'Pollita'],
   },
   gato: {

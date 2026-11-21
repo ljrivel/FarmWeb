@@ -326,42 +326,71 @@ SPECIES = {
     "gallina": (gallina_body, gallina_face, [
         dict(body="#fffaf0", wing="#f1e0cc", comb="#ff7b8e", beak="#ffb347", feet="#ffb347"),
         dict(body="#e9b685", wing="#cf9660", comb="#ff7b8e", beak="#ffb347", feet="#f0a030"),
+        dict(body="#ffc6a5", wing="#f5a883", comb="#ff7b8e", beak="#ffb347", feet="#f0a030"),  # Durazno
+        dict(body="#d9c8f5", wing="#bda5e6", comb="#ff8fc0", beak="#ffc15e", feet="#ffb347"),  # Lavanda
     ]),
     "gato": (gato_body, gato_face, [
         dict(body="#ffbc78", dark="#e8924a", ear="#ffc4cf", paw="#fff0e0"),
         dict(body="#bfc3d2", dark="#9aa0b6", ear="#ffc4cf", paw="#f4f4fb"),
+        dict(body="#f4e3cf", dark="#8a6a58", ear="#c9a08c", paw="#a07c68"),  # Siamés
+        dict(body="#6a6fa8", dark="#4a4f86", ear="#ffb3d1", paw="#c9ccf0"),  # Medianoche
     ]),
     "vaca": (vaca_body, vaca_face, [
         dict(body="#fffdf8", spot="#5b5266", muzzle="#ffc4cf", horn="#f0d08a", hoof="#7a6a80"),
         dict(body="#d09a6a", spot="#fff1dc", muzzle="#ffc4cf", horn="#f0d08a", hoof="#7a5a48"),
+        dict(body="#ffd0dc", spot="#ff8fb0", muzzle="#fff0f4", horn="#f0d08a", hoof="#c0708a"),  # Fresa
+        dict(body="#5d5b9a", spot="#b9b7ff", muzzle="#ffc4e0", horn="#ffe08a", hoof="#3f3d74"),  # Galaxia
     ]),
     "mapache": (mapache_body, mapache_face, [
         dict(body="#a3a8ba", mask="#6b6883", light="#fff6f6"),
         dict(body="#c9a073", mask="#7a5640", light="#fff1e0"),
+        dict(body="#f08c58", mask="#9c4430", light="#fff3e6"),  # Rojizo
+        dict(body="#f2f4fb", mask="#9aa6c8", light="#ffffff"),  # Nieve
     ]),
     "chanchito": (chanchito_body, chanchito_face, [
         dict(body="#ffb9c8", dark="#f598ad", snout="#ffd3dc", nostril="#d9788f"),
         dict(body="#fff0e6", dark="#e9b9a0", snout="#ffd9d3", nostril="#d9788f", patch="#e7b58f"),
+        dict(body="#b98563", dark="#9a6a4c", snout="#d9ac8c", nostril="#6e4632"),  # Chocolate
+        dict(body="#d9c6ff", dark="#bfa6f0", snout="#eadcff", nostril="#a07cd0"),  # Algodón
     ]),
     "ajolote": (ajolote_body, ajolote_face, [
         dict(body="#ffb8ca", belly="#ffe3ea", gill="#ff7497"),
         dict(body="#ffd98e", belly="#fff1cf", gill="#ff9a62"),
+        dict(body="#a8ead2", belly="#e6fff4", gill="#4fc79a"),  # Menta
+        dict(body="#5a6aa8", belly="#b9c4f0", gill="#7fe3ff"),  # Medianoche
     ]),
     "carnotauro": (carnotauro_body, carnotauro_face, [
         dict(body="#f08a68", belly="#ffe6cf", horn="#ffe6a8", dark="#cf6247", foot="#dc7355", snout="#f7a98a"),
         dict(body="#86d6b6", belly="#f2ffe8", horn="#fff0a8", dark="#55b394", foot="#6fc4a4", snout="#a8e6cf"),
+        dict(body="#b9a2f0", belly="#f3ecff", horn="#ffe6a8", dark="#9078d6", foot="#a68ae6", snout="#d0bff7"),  # Lavanda
+        dict(body="#5b6aa6", belly="#c8d0f2", horn="#ffe08a", dark="#414f86", foot="#4a5894", snout="#7e8cc4"),  # Medianoche
     ]),
     "spinosaurus": (spino_body, spino_face, [
         dict(body="#74c7da", belly="#f0fbff", sail="#ff9fbd", ribs="#e0709a", dark="#4aa2ba", snout="#a6e0ec"),
         dict(body="#94d68e", belly="#f5ffe9", sail="#ffc66e", ribs="#e39b3f", dark="#62b45e", snout="#bfe8ba"),
+        dict(body="#ffae7a", belly="#fff1e4", sail="#74c7da", ribs="#4aa2ba", dark="#e8844a", snout="#ffc9a3"),  # Naranja
+        dict(body="#b79af0", belly="#f4eeff", sail="#ffc66e", ribs="#e39b3f", dark="#9378d6", snout="#d2c0f7"),  # Violeta
     ]),
 }
 STAGES = {"baby": 0.74, "adult": 1.0}
 
+# Look brillante: una paleta propia por especie (cuerpo nacarado y dorado con acentos aguamarina).
+SHINY = {
+    "gallina": dict(body="#fff3c4", wing="#ffd77a", comb="#7fe0d4", beak="#ffd04d", feet="#ffd04d"),
+    "gato": dict(body="#ffe9a8", dark="#f5c16a", ear="#9fe8e0", paw="#fffbea"),
+    "vaca": dict(body="#fff5cf", spot="#9fe3d8", muzzle="#ffc4cf", horn="#ffd04d", hoof="#c9a85a"),
+    "mapache": dict(body="#ffe9b0", mask="#e0a850", light="#fffbea"),
+    "chanchito": dict(body="#fff0b8", dark="#f5cf72", snout="#ffe39a", nostril="#d9a24a", patch="#a8ece0"),
+    "ajolote": dict(body="#fff0b0", belly="#fffbe6", gill="#7fe3d6"),
+    "carnotauro": dict(body="#ffe39a", belly="#fffbe6", horn="#9fe8e0", dark="#f0b84a", foot="#f5c562", snout="#ffeebb"),
+    "spinosaurus": dict(body="#fff0b0", belly="#fffbe6", sail="#7fe3d6", ribs="#3fbfae", dark="#f0c85a", snout="#fff3c8"),
+}
+
 
 def render_animal(species, variant, stage, frame):
     body_fn, face_fn, variants = SPECIES[species]
-    pal = {k: hx(v) for k, v in variants[variant].items()}
+    look = SHINY[species] if variant == "shiny" else variants[variant]
+    pal = {k: hx(v) for k, v in look.items()}
     c = Canvas(CELL, ox=16, oy=29, s=STAGES[stage], sy=IDLE_SY[frame])
     body_fn(c, pal)
     c.img = outline(shade_pass(c.img), auto_line(pal["body"]))
@@ -724,7 +753,7 @@ def build():
     rows = {}
     keys = []
     for sp, (_, _, variants) in SPECIES.items():
-        for v in range(len(variants)):
+        for v in [*range(len(variants)), "shiny"]:
             for st in STAGES:
                 rows[f"{sp}:{v}:{st}"] = len(keys)
                 keys.append((sp, v, st))
@@ -761,16 +790,17 @@ def build():
     with open(os.path.join(OUT, "places.json"), "w") as fh:
         json.dump({"cell": 48, "index": {n: i for i, (n, _) in enumerate(places)}}, fh, indent=1)
 
-    # vista previa: 8 especies en columnas; filas = bebé/adulto de cada color
+    # vista previa: 8 especies en columnas; filas = bebé/adulto de cada color y del brillante
     z, pad = 4, 8
     cols = len(SPECIES)
     cellp = CELL * z + pad
-    icons_y = 4 * cellp + pad
+    looks = [(v, st) for v in (0, 1, 2, 3, "shiny") for st in ("baby", "adult")]
+    icons_y = len(looks) * cellp + pad
     tiles_y = icons_y + 2 * (16 * z + pad)
     places_y = tiles_y + 16 * z + pad
     prev = Image.new("RGBA", (cols * cellp + pad, places_y + 48 * 2 + pad), hx("#fff6e5"))
     for ci, sp in enumerate(SPECIES):
-        for ri, (v, st) in enumerate(((0, "baby"), (0, "adult"), (1, "baby"), (1, "adult"))):
+        for ri, (v, st) in enumerate(looks):
             im = render_animal(sp, v, st, 0).resize((CELL * z, CELL * z), Image.NEAREST)
             prev.alpha_composite(im, (pad + ci * cellp, pad + ri * cellp))
     per_row = (len(icons) + 1) // 2

@@ -25,7 +25,7 @@ Que cada animal se sienta **tuyo** (le pones y le cambias el nombre), que criar 
 
 | Color | Gallina | Gato | Vaca | Mapache | Chanchito | Ajolote | Carnotauro | Spinosaurus |
 |---|---|---|---|---|---|---|---|---|
-| Poco común | Dorada | Siamés | Fresa | Rojizo | Chocolate | Menta | Lavanda | Naranja |
+| Poco común | Durazno | Siamés | Fresa | Rojizo | Chocolate | Menta | Lavanda | Naranja |
 | Raro | Lavanda | Medianoche | Galaxia | Nieve | Algodón | Medianoche | Medianoche | Violeta |
 
 Probabilidades (en `BALANCE`, en `src/data.js`):
