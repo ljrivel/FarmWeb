@@ -26,6 +26,8 @@ export const BALANCE = {
   shinyChance: 0.02,
   shinyChanceParent: 0.15,
   maxReady: 3,
+  afkMaxReady: 1,   // si el jugador está ausente (sin conexión o sin tocar nada `afkMs`), cada animal solo guarda 1 producto
+  afkMs: 5 * MIN,
   // ---- Fase 2B: corazones (afecto 0..5). 100 de cariño = 1 corazón.
   lovePerPet: 10,
   lovePerFav: 15,

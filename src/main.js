@@ -219,6 +219,7 @@ function welcomeBack(s) {
   return parts.length ? `¡Bienvenido de vuelta! Mientras no estabas: ${parts.join(', ')}.` : '¡Bienvenido de vuelta!';
 }
 
+app.lastInput = Date.now(); // última vez que el jugador tocó algo: pasado `BALANCE.afkMs` cuenta como ausente
 function advance(now) {
   const w = app.w;
   let dt = now - w.lastTick;
@@ -228,7 +229,7 @@ function advance(now) {
   const summary = {};
   const babies = [];
   for (let left = dt; left > 0; left -= 30_000) {
-    for (const e of sim.tick(w, Math.min(left, 30_000), { live: !away })) {
+    for (const e of sim.tick(w, Math.min(left, 30_000), { live: !away, afk: away || Date.now() - app.lastInput > BALANCE.afkMs })) {
       summary[e.type] = (summary[e.type] || 0) + 1;
       if (away) continue;
       if (e.type === 'hatch') { babies.push(e.animal); continue; }
@@ -449,6 +450,7 @@ async function boot() {
   for (const type of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) {
     document.addEventListener(type, () => app.audio.unlock(), { capture: true, passive: true });
   }
+  for (const type of ['pointerdown', 'keydown']) document.addEventListener(type, () => { app.lastInput = Date.now(); }, { capture: true, passive: true });
   document.addEventListener('keydown', konamiKey);
   app.audio.setHidden(document.hidden);
   if (location.search.includes('debug')) window.farmweb = { app, sim, audio: app.audio };

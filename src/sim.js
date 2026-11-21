@@ -50,6 +50,7 @@ export function tick(w, dt, opts = {}) {
   const s = dt / 1000;
   const B = BALANCE;
   if (live && w.vet?.shield > 0) w.vet.shield = Math.max(0, w.vet.shield - dt);
+  const cap = opts.afk ? B.afkMaxReady : B.maxReady; // opts.afk: jugador ausente (sin conexión o sin tocar nada)
   const crowded = new Set(w.corrales.filter((c) => spaceUsed(w, c.id) > capacityOf(w, c.id)).map((c) => c.id));
 
   for (const a of w.animals) {
@@ -71,14 +72,14 @@ export function tick(w, dt, opts = {}) {
         a.growth = 0;
         events.push({ type: 'grown', animal: a });
       }
-    } else if (a.ready < B.maxReady && a.fed > 0 && a.happy >= 30) {
+    } else if (a.ready < cap && a.fed > 0 && a.happy >= 30) {
       a.prod += dt * (a.happy >= 60 ? 1 : 0.5) * heartBonus(a);
-      while (a.prod >= sp.prod && a.ready < B.maxReady) {
+      while (a.prod >= sp.prod && a.ready < cap) {
         a.prod -= sp.prod;
         a.ready++;
         events.push({ type: 'ready', animal: a });
       }
-      if (a.ready >= B.maxReady) a.prod = 0;
+      if (a.ready >= cap) a.prod = 0;
     }
   }
 

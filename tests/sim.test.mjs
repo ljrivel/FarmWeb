@@ -315,3 +315,13 @@ test('wander mantiene a cada animal dentro del área de su corral', () => {
       `${a.species} fuera de ${a.corral}: ${a.x},${a.y}`);
   }
 });
+
+test('ausente (afk) cada animal guarda solo 1 producto; presente, hasta el máximo', () => {
+  const lleno = (opts) => {
+    const w = fresh(2);
+    for (let i = 0; i < 60; i++) { for (const a of w.animals) { a.fed = 100; a.happy = 100; } sim.tick(w, 30_000, opts); }
+    return Math.max(...w.animals.map((a) => a.ready));
+  };
+  assert.equal(lleno({ afk: true }), BALANCE.afkMaxReady);
+  assert.equal(lleno({}), BALANCE.maxReady);
+});
