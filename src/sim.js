@@ -4,6 +4,7 @@
 
 import {
   SPECIES, FOODS, PRODUCTS, BALANCE, CORRAL_COSTS, CORRAL_TYPES, CORRAL_TYPE_ORDER, MAX_CORRAL_LEVEL, corralTypeOf,
+  COMMON_VARIANTS, VARIANT_TIERS,
 } from './data.js';
 import { rand, randInt, chance } from './rng.js';
 import { addAnimal, addCorral, capacityOf, getCorral, corralOfSpecies } from './state.js';
@@ -75,9 +76,7 @@ export function tick(w, dt) {
       const a = ready.shift();
       const b = ready.shift();
       const sp = SPECIES[species];
-      const parent = chance(w, 0.5) ? a : b;
-      let variant = parent.variant;
-      if (sp.variants.length > 1 && chance(w, B.mutationChance)) variant = (variant + 1) % sp.variants.length;
+      const variant = pickBabyVariant(w, a, b);
       const shiny = chance(w, a.shiny || b.shiny ? B.shinyChanceParent : B.shinyChance);
       w.eggs.push({
         id: w.nextId++, species, corral: corral.id, variant, shiny, left: sp.breed,
@@ -89,6 +88,17 @@ export function tick(w, dt) {
     }
   }
   return events;
+}
+
+/**
+ * Color de una cría: hereda el de un padre al azar; con probabilidad `mutationChance` muta
+ * a un color poco común o raro (las probabilidades están en BALANCE, en data.js).
+ */
+export function pickBabyVariant(w, a, b) {
+  const inherited = chance(w, 0.5) ? a.variant : b.variant;
+  if (!chance(w, BALANCE.mutationChance)) return inherited;
+  const tier = chance(w, BALANCE.mutantTierOdds.poco) ? 'poco' : 'raro';
+  return VARIANT_TIERS.indexOf(tier);
 }
 
 // ------------------------------------------------------------------ acciones
@@ -174,7 +184,7 @@ export function buyAnimal(w, species) {
   if (!c.ok) return c;
   const sp = SPECIES[species];
   w.coins -= sp.price;
-  const a = addAnimal(w, species, randInt(w, sp.variants.length), 'baby');
+  const a = addAnimal(w, species, randInt(w, COMMON_VARIANTS), 'baby');
   w.stats.bought[species] = (w.stats.bought[species] || 0) + 1;
   return ok(`¡${a.name} se unió a la granja!`, { animal: a });
 }

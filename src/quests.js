@@ -1,7 +1,7 @@
 // Progreso de misiones. Las metas cuentan el progreso acumulado del mundo (estadísticas),
 // y las misiones se desbloquean en orden: la activa es la primera sin reclamar.
 
-import { QUESTS, SPECIES, FOODS, CORRAL_TYPES, corralTypeOf } from './data.js';
+import { QUESTS, SPECIES, FOODS, CORRAL_TYPES, COMMON_VARIANTS, corralTypeOf } from './data.js';
 import { hasSpace } from './sim.js';
 import { addAnimal, addCorral, getCorral, corralOfSpecies } from './state.js';
 import { randInt } from './rng.js';
@@ -63,7 +63,7 @@ export function claim(w) {
   for (const s of r.unlock || []) if (!w.unlocked.includes(s)) w.unlocked.push(s);
   let animal = null;
   if (r.gift) {
-    animal = addAnimal(w, r.gift, randInt(w, SPECIES[r.gift].variants.length), 'baby');
+    animal = addAnimal(w, r.gift, randInt(w, COMMON_VARIANTS), 'baby');
   }
   return { ok: true, msg: `¡Misión completada! Recibes ${rewardText(r)}.`, quest: q, animal };
 }
