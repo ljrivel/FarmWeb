@@ -234,3 +234,24 @@ test('prefs: volumen fuera de rango se corrige, JSON roto vuelve al valor por de
   const otra = createAudio({ storage, AudioContextClass: makeFake().FakeContext });
   assert.deepEqual(otra.prefs, { muted: true, volume: 0.3 });
 });
+
+test('play y voice nunca lanzan aunque el contexto falle al programar', async () => {
+  const { audio, ctx } = await ready();
+  ctx.createOscillator = () => { throw new Error('roto'); };
+  ctx.createBufferSource = () => { throw new Error('roto'); };
+  assert.doesNotThrow(() => audio.play('tap'));
+  ctx.currentTime += 1;
+  assert.equal(audio.play('quest'), false);
+  assert.equal(audio.voice('gato'), false);
+});
+
+test('si build() falla a medias el motor queda limpio y en silencio', async () => {
+  const { FakeContext, instances } = makeFake();
+  class Half extends FakeContext { createDynamicsCompressor() { throw new Error('a medias'); } }
+  const audio = createAudio({ storage: makeStorage(), AudioContextClass: Half });
+  await audio.unlock();
+  assert.equal(instances.length, 1, 'se intentó crear');
+  assert.equal(audio.state, 'none', 'ctx vuelve a null');
+  assert.equal(audio.play('tap'), false);
+  assert.doesNotThrow(() => { audio.setVolume(0.2); audio.setMuted(true); audio.setHidden(true); });
+});

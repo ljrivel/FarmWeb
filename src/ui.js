@@ -45,7 +45,7 @@ export function createUI(app) {
     const n = Object.keys(S().icons.index).length;
     const i = S().icons.index[name];
     const el = h('span', { class: 'ico', 'aria-hidden': 'true' });
-    el.style.cssText = `width:${16 * z}px;height:${16 * z}px;background-image:url(assets/sprites/icons.png);` +
+    el.style.cssText = `width:${16 * z}px;height:${16 * z}px;background-image:url(${S().urls.icons});` +
       `background-size:${16 * n * z}px ${16 * z}px;background-position:-${i * 16 * z}px 0;`;
     return el;
   }
@@ -53,7 +53,7 @@ export function createUI(app) {
     const rows = Object.keys(S().animals.rows).length;
     const row = spriteRow(S().animals.rows, species, variant, shiny, stage);
     const el = h('span', { class: 'ico portrait', 'aria-hidden': 'true' });
-    el.style.cssText = `width:${32 * z}px;height:${32 * z}px;background-image:url(assets/sprites/animals.png);` +
+    el.style.cssText = `width:${32 * z}px;height:${32 * z}px;background-image:url(${S().urls.animals});` +
       `background-size:${32 * 4 * z}px ${32 * rows * z}px;background-position:0 -${row * 32 * z}px;`;
     return el;
   }
@@ -213,7 +213,9 @@ export function createUI(app) {
     app.audio?.play('close');
     backdrop().hidden = true;
     document.body.classList.remove('sheet-open');
-    if (lastFocus && lastFocus.focus) lastFocus.focus();
+    // si el elemento de antes desapareció (p. ej. la tarjeta se redibujó), el foco vuelve a la barra de abajo
+    if (lastFocus?.isConnected && lastFocus.focus) lastFocus.focus();
+    else document.querySelector('#dock button')?.focus();
   }
   function refreshSheet() {
     if (!current || current.keep) return; // el diálogo de nombre no se redibuja: se perdería lo que se escribe
@@ -249,7 +251,7 @@ export function createUI(app) {
       autocomplete: 'off', autocapitalize: 'words', spellcheck: 'false', 'aria-describedby': 'animalNameHint',
     });
     const save = () => app.renameAnimal(id, input.value);
-    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); save(); } });
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); save(); } });
     const content = h('div', { class: 'name-dialog' },
       h('div', { class: 'name-head' },
         portrait(a.species, a.variant, a.stage, 3, a.shiny),

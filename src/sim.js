@@ -4,7 +4,7 @@
 
 import {
   SPECIES, FOODS, PRODUCTS, BALANCE, CORRAL_COSTS, CORRAL_TYPES, CORRAL_TYPE_ORDER, MAX_CORRAL_LEVEL, corralTypeOf,
-  COMMON_VARIANTS, VARIANT_TIERS,
+  COMMON_VARIANTS, VARIANT_TIERS, rarityOf,
 } from './data.js';
 import { rand, randInt, chance } from './rng.js';
 import { addAnimal, addCorral, capacityOf, getCorral, corralOfSpecies, cleanName } from './state.js';
@@ -17,6 +17,16 @@ export const spaceUsed = (w, corralId) =>
   w.animals.filter((a) => a.corral === corralId).length + w.eggs.filter((e) => e.corral === corralId).length;
 export const hasSpace = (w, corralId) => spaceUsed(w, corralId) < capacityOf(w, corralId);
 export const find = (w, id) => w.animals.find((a) => a.id === id);
+/** El animal sigue siendo este mismo objeto del mundo (si se cargó otro mundo, ya no). */
+export const isCurrent = (w, a) => !!a && find(w, a.id) === a;
+
+/** Texto del aviso de nacimiento: una cría con su nombre y rareza, o varias en un solo aviso. */
+export function hatchToast(babies) {
+  if (babies.length > 1) return `¡Nacieron ${babies.length} crías! Toca para ver la primera.`;
+  const a = babies[0];
+  const kind = { poco: 'poco común', raro: 'rara', brillante: 'brillante' }[rarityOf(a)];
+  return kind ? `¡Nació ${a.name}, una cría ${kind}!` : `¡Nació ${a.name}! Toca para ponerle nombre.`;
+}
 
 /** Avanza la simulación dt milisegundos. Devuelve eventos para mostrar avisos. */
 export function tick(w, dt) {

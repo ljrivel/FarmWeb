@@ -121,6 +121,9 @@ export function createAudio({ storage, AudioContextClass } = {}) {
   const applyLevel = () => { if (master) master.gain.setTargetAtTime(level(), ctx.currentTime, 0.015); };
 
   function build() {
+    try { buildGraph(); } catch (err) { ctx = input = master = noise = null; throw err; } // a medias: limpio y en silencio
+  }
+  function buildGraph() {
     ctx = new AudioContextClass();
     const comp = ctx.createDynamicsCompressor();
     comp.threshold.setValueAtTime(-18, 0);
@@ -157,7 +160,11 @@ export function createAudio({ storage, AudioContextClass } = {}) {
 
   const live = () => !!ctx && !hidden && !prefs.muted && ctx.state === 'running';
 
+  // Nunca lanza: un fallo del navegador al programar notas solo deja ese sonido sin sonar.
   function fire(key, notes, gap) {
+    try { return fireUnsafe(key, notes, gap); } catch { return false; }
+  }
+  function fireUnsafe(key, notes, gap) {
     if (!live()) return false;
     const now = ctx.currentTime;
     if (now - (lastAt.get(key) ?? -Infinity) < gap) return false;

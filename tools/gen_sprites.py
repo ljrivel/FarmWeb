@@ -7,6 +7,7 @@ Salida: assets/sprites/{animals,icons,tiles,places}.png + .json, docs/preview-sp
 Estilo kawaii: formas redondas, ojos grandes con brillo, mejillas rosadas,
 contorno con el tono oscuro del propio color (nunca negro).
 """
+import hashlib
 import json
 import math
 import os
@@ -746,6 +747,16 @@ PLACES = [("pradera", pl_pradera), ("bosque", pl_bosque), ("estanque", pl_estanq
 
 
 # --------------------------------------------------------------------- salida
+def save_sheet(img, name, meta):
+    """Guarda el PNG y su JSON; `version` (hash del PNG) sirve de ?v= para que el navegador no mezcle caché vieja."""
+    path = os.path.join(OUT, name + ".png")
+    img.save(path)
+    with open(path, "rb") as fh:
+        meta = {**meta, "version": hashlib.sha1(fh.read()).hexdigest()[:10]}
+    with open(os.path.join(OUT, name + ".json"), "w") as fh:
+        json.dump(meta, fh, indent=1)
+
+
 def build():
     os.makedirs(OUT, exist_ok=True)
     os.makedirs(DOCS, exist_ok=True)
@@ -761,34 +772,26 @@ def build():
     for r, (sp, v, st) in enumerate(keys):
         for f in range(len(IDLE_SY)):
             atlas.paste(render_animal(sp, v, st, f), (f * CELL, r * CELL))
-    atlas.save(os.path.join(OUT, "animals.png"))
-    with open(os.path.join(OUT, "animals.json"), "w") as fh:
-        json.dump({"cell": CELL, "frames": len(IDLE_SY), "idle": IDLE_SEQ, "rows": rows,
-                   "species": {s: len(v[2]) for s, v in SPECIES.items()}}, fh, indent=1)
+    save_sheet(atlas, "animals", {"cell": CELL, "frames": len(IDLE_SY), "idle": IDLE_SEQ, "rows": rows,
+                                  "species": {s: len(v[2]) for s, v in SPECIES.items()}})
 
     icons = [make_icon(n, b, f) for n, b, f in ICONS]
     sheet = Image.new("RGBA", (16 * len(icons), 16), (0, 0, 0, 0))
     for i, (_, im) in enumerate(icons):
         sheet.paste(im, (i * 16, 0))
-    sheet.save(os.path.join(OUT, "icons.png"))
-    with open(os.path.join(OUT, "icons.json"), "w") as fh:
-        json.dump({"cell": 16, "index": {n: i for i, (n, _) in enumerate(icons)}}, fh, indent=1)
+    save_sheet(sheet, "icons", {"cell": 16, "index": {n: i for i, (n, _) in enumerate(icons)}})
 
     tsheet = Image.new("RGBA", (16 * len(TILES), 16), (0, 0, 0, 0))
     for i, (_, im) in enumerate(TILES):
         tsheet.paste(im, (i * 16, 0))
-    tsheet.save(os.path.join(OUT, "tiles.png"))
-    with open(os.path.join(OUT, "tiles.json"), "w") as fh:
-        json.dump({"cell": 16, "index": {n: i for i, (n, _) in enumerate(TILES)}}, fh, indent=1)
+    save_sheet(tsheet, "tiles", {"cell": 16, "index": {n: i for i, (n, _) in enumerate(TILES)}})
 
     places = [(n, _place(f)) for n, f in PLACES]
     places += [(n + "_bloq", desaturate(im)) for n, im in places[:len(PLACES)]]
     psheet = Image.new("RGBA", (48 * len(places), 48), (0, 0, 0, 0))
     for i, (_, im) in enumerate(places):
         psheet.paste(im, (i * 48, 0))
-    psheet.save(os.path.join(OUT, "places.png"))
-    with open(os.path.join(OUT, "places.json"), "w") as fh:
-        json.dump({"cell": 48, "index": {n: i for i, (n, _) in enumerate(places)}}, fh, indent=1)
+    save_sheet(psheet, "places", {"cell": 48, "index": {n: i for i, (n, _) in enumerate(places)}})
 
     # vista previa: 8 especies en columnas; filas = bebé/adulto de cada color y del brillante
     z, pad = 4, 8

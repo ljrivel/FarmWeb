@@ -360,6 +360,49 @@ def small_phone(browser):
     ctx.close()
 
 
+def new_page(browser, viewport, dpr, mobile):
+    ctx = browser.new_context(viewport=viewport, device_scale_factor=dpr, is_mobile=mobile, has_touch=mobile)
+    page = ctx.new_page()
+    errors = []
+    page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(URL)
+    page.wait_for_function("document.getElementById('loading').hidden === true", timeout=15000)
+    page.wait_for_timeout(400)
+    return ctx, page, errors
+
+
+def stage0(browser):
+    """Pendientes de la 2A: Enter con composición, foco al cerrar, avisos de varios nacimientos."""
+    print("\n== etapa 0 (pendientes de la 2A)")
+    ctx, page, errors = new_page(browser, {"width": 390, "height": 844}, 2, True)
+    aid = page.evaluate("farmweb.app.w.animals[0].id")
+    page.evaluate(f"farmweb.app.selectedId = {aid}; farmweb.app.goTo('pradera')")
+    page.wait_for_timeout(300)
+    page.locator("#selected .btn.highlight").click()
+    page.wait_for_timeout(200)
+    page.locator("#animalName").fill("Kiki")
+    page.evaluate("""document.getElementById('animalName').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', isComposing: true, bubbles: true }))""")
+    page.wait_for_timeout(200)
+    check(page.locator("#sheetTitle").is_visible() and page.evaluate(f"farmweb.app.w.animals[0].name") != "Kiki",
+          "Enter durante una composición de teclado no guarda")
+    page.keyboard.press("Enter")
+    page.wait_for_timeout(300)
+    check(page.evaluate("farmweb.app.w.animals[0].name") == "Kiki", "Enter normal sí guarda")
+    check(page.evaluate("document.activeElement && document.activeElement.isConnected && document.activeElement !== document.body"),
+          "al cerrar, el foco vuelve a un elemento que existe (" + page.evaluate("document.activeElement.textContent.trim().slice(0, 20)") + ")")
+    page.evaluate("""(() => { const w = farmweb.app.w;
+        for (let i = 0; i < 2; i++) w.eggs.push({ id: w.nextId++, species: 'gallina', corral: 'pradera', variant: 0, shiny: false, left: 1, x: 100 + i * 30, y: 150 }); })()""")
+    page.wait_for_timeout(1600)
+    check("Nacieron 2 crías" in page.locator("#toast").inner_text(), "dos nacimientos juntos dan un solo aviso «¡Nacieron 2 crías!»")
+    page.locator("#toast").click()
+    page.wait_for_timeout(300)
+    check(page.locator("#sheetTitle").inner_text() == "Ponle nombre", "tocar el aviso abre el nombre de la primera cría")
+    page.keyboard.press("Escape")
+    check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
+    ctx.close()
+
+
 def main():
     server = subprocess.Popen([sys.executable, "-m", "http.server", str(PORT), "--bind", "127.0.0.1"],
                               cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -373,6 +416,7 @@ def main():
             identity_and_sound(browser, "pc", {"width": 1280, "height": 800}, 1, False)
             migration(browser)
             small_phone(browser)
+            stage0(browser)
             browser.close()
     finally:
         server.terminate()

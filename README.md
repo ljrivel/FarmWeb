@@ -19,7 +19,7 @@ Todo está en `BALANCE` y `SPECIES[..].variants` de `src/data.js`:
 | `shinyChance` | Brillante en una cría de padres comunes | 0.02 |
 | `shinyChanceParent` | Brillante si un padre es brillante | 0.15 |
 
-Los colores de cada especie van por orden de rareza (índices 0 y 1 comunes, 2 poco común, 3 raro; ver `VARIANT_TIERS`). Para cambiar el arte, edita las paletas de `tools/gen_sprites.py` y corre `python3 tools/gen_sprites.py`.
+Los colores de cada especie van por orden de rareza (índices 0 y 1 comunes, 2 poco común, 3 raro; ver `VARIANT_TIERS`). Para cambiar el arte, edita las paletas de `tools/gen_sprites.py` y corre `python3 tools/gen_sprites.py`. Cada JSON de sprites lleva un `version` (hash del PNG) que el juego usa como `?v=` al cargar la imagen, para que el navegador no mezcle un atlas viejo con el código nuevo.
 
 ### Antes (v0.2 — fase 1: corrales y mapa)
 

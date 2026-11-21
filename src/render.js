@@ -20,19 +20,20 @@ const loadImg = (src) => new Promise((res, rej) => {
   i.onerror = () => rej(new Error('No se pudo cargar ' + src));
   i.src = src;
 });
-const loadJson = (src) => fetch(src).then((r) => {
+const loadJson = (src) => fetch(src, { cache: 'no-cache' }).then((r) => {
   if (!r.ok) throw new Error('No se pudo cargar ' + src);
   return r.json();
 });
 
 export async function loadSprites() {
-  const [animalsImg, iconsImg, tilesImg, placesImg, animals, icons, tiles, places] = await Promise.all([
-    loadImg('assets/sprites/animals.png'), loadImg('assets/sprites/icons.png'),
-    loadImg('assets/sprites/tiles.png'), loadImg('assets/sprites/places.png'),
-    loadJson('assets/sprites/animals.json'), loadJson('assets/sprites/icons.json'),
-    loadJson('assets/sprites/tiles.json'), loadJson('assets/sprites/places.json'),
-  ]);
-  return { animalsImg, iconsImg, tilesImg, placesImg, animals, icons, tiles, places };
+  // El JSON se revalida siempre (barato); la imagen lleva ?v=<hash> para no mezclar un PNG viejo con el JS nuevo.
+  const names = ['animals', 'icons', 'tiles', 'places'];
+  const metas = await Promise.all(names.map((n) => loadJson(`assets/sprites/${n}.json`)));
+  const urls = Object.fromEntries(names.map((n, i) => [n, `assets/sprites/${n}.png${metas[i].version ? `?v=${metas[i].version}` : ''}`]));
+  const imgs = await Promise.all(names.map((n) => loadImg(urls[n])));
+  const [animals, icons, tiles, places] = metas;
+  const [animalsImg, iconsImg, tilesImg, placesImg] = imgs;
+  return { animalsImg, iconsImg, tilesImg, placesImg, animals, icons, tiles, places, urls };
 }
 
 /** Ajusta el lienzo al contenedor con escala entera en píxeles de dispositivo. */

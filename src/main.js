@@ -54,8 +54,8 @@ app.buyAnimal = (s) => {
 };
 app.renameAnimal = (id, raw) => {
   const r = sim.renameAnimal(app.w, id, raw);
+  report(r, undefined, 'named'); // primero se redibuja la tarjeta; así closeSheet sabe si el botón de antes sigue
   if (r.ok) ui.closeSheet();
-  report(r, undefined, 'named');
 };
 app.buyFood = (f, n) => report(sim.buyFood(app.w, f, n), undefined, 'buy');
 app.buildCorral = (tipo) => report(sim.buildCorral(app.w, tipo), undefined, 'build');
@@ -134,26 +134,34 @@ function advance(now) {
   const away = dt > 60_000;
   dt = Math.min(dt, MAX_OFFLINE_MS);
   const summary = {};
+  const babies = [];
   for (let left = dt; left > 0; left -= 30_000) {
     for (const e of sim.tick(w, Math.min(left, 30_000))) {
       summary[e.type] = (summary[e.type] || 0) + 1;
       if (away) continue;
-      if (e.type === 'hatch') {
-        const a = e.animal, rar = rarityOf(a);
-        const kind = { poco: 'poco común', raro: 'rara', brillante: 'brillante' }[rar];
-        const goName = () => { app.goTo(a.corral); app.selectedId = a.id; ui.refresh(); ui.askName(a.id, true); };
-        ui.toast(kind ? `¡Nació ${a.name}, una cría ${kind}!` : `¡Nació ${a.name}! Toca para ponerle nombre.`, 'ok', goName);
-        app.audio.play('hatch');
-        // la fanfarria de rareza llega cuando el crujido del huevo ya casi terminó (si no, el tope de notas la cortaría)
-        if (rar === 'brillante') setTimeout(() => app.audio.play('shiny'), 500);
-        else if (rar !== 'comun') setTimeout(() => app.audio.play('rare'), 500);
-      }
+      if (e.type === 'hatch') { babies.push(e.animal); continue; }
       else if (e.type === 'egg') { ui.toast(`${SPECIES[e.species].nombre} puso un huevo.`); app.audio.play('egg'); }
       else if (e.type === 'grown') { ui.toast(`¡${e.animal.name} creció!`); app.audio.play('grown'); }
     }
   }
   w.lastTick = now;
   if (away) ui.toast(welcomeBack(summary));
+  else if (babies.length) announceBirths(babies);
+}
+
+/** Un solo aviso por tanda de nacimientos; tocarlo abre el nombre de la primera cría si sigue en este mundo. */
+function announceBirths(babies) {
+  const a = babies[0];
+  const goName = () => {
+    if (!sim.isCurrent(app.w, a)) return; // se cargó otro mundo mientras tanto
+    app.goTo(a.corral); app.selectedId = a.id; ui.refresh(); ui.askName(a.id, true);
+  };
+  ui.toast(sim.hatchToast(babies), 'ok', goName);
+  app.audio.play('hatch');
+  // la fanfarria de rareza llega cuando el crujido del huevo ya casi terminó (si no, el tope de notas la cortaría)
+  const rars = babies.map(rarityOf);
+  if (rars.includes('brillante')) setTimeout(() => app.audio.play('shiny'), 500);
+  else if (rars.some((r) => r !== 'comun')) setTimeout(() => app.audio.play('rare'), 500);
 }
 
 // --------------------------------------------------------------- entrada
