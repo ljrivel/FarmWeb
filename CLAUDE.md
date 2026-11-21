@@ -22,9 +22,9 @@ El dueño es Luis Josué; **responde siempre en español**.
 | Qué | Comando |
 |---|---|
 | Jugar en local (PC y celular en la misma Wi-Fi) | doble clic a `iniciar.bat` o `npm start` |
-| Pruebas unitarias | `npm test` (deben pasar todas; hoy 118) |
+| Pruebas unitarias | `npm test` (deben pasar todas; hoy 123) |
 | Regenerar sprites | `npm run sprites` (Python + Pillow; escribe `assets/sprites/*`) |
-| Recorrido en navegador | `python tools/e2e_smoke.py <carpeta_capturas>` (Playwright + Chrome; hoy 157 comprobaciones) |
+| Recorrido en navegador | `python tools/e2e_smoke.py <carpeta_capturas>` (Playwright + Chrome; hoy 171 comprobaciones) |
 
 Tras un cambio visible, recarga con Ctrl+F5. El servidor local envía `Cache-Control: no-store`.
 Con `?debug` en la URL queda disponible `window.farmweb = { app, sim, audio }`.
@@ -48,8 +48,9 @@ Con `?debug` en la URL queda disponible `window.farmweb = { app, sim, audio }`.
 Hecho y subido a `main`: corrales y mapa, nombres, colores raros y brillantes, sonido, cuidado profundo (2B),
 historia hasta el Capítulo 5, secundarias en paralelo con Historial, 8 secretos, conejo y pato.
 Detalle y decisiones en `docs/NOTAS_MEJORAS_NOCTURNAS.md`.
-Retratos pixel art de los 7 personajes (`assets/sprites/portraits.*`, se ven en Misiones). El guion de la historia
-está en `docs/GUION_HISTORIA.md` (borrador por aprobar): sigue la Etapa B (escenas con diálogo).
+Retratos pixel art de los 7 personajes (`assets/sprites/portraits.*`, se ven en Misiones). Escenas con diálogo (Etapa B, 23 escenas del guion aprobado en `docs/GUION_HISTORIA.md`): `SCENES` en `data.js`,
+lógica en `src/story.js`, diálogo en `ui.js` (`playStory`), vistas guardadas en `w.story.seen`. `?sinescenas` las apaga
+(el e2e lo usa). Faltan las Etapas C (visitas ocasionales) y D (Diario).
 
 ## Pendiente
 

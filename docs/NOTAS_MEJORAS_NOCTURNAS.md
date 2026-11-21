@@ -127,3 +127,6 @@ arreglo: la tarjeta de un animal sano mostraba «null» desde el sub-paso 2 de l
   con 10 animales.
 - Retratos: atlas `portraits` (32×32, 7 personajes × normal/contento/triste), generado por `gen_sprites.py`,
   mostrado en `speaker()` de `ui.js`. Sin retrato, cae a la inicial de color.
+- Escenas con diálogo (Etapa B): 23 escenas enganchadas a misiones (`inicio:`/`fin:`) y a la primera enfermedad. Se
+  marcan vistas al empezar. Una partida sin `story` marca como vistas las de lo que ya ocurrió (no se repiten), pero
+  sí sale la de la misión activa. Campo nuevo `story.seen` con valor por defecto, sin subir `VERSION`.

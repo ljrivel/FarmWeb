@@ -432,6 +432,63 @@ export function createUI(app) {
     return h('p', { class: 'speaker' }, face(id, short ? 1 : 2, mood), h('span', null, h('strong', { text: c.nombre }), !short && h('span', { class: 'muted small', text: ` · ${c.rol}` })));
   }
 
+  // ------------------------------------------------------------ escenas
+  let storyEl = null;
+  const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /** Diálogo de una escena: toque o Enter avanzan (primero completan el texto), «Saltar» o Escape la cierran. */
+  function playStory(scene, onDone) {
+    let i = 0, shown = 0, timer = 0;
+    const portraitBox = h('div', { class: 'story-face' });
+    const nameEl = h('strong', { class: 'story-name' });
+    const textEl = h('p', { class: 'story-text', 'aria-live': 'polite' });
+    const next = btn('Siguiente', () => advance(), { cls: 'primary', key: 'story-next' });
+    const skip = btn('Saltar', () => end(), { cls: 'small', key: 'story-skip' });
+    storyEl = h('div', { class: 'story', role: 'dialog', 'aria-modal': 'true', 'aria-label': scene.title },
+      h('div', { class: 'story-card' }, h('div', { class: 'story-head' }, portraitBox, nameEl),
+        textEl, h('div', { class: 'story-actions' }, skip, next)));
+    const onKey = (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); end(); }
+      else if (e.key === 'Tab') { e.preventDefault(); (document.activeElement === next ? skip : next).focus(); }
+    };
+    function line() {
+      const [who, mood, text] = scene.lines[i];
+      portraitBox.replaceChildren(face(who, 3, mood));
+      nameEl.textContent = CHARACTERS[who]?.nombre || '';
+      next.textContent = i === scene.lines.length - 1 ? 'Seguir jugando' : 'Siguiente';
+      clearInterval(timer);
+      shown = reduceMotion() ? text.length : 0;
+      textEl.textContent = text.slice(0, shown);
+      if (shown < text.length) {
+        timer = setInterval(() => {
+          shown++;
+          textEl.textContent = text.slice(0, shown);
+          if (shown >= text.length) clearInterval(timer);
+        }, 22);
+      }
+    }
+    function advance() {
+      const text = scene.lines[i][2];
+      if (shown < text.length) { clearInterval(timer); shown = text.length; textEl.textContent = text; return; }
+      if (++i >= scene.lines.length) end(); else { app.audio?.play('tap'); line(); }
+    }
+    function end() {
+      clearInterval(timer);
+      document.removeEventListener('keydown', onKey, true);
+      storyEl?.remove();
+      storyEl = null;
+      lastStoryFocus?.isConnected && lastStoryFocus.focus?.();
+      onDone?.();
+    }
+    const lastStoryFocus = document.activeElement;
+    document.body.append(storyEl);
+    document.addEventListener('keydown', onKey, true);
+    app.audio?.play('open');
+    line();
+    next.focus();
+  }
+  /** Hay una hoja o una escena abiertas: no conviene empezar otra escena. */
+  const busy = () => !!current || !!storyEl;
+
   // ---- panel: misiones
   let historyOpen = false;
   /** Barra de progreso de una misión (con su texto). */
@@ -619,5 +676,5 @@ export function createUI(app) {
     document.addEventListener('keydown', trapTab);
   }
 
-  return { init, refresh, tickLight, toast, openPanel, closeSheet, icon, askName };
+  return { init, refresh, tickLight, toast, openPanel, closeSheet, icon, askName, playStory, busy };
 }

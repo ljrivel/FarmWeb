@@ -18,7 +18,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SHOTS = sys.argv[1] if len(sys.argv) > 1 else tempfile.mkdtemp(prefix="farmweb-shots-")
 PORT = 8123
 FIXTURE = os.path.join(ROOT, "tests", "fixtures", "mundo-v1.farmweb.json")
-URL = f"http://127.0.0.1:{PORT}/index.html?debug"
+URL = f"http://127.0.0.1:{PORT}/index.html?debug&sinescenas"  # sin escenas: no tapan los clics del recorrido
+URL_ESCENAS = f"http://127.0.0.1:{PORT}/index.html?debug"
 CHROME = next((p for p in ("/usr/bin/google-chrome", "/usr/bin/chromium") if os.path.exists(p)), None)
 problems = []
 
@@ -529,6 +530,34 @@ def new_content(browser):
     ctx.close()
 
 
+def story_scenes(browser, name, viewport, dpr, mobile):
+    print(f"\n== escenas con diálogo {name} {viewport}")
+    ctx = browser.new_context(viewport=viewport, device_scale_factor=dpr, is_mobile=mobile, has_touch=mobile)
+    page = ctx.new_page()
+    errors = []
+    page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(URL_ESCENAS)
+    page.wait_for_function("document.getElementById('loading').hidden === true", timeout=15000)
+    page.wait_for_selector(".story", timeout=5000)
+    check(page.locator(".story").get_attribute("aria-label") == "El sobre mojado", "la partida nueva abre la escena de Bruno")
+    check(page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1"), "la escena no desborda en horizontal")
+    page.wait_for_timeout(1200)
+    page.screenshot(path=f"{SHOTS}/{name}-30-escena.png")
+    page.locator('[data-key="story-next"]').click()  # completa la línea
+    page.locator('[data-key="story-next"]').click()  # pasa a la siguiente
+    page.wait_for_function("document.querySelector('.story-text').textContent.includes('Traigo un sobre')", timeout=4000)
+    check(True, "avanza a la segunda línea (el texto se va escribiendo)")
+    page.locator('[data-key="story-skip"]').click()
+    check(page.locator(".story").count() == 0, "Saltar cierra la escena")
+    check(page.evaluate("farmweb.app.w.story.seen['sobre-mojado']") is True, "la escena queda marcada como vista")
+    page.wait_for_timeout(2500)
+    check(page.locator(".story").count() == 0, "no se repite")
+    page.keyboard.press("Escape")
+    check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
+    ctx.close()
+
+
 def main():
     server = subprocess.Popen([sys.executable, "-m", "http.server", str(PORT), "--bind", "127.0.0.1"],
                               cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -548,6 +577,8 @@ def main():
             side_quests(browser)
             secrets(browser)
             new_content(browser)
+            story_scenes(browser, "movil", {"width": 390, "height": 844}, 3, True)
+            story_scenes(browser, "pc", {"width": 1280, "height": 800}, 1, False)
             browser.close()
     finally:
         server.terminate()

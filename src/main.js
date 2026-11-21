@@ -8,6 +8,7 @@ import { newWorld, getCorral, resolveScene } from './state.js';
 import { store, downloadWorld, readWorldFile } from './storage.js';
 import { MAX_OFFLINE_MS, SPECIES, DISEASES, SECRETS, rarityOf } from './data.js';
 import { createAudio } from './audio.js';
+import { nextScene } from './story.js';
 
 const app = { w: null, sprites: null, scene: 'pradera', selectedId: null, fx: [], lastSaved: 0, k: 1, audio: null };
 // El sonido es opcional: sin localStorage o sin AudioContext el juego sigue igual, en silencio.
@@ -247,6 +248,15 @@ function konamiKey(e) {
   konamiAt = k === KONAMI[konamiAt] ? konamiAt + 1 : (k === KONAMI[0] ? 1 : 0);
   if (konamiAt === KONAMI.length) { konamiAt = 0; wave(); }
 }
+/** Cuenta la siguiente escena pendiente cuando no hay otra hoja abierta. `?sinescenas` las apaga (para las pruebas). */
+const STORY_ON = !location.search.includes('sinescenas');
+function checkStory() {
+  if (!STORY_ON || document.hidden || ui.busy()) return;
+  const s = nextScene(app.w);
+  if (!s) return;
+  app.w.story.seen[s.id] = true; // se marca al empezar: si se cierra la pestaña, no se repite
+  ui.playStory(s, () => saveNow(false));
+}
 /** Secretos que dependen del estado o de la hora (se revisan cada segundo). */
 function checkSecrets() {
   for (const id of sim.secretsByState(app.w)) app.secret(id);
@@ -298,7 +308,7 @@ async function boot() {
     last = t;
     sim.wander(app.w, dt);
     const now = Date.now();
-    if (now - app.w.lastTick >= 1000) { advance(now); checkSecrets(); ui.tickLight(); }
+    if (now - app.w.lastTick >= 1000) { advance(now); checkSecrets(); checkStory(); ui.tickLight(); }
     ctx.setTransform(app.k, 0, 0, app.k, 0, 0);
     draw(ctx, app.sprites, app.w, app, t);
     requestAnimationFrame(frame);

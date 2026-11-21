@@ -427,3 +427,13 @@ body.sheet-open .toast.show { animation: none; }
   .chip-btn.done, #collectAll:not([hidden]), .toast.show, #selected { animation: none; }
 }
 #collectAll { gap: 0; } /* el número va pegado a los paréntesis */
+
+/* ---------- escenas con diálogo ---------- */
+.story { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-end; justify-content: center; padding: 12px; background: rgba(74, 51, 71, .35); }
+.story-card { width: 100%; max-width: 560px; display: grid; gap: 10px; padding: 14px 16px calc(14px + env(safe-area-inset-bottom)); background: var(--paper); border: 2px solid var(--line); border-radius: 20px; animation: up .18s ease-out; }
+.story-head { display: flex; align-items: flex-end; gap: 10px; }
+.story-name { font-size: 1.05rem; padding-bottom: 6px; }
+.story-text { margin: 0; min-height: 4.5em; line-height: 1.5; }
+.story-actions { display: flex; justify-content: space-between; gap: 10px; }
+@media (min-width: 700px) { .story { align-items: center; } }
+@media (prefers-reduced-motion: reduce) { .story-card { animation: none; } }
