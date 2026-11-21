@@ -76,3 +76,48 @@ test('cada acción se da por hecha solo cuando el jugador la hace', () => {
   assert.equal(stepDone(paso('acariciar'), { w, selectedId: 1, base }), true);
   assert.equal(stepDone(paso('hola'), { w, selectedId: 1, base }), false, 'un paso sin acción nunca avanza solo');
 });
+
+// ---- mini lecciones por mecánica nueva
+import { LESSONS, lessonDue, pastLessons, lessonOpen } from '../src/tutorial.js';
+import { CHARACTERS } from '../src/data.js';
+
+test('las lecciones están bien formadas: narrador existente, ids únicos y textos cortos', () => {
+  assert.equal(new Set(LESSONS.map((l) => l.id)).size, LESSONS.length);
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const ui = readFileSync(new URL('../src/ui.js', import.meta.url), 'utf8');
+  for (const l of LESSONS) {
+    assert.ok(CHARACTERS[l.who], `${l.id}: narrador`);
+    assert.ok(l.steps.length >= 2 && l.title, l.id);
+    for (const s of l.steps) {
+      assert.ok(s.text.length > 10 && s.text.length <= 200, `${l.id}/${s.id}: ${s.text.length} letras`);
+      if (s.target && s.target !== 'animal') {
+        const [raíz] = s.target.split(' ');
+        if (raíz === '#selected') assert.ok(ui.includes(s.target.match(/data-key="(\w+)"/)?.[1] ?? s.target.split('.')[1]), `${l.id}/${s.id}`);
+        else assert.ok(html.includes(`id="${raíz.slice(1)}"`), `${l.id}/${s.id}`);
+      }
+    }
+  }
+});
+
+test('cada lección sale en su capítulo (o al abrir el Laboratorio), una vez y en orden', () => {
+  const w = fresh();
+  assert.equal(lessonDue(w, {}, 1), null, 'en el capítulo 1 solo está el tutorial');
+  assert.equal(lessonDue(w, {}, 2).id, 'vender');
+  assert.equal(lessonDue(w, { vender: true }, 2).id, 'criadero');
+  assert.equal(lessonDue(w, { vender: true, criadero: true }, 3).id, 'salud');
+  const hasta3 = { vender: true, criadero: true, salud: true };
+  assert.equal(lessonDue(w, hasta3, 5), null, 'el laboratorio espera a abrirse');
+  w.lab.built = true;
+  assert.equal(lessonDue(w, hasta3, 5).id, 'lab');
+  assert.equal(lessonDue(w, { ...hasta3, lab: true }, 6).id, 'mao');
+  assert.equal(lessonDue(w, { ...hasta3, lab: true, mao: true }, 8).id, 'estacion');
+});
+
+test('una partida avanzada no repite las lecciones de capítulos anteriores, pero puede verlas desde Mundo', () => {
+  assert.deepEqual(Object.keys(pastLessons(3)).sort(), ['criadero', 'vender']);
+  assert.deepEqual(pastLessons(1), {});
+  const w = fresh();
+  assert.equal(lessonOpen(w, LESSONS.find((l) => l.id === 'mao'), 5), false);
+  assert.equal(lessonOpen(w, LESSONS.find((l) => l.id === 'mao'), 6), true);
+  assert.equal(lessonOpen(w, LESSONS.find((l) => l.id === 'lab'), 9), false);
+});

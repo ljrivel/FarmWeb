@@ -1,7 +1,7 @@
 // Interfaz en DOM: barra superior, tarjeta del animal, paneles y avisos.
 // Todo el texto dinámico se inserta con textContent / nodos de texto (nunca innerHTML).
 
-import { TUTORIAL_STEPS, stepSkipped, nextIndex, stepDone } from './tutorial.js';
+import { TUTORIAL_STEPS, LESSONS, lessonOpen, stepSkipped, nextIndex, stepDone } from './tutorial.js';
 import { chapterNow } from './story.js';
 import { LATIDO, latidoPos, latidoHit, HERBS, herbRound, herbOk } from './vetgames.js';
 import { BASES, PAIR, makeStrand } from './genetica.js';
@@ -80,7 +80,8 @@ export function createUI(app) {
 
   /** «Gato naranja»; el brillante no repite su rareza aquí porque ya lleva su etiqueta. */
   const kindName = (a) => SPECIES[a.species].nombre + (a.shiny ? '' : ` ${SPECIES[a.species].variants[a.variant].toLowerCase()}`);
-  const stageName = (a) => (a.stage === 'baby' ? 'bebé' : 'adulto');
+  /** Etapa de desarrollo como etiqueta (con texto: el color nunca va solo). */
+  const stageBadge = (a) => h('span', { class: `stage ${a.stage}`, text: a.stage === 'baby' ? 'Bebé' : 'Adulto' });
   /** Etiqueta de rareza; los comunes no llevan. */
   const rarityBadge = (a) => (rarityOf(a) === 'comun' ? null
     : h('span', { class: `rarity ${rarityOf(a)}`, text: rarityLabel(a) }));
@@ -180,7 +181,7 @@ export function createUI(app) {
       selectedSig = '';
       return;
     }
-    const sig = JSON.stringify([a.id, a.stage, a.ready > 0, a.petCd > 0, a.fed >= 95, w.foods, a.name, a.named, a.hearts, a.sick]);
+    const sig = JSON.stringify([a.id, a.stage, w.animals.length, a.away, a.ready > 0, a.petCd > 0, a.fed >= 95, w.foods, a.name, a.named, a.hearts, a.sick]);
     root.hidden = false;
     if (sig === selectedSig) return;
     selectedSig = sig;
@@ -191,7 +192,7 @@ export function createUI(app) {
         portrait(a.species, a.variant, a.stage, 2, a.shiny),
         h('div', { class: 'sel-title' },
           h('h2', { text: a.name }),
-          h('p', { class: 'muted' }, `${kindName(a)} · ${stageName(a)} `, rarityBadge(a)),
+          h('p', { class: 'muted' }, `${kindName(a)} `, stageBadge(a), ' ', rarityBadge(a)),
           hearts(a),
           h('p', { class: 'small', 'data-live': 'info', 'data-id': String(a.id), text: liveInfo(a) })),
         h('button', { class: 'btn small', type: 'button', 'aria-label': 'Cerrar tarjeta', onclick: () => { app.selectedId = null; refresh(); } }, '✕')),
@@ -203,7 +204,9 @@ export function createUI(app) {
         h('button', { class: 'btn', type: 'button', 'data-key': 'pet', disabled: a.petCd > 0, onclick: () => app.pet(a.id) },
           icon('heart', 1), a.petCd > 0 ? 'Mimado' : 'Acariciar'),
         h('button', { class: `btn${a.named === false ? ' highlight' : ''}`, type: 'button', onclick: () => askName(a.id, false) },
-          a.named === false ? 'Ponle nombre' : 'Cambiar nombre')),
+          a.named === false ? 'Ponle nombre' : 'Cambiar nombre'),
+        h('button', { class: 'btn', type: 'button', 'data-key': 'sell', title: sim.canSellAnimal(w, a).msg || undefined, disabled: !sim.canSellAnimal(w, a).ok, onclick: () => askSell(a.id) },
+          icon('coin', 1), `Vender (+${sim.sellPrice(a)})`)),
       foods.length
         ? h('div', { class: 'foods', role: 'group', 'aria-label': 'Dar de comer' },
           h('span', { class: 'meter-label', text: 'Dar de comer' }),
@@ -280,7 +283,7 @@ export function createUI(app) {
     const content = h('div', { class: 'name-dialog' },
       h('div', { class: 'name-head' },
         portrait(a.species, a.variant, a.stage, 3, a.shiny),
-        h('p', { class: 'muted' }, `${kindName(a)} · ${stageName(a)} `, rarityBadge(a))),
+        h('p', { class: 'muted' }, `${kindName(a)} `, stageBadge(a), ' ', rarityBadge(a))),
       h('label', { class: 'meter-label', for: 'animalName', text: 'Nombre' }), input,
       h('p', { id: 'animalNameHint', class: 'muted small', text: 'Hasta 24 letras. Puedes cambiarlo cuando quieras.' }),
       h('div', { class: 'actions' },
@@ -289,6 +292,31 @@ export function createUI(app) {
     openSheet('name', isNew || a.named === false ? 'Ponle nombre' : 'Cambiar nombre', () => content, {
       keep: true, focus: () => { input.focus(); input.select(); },
     });
+  }
+
+  /** Aviso si la misión activa pide a este animal o esa cantidad. */
+  function sellWarning(w, a) {
+    const g = activeQuest(w)?.goal;
+    if (g?.type === 'owncount' && w.animals.length - 1 < g.n) return `Ojo: la misión activa pide ${g.n} animales.`;
+    if (g?.type === 'own' && g.species === a.species && (!g.stage || g.stage === a.stage)) return 'Ojo: la misión activa necesita a este animal.';
+    return null;
+  }
+  // ---- diálogo para confirmar la venta de un animal (no se deshace)
+  function askSell(id) {
+    const render = () => {
+      const w = W(), a = sim.find(w, id);
+      if (!a) return h('p', { class: 'muted', text: 'Ese animal ya no está.' });
+      const c = sim.canSellAnimal(w, a), gain = sim.sellPrice(a), warn = sellWarning(w, a);
+      return h('div', { class: 'name-dialog' },
+        h('div', { class: 'name-head' }, portrait(a.species, a.variant, a.stage, 3, a.shiny),
+          h('p', { class: 'muted' }, h('strong', { text: a.name }), ` · ${kindName(a)} `, stageBadge(a), ' ', rarityBadge(a))),
+        h('p', { text: c.ok ? `¿Vender a ${a.name} por ${gain} monedas? No se puede deshacer.` : c.msg }),
+        warn && h('p', { class: 'warn small', text: warn }),
+        h('div', { class: 'actions' },
+          btn(`Vender por ${gain}`, () => app.sellAnimal(id), { cls: 'primary', disabled: !c.ok, key: 'sell-confirm' }),
+          btn('Mejor no', closeSheet, { key: 'sell-cancel' })));
+    };
+    openSheet('sell', 'Vender animal', render, { focus: () => body().querySelector('[data-key="sell-cancel"]')?.focus() });
   }
 
   // ---- panel: animales (agrupados por corral)
@@ -328,10 +356,11 @@ export function createUI(app) {
           portrait(a.species, a.variant, a.stage, 2, a.shiny),
           h('div', { class: 'grow' },
             h('strong', { text: a.name }), ' ', hearts(a),
-            h('div', { class: 'muted small', text: `${kindName(a)} · ${stageName(a)}${rarityOf(a) === 'comun' ? '' : ` · ${rarityLabel(a)}`}${a.ready ? ` · ${a.ready} listo${a.ready > 1 ? 's' : ''}` : ''}${a.named === false ? ' · sin bautizar' : ''}${a.away ? ' · en el Criadero' : ''}` }),
+            h('div', { class: 'muted small' }, `${kindName(a)} `, stageBadge(a), ` ${rarityOf(a) === 'comun' ? '' : `· ${rarityLabel(a)}`}${a.ready ? ` · ${a.ready} listo${a.ready > 1 ? 's' : ''}` : ''}${a.named === false ? ' · sin bautizar' : ''}${a.away ? ' · en el Criadero' : ''}`),
             sickNote(a, false),
             h('div', { class: 'meters tight' }, bar('fed', a), bar('happy', a))),
-          btn(a.away ? 'En el nido' : 'Ver', () => { closeSheet(); app.goTo(a.corral); app.selectedId = a.id; refresh(); }, { key: `ver-${a.id}`, disabled: !!a.away })))
+          btn(a.away ? 'En el nido' : 'Ver', () => { closeSheet(); app.goTo(a.corral); app.selectedId = a.id; refresh(); }, { key: `ver-${a.id}`, disabled: !!a.away }),
+          btn(`Vender +${sim.sellPrice(a)}`, () => askSell(a.id), { key: `sell-${a.id}`, cls: 'small', disabled: !sim.canSellAnimal(w, a).ok })))
           : h('p', { class: 'muted small', text: 'Aún no hay animales aquí.' }));
     });
     const { used, capacity } = totals(w);
@@ -751,21 +780,22 @@ export function createUI(app) {
     return r.width && r.height ? r : null;
   }
   /** Guía de Tomás paso a paso: ilumina lo que explica y deja pasar los toques para hacerlo de verdad. */
-  function startTutorial(onDone) {
+  function startTutorial(onDone, lesson = null) {
     if (tutoEl) return;
+    const steps = lesson ? lesson.steps : TUTORIAL_STEPS, who = lesson?.who || 'tomas';
     let i = 0, base = {}, timer = 0, celebrating = 0, raf = 0;
     const sceneBefore = app.scene === 'mapa' ? (W().animals[0]?.corral || 'pradera') : app.scene;
     const faceBox = h('div', { class: 'tuto-face' });
     const textEl = h('p', { class: 'tuto-text' });
     const stepEl = h('span', { class: 'muted small' });
     const next = btn('Siguiente', () => go(), { cls: 'primary', key: 'tuto-next' });
-    const skip = btn('Saltar tutorial', () => end(), { cls: 'small', key: 'tuto-skip' });
+    const skip = btn(lesson ? 'Saltar lección' : 'Saltar tutorial', () => end(), { cls: 'small', key: 'tuto-skip' });
     const hole = h('div', { class: 'tuto-hole' });
     const card = h('section', { class: 'tuto-card', role: 'region', 'aria-label': 'Tutorial' },
-      h('div', { class: 'tuto-head' }, faceBox, h('div', null, h('strong', { text: CHARACTERS.tomas.nombre }), h('div', null, stepEl))),
+      h('div', { class: 'tuto-head' }, faceBox, h('div', null, h('strong', { text: CHARACTERS[who].nombre }), h('div', null, stepEl))),
       textEl, h('div', { class: 'story-actions' }, skip, next));
     tutoEl = h('div', { class: 'tuto' }, hole, card);
-    const step = () => TUTORIAL_STEPS[i];
+    const step = () => steps[i];
     function place() {
       const sheetOpen = !!current;
       // con un panel abierto el foco es el panel: nada se oscurece encima y la tarjeta se va arriba
@@ -795,16 +825,16 @@ export function createUI(app) {
       if (st.scene) app.goTo(st.scene, true);
       else if (app.scene === 'mapa') app.goTo(sceneBefore, true);
       if (st.act === 'select') { app.selectedId = null; refresh(); }
-      faceBox.replaceChildren(face('tomas', 2, st.mood || 0));
+      faceBox.replaceChildren(face(who, 2, st.mood || 0));
       textEl.textContent = st.text;
-      stepEl.textContent = `Paso ${i + 1} de ${TUTORIAL_STEPS.length}`;
+      stepEl.textContent = `${lesson ? `${lesson.title} · ` : ''}Paso ${i + 1} de ${steps.length}`;
       next.disabled = false;
-      next.textContent = st.act ? 'Saltar paso' : (nextIndex(i, W()) >= TUTORIAL_STEPS.length ? 'Terminar' : 'Siguiente');
+      next.textContent = st.act ? 'Saltar paso' : (nextIndex(i, W(), steps) >= steps.length ? 'Terminar' : 'Siguiente');
       place();
     }
     function go() {
-      i = nextIndex(i, W());
-      if (i >= TUTORIAL_STEPS.length) end(); else begin();
+      i = nextIndex(i, W(), steps);
+      if (i >= steps.length) end(); else begin();
     }
     function tick() {
       if (!tutoEl) return;
@@ -834,7 +864,8 @@ export function createUI(app) {
     const onKey = (e) => { if (e.key === 'Escape' && !e.defaultPrevented) end(); }; // la hoja abierta se cierra primero
     document.body.append(tutoEl);
     document.addEventListener('keydown', onKey);
-    i = TUTORIAL_STEPS.findIndex((st) => !stepSkipped(st, W()));
+    i = steps.findIndex((st) => !stepSkipped(st, W()));
+    if (i < 0) { end(); return; }
     begin();
     timer = setInterval(tick, 250);
     const follow = () => { if (!tutoEl) return; place(); raf = requestAnimationFrame(follow); }; // el recuadro sigue al elemento aunque se mueva o cambie de tamaño
@@ -953,7 +984,11 @@ export function createUI(app) {
     return h('section', { class: 'group', 'aria-labelledby': 'tutoTitle' },
       h('h3', { id: 'tutoTitle', text: 'Tutorial' }),
       row(h('div', { class: 'grow muted small', text: 'Tomás te enseña otra vez lo básico de la granja.' }),
-        btn('Ver otra vez', () => { closeSheet(); app.startTutorial(); }, { key: 'tuto-replay' })));
+        btn('Ver otra vez', () => { closeSheet(); app.startTutorial(); }, { key: 'tuto-replay' })),
+      h('h3', { text: 'Lecciones' }),
+      LESSONS.filter((l) => lessonOpen(W(), l, chapterNow(W()))).map((l) => row(
+        face(l.who, 1), h('div', { class: 'grow' }, h('strong', { text: l.title }), h('div', { class: 'muted small', text: `Con ${CHARACTERS[l.who].nombre}` })),
+        btn('Ver', () => { closeSheet(); app.startLesson(l.id); }, { key: `lesson-${l.id}`, cls: 'small' }))));
   }
 
   // ---- sección de sonido del panel Mundo (se guarda en este dispositivo, no en el archivo del mundo)

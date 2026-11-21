@@ -22,9 +22,9 @@ El dueño es Luis Josué; **responde siempre en español**.
 | Qué | Comando |
 |---|---|
 | Jugar en local (PC y celular en la misma Wi-Fi) | doble clic a `iniciar.bat` o `npm start` |
-| Pruebas unitarias | `npm test` (deben pasar todas; hoy 179) |
+| Pruebas unitarias | `npm test` (deben pasar todas; hoy 185) |
 | Regenerar sprites | `npm run sprites` (Python + Pillow; escribe `assets/sprites/*`) |
-| Recorrido en navegador | `python tools/e2e_smoke.py <carpeta_capturas>` (Playwright + Chrome; hoy 339 comprobaciones) |
+| Recorrido en navegador | `python tools/e2e_smoke.py <carpeta_capturas>` (Playwright + Chrome; hoy 358 comprobaciones) |
 
 Tras un cambio visible, recarga con Ctrl+F5. El servidor local envía `Cache-Control: no-store`.
 Con `?debug` en la URL queda disponible `window.farmweb = { app, sim, audio }`. `?sinescenas` y `?sintutorial` apagan las
@@ -62,8 +62,8 @@ compran y crían (porg, gato loth, tauntaun, bantha, purrgil, dewback, ewok, Gro
 cobrar la leche azul). Sitio privado y sin fines de lucro, según el dueño.
 Criadero (lugar único del mapa, `CRIADERO_SPOT`; `w.criadero = { built, level, lanes }`, `a.away`, `corral.breed`): cupos con
 nido → huevo en incubadora → eclosión, «Darle calor», niveles 0 a 4, cría automática por defecto y «manual» por corral. Los
-padres en el nido están ausentes (sin hambre ni ánimo, ni dibujados). Todo en `BALANCE.criadero*` y `heat*`. Los 6 dinosaurios ya
-tienen precio y se compran en la Tienda cuando se desbloquean (antes `price: null` los ocultaba).
+padres en el nido están ausentes (sin hambre ni ánimo, ni dibujados). Todo en `BALANCE.criadero*` y `heat*`. Los 6 dinosaurios tienen
+precio y se listan en la Tienda, pero se replican en el Laboratorio (ver abajo).
 Mao Mao (retrato pixel art chibi de gato, id `mao`) atiende la Veterinaria desde el Capítulo 6 mientras la Dra. Pita está de viaje:
 Pita se despide en la escena `una-boticaria-nueva` (al terminar el festival), sus visitas llevan `maxCh: 5` y las líneas de los
 capítulos 6 a 8 las dice Mao Mao.
@@ -84,6 +84,13 @@ doctora de turno): los dinosaurios ya no se compran, se **replican** (`replicate
 `src/genetica.js`, panel `lab` en `ui.js`, `BALANCE.lab*`). Resultado por errores: perfecta (−25 % de costo, más color raro), buena, inestable (devuelven 50 %), fallida
 (se pierde); el cobro es al terminar, salir antes es gratis. Partidas viejas que ya pasaron el capítulo 4 reciben esas misiones hechas y el Laboratorio abierto
 (migración en `validateWorld`, sin subir `VERSION`). Personaje nuevo `helice` (Señor Hélice). Sin hacer: las «lagunas de ADN de rana» del guion.
+Vender animales (`sellPrice`, `canSellAnimal`, `sellAnimal` en `sim.js`; `BALANCE.sell*`; `stats.soldAnimals`): bebé 25 % y adulto 50 % del precio de la
+especie, por la rareza (poco ×1,5, raro ×2,5, brillante ×4); no se vende un enfermo, uno del nido ni el último animal. Botón en la tarjeta y en la lista de
+Animales, con confirmación (`askSell` en `ui.js`). La etapa se ve como etiqueta (`stageBadge`: Bebé / Adulto).
+Mini lecciones por mecánica nueva (`LESSONS` en `src/tutorial.js`: vender, Criadero, enfermedades, Laboratorio, Mao Mao y Estación; las cuentan Tomás, Pita,
+el Señor Hélice, Mao Mao y Noa): salen solas al llegar a su capítulo (el Laboratorio, al abrirse), tras el tutorial y las escenas, y se guardan en
+`farmweb:ui:v1` (`lessons`); una partida avanzada no repite las de capítulos anteriores y las repite desde Mundo → Lecciones. `startTutorial(onDone, lesson)`
+sirve para ambos. Una mecánica nueva en el futuro = una lección más en `LESSONS`.
 `tests/historia-completa.test.mjs` recorre toda la historia: añade ahí cualquier capítulo nuevo sin tocar más.
 
 ## Pendiente

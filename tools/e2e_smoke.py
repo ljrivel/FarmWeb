@@ -1108,6 +1108,104 @@ def lab_flow(browser):
     ctx.close()
 
 
+def venta_lecciones(browser):
+    print("\n== vender animales y mini lecciones por capítulo")
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    page = ctx.new_page()
+    errors = []
+    page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(URL)
+    page.wait_for_function("document.getElementById('loading').hidden === true", timeout=15000)
+    page.evaluate("""(async () => {
+      const { addAnimal } = await import('/src/state.js');
+      const w = farmweb.app.w;
+      w.animals.length = 0;
+      window.__ids = [addAnimal(w, 'vaca', 0, 'baby').id, addAnimal(w, 'vaca', 0, 'adult').id, addAnimal(w, 'gato', 3, 'adult').id];
+      farmweb.app.selectedId = window.__ids[0];
+      farmweb.app.ui?.refresh?.();
+    })()""")
+    page.evaluate("farmweb.app.goTo('pradera', true)")
+    page.evaluate("farmweb.app.selectedId = window.__ids[0]")
+    page.wait_for_selector('#selected [data-key="sell"]', timeout=3000)
+    check("Bebé" in page.locator("#selected").inner_text(), "la tarjeta muestra la etapa: Bebé")
+    check("Vender (+" in page.locator('#selected [data-key="sell"]').inner_text(), "y cuánto pagan por venderlo")
+    page.screenshot(path=f"{SHOTS}/movil-90-tarjeta-vender.png")
+    page.locator('#selected [data-key="sell"]').click()
+    page.wait_for_selector('[data-key="sell-confirm"]', timeout=3000)
+    page.screenshot(path=f"{SHOTS}/movil-91-confirmar-venta.png")
+    page.locator('[data-key="sell-cancel"]').click()
+    check(page.evaluate("farmweb.app.w.animals.length") == 3, "«Mejor no» no vende nada")
+    pagan = page.evaluate("farmweb.sim.sellPrice(farmweb.app.w.animals[1])")
+    monedas = page.evaluate("farmweb.app.w.coins")
+    page.evaluate("farmweb.app.selectedId = window.__ids[1]")
+    page.wait_for_function("document.querySelector('#selected').innerText.includes('Adulto')", timeout=4000)
+    page.locator('#selected [data-key="sell"]').click()
+    check("Adulto" in page.locator("#sheetBody").inner_text(), "el diálogo también dice la etapa")
+    page.locator('[data-key="sell-confirm"]').click()
+    page.wait_for_timeout(300)
+    check(page.evaluate("farmweb.app.w.animals.length") == 2 and page.evaluate("farmweb.app.w.coins") == monedas + pagan, "vender un adulto lo quita y paga su precio")
+    check(page.evaluate("farmweb.app.selectedId") is None, "y la tarjeta se cierra")
+    page.evaluate("farmweb.app.w.animals[0].sick = 'resfriado'")
+    page.evaluate("farmweb.app.selectedId = window.__ids[0]")
+    page.wait_for_function("document.querySelector('#selected [data-key=sell]')?.disabled", timeout=4000)
+    check(page.locator('#selected [data-key="sell"]').is_disabled(), "un animal enfermo no se puede vender")
+    page.evaluate("farmweb.app.w.animals[0].sick = undefined")
+    page.click('[data-panel="animals"]')
+    check(page.locator(f'[data-key="sell-{page.evaluate("window.__ids[2]")}"]').is_enabled(), "en la lista de Animales también hay botón de vender")
+    page.locator(f'[data-key="sell-{page.evaluate("window.__ids[2]")}"]').click()
+    page.locator('[data-key="sell-confirm"]').click()
+    page.wait_for_timeout(300)
+    check(page.evaluate("farmweb.app.w.animals.length") == 1, "desde la lista se vende igual")
+    page.click('[data-panel="animals"]')
+    check(page.locator(f'[data-key="sell-{page.evaluate("window.__ids[0]")}"]').is_disabled(), "el último animal no se puede vender")
+    page.keyboard.press("Escape")
+    check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
+    ctx.close()
+
+    # lecciones: salen solas al llegar a cada capítulo, una vez y en orden
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
+    page = ctx.new_page()
+    errors = []
+    page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(f"http://127.0.0.1:{PORT}/index.html?debug&sinescenas")
+    page.wait_for_function("document.getElementById('loading').hidden === true", timeout=15000)
+    page.wait_for_selector(".tuto-card", timeout=5000)
+    page.locator('[data-key="tuto-skip"]').click()
+    page.wait_for_timeout(2500)  # en el capítulo 1 no sale ninguna lección: así no cuentan como «de antes»
+    page.evaluate("""(async () => {
+      const { QUESTS } = await import('/src/data.js');
+      const w = farmweb.app.w;
+      for (const q of QUESTS) { if (q.id === 'c4-grieta') break; w.quests.claimed[q.id] = true; }
+      w.lab.built = true;
+    })()""")
+    vistas = []
+    for _ in range(4):
+        page.wait_for_selector(".tuto-card", timeout=5000)
+        vistas.append(page.locator(".tuto-head .muted").inner_text().split(" · ")[0])
+        if len(vistas) == 1:
+            check("Tomás" in page.locator(".tuto-head strong").inner_text(), "la primera lección la cuenta Tomás")
+            page.screenshot(path=f"{SHOTS}/movil-92-leccion-vender.png")
+        if vistas[-1] == "El Laboratorio":
+            check("Señor Hélice" in page.locator(".tuto-head strong").inner_text(), "la del Laboratorio la cuenta el Señor Hélice")
+            page.screenshot(path=f"{SHOTS}/movil-93-leccion-laboratorio.png")
+        page.locator('[data-key="tuto-skip"]').click()
+        page.wait_for_timeout(1300)
+    check(vistas == ["Vender animales", "El Criadero", "Enfermedades", "El Laboratorio"], f"las lecciones salen en orden y una vez ({vistas})")
+    page.wait_for_timeout(1500)
+    check(page.locator(".tuto-card").count() == 0, "y no se repiten")
+    check(set(page.evaluate("JSON.parse(localStorage.getItem('farmweb:ui:v1')).lessons")) == {"vender", "criadero", "salud", "lab"}, "lo visto se guarda en este dispositivo")
+    page.click('[data-panel="world"]')
+    check(page.locator('[data-key="lesson-lab"]').count() == 1 and page.locator('[data-key="lesson-mao"]').count() == 0, "Mundo lista las lecciones ya alcanzadas")
+    page.locator('[data-key="lesson-vender"]').click()
+    page.wait_for_selector(".tuto-card", timeout=3000)
+    check("Vender animales" in page.locator(".tuto-head .muted").inner_text(), "y se pueden repetir")
+    page.locator('[data-key="tuto-skip"]').click()
+    check(not errors, "sin errores de consola" + (f": {errors[:3]}" if errors else ""))
+    ctx.close()
+
+
 def auto_update(browser):
     print("\n== actualización automática")
     ctx = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
@@ -1252,6 +1350,7 @@ def main():
             mao_mao(browser)
             criadero_flow(browser)
             lab_flow(browser)
+            venta_lecciones(browser)
             auto_update(browser)
             vet_interactiva(browser)
             tutorial_flow(browser, "movil", {"width": 390, "height": 844}, 3, True)

@@ -540,6 +540,27 @@ export function setCorralBreed(w, corralId, mode) {
   return ok(mode === 'manual' ? `En ${c.nombre} ahora solo se cría en el Criadero.` : `En ${c.nombre} la cría vuelve a ser automática.`);
 }
 
+// ------------------------------------------------------------------ venta de animales
+/** Lo que pagan por un animal: depende de su etapa (bebé o adulto) y de la rareza de su color. */
+export const sellPrice = (a) => Math.max(1, Math.round(SPECIES[a.species].price * (a.stage === 'baby' ? BALANCE.sellBabyPct : BALANCE.sellAdultPct) * BALANCE.sellRarityMul[rarityOf(a)]));
+export function canSellAnimal(w, a) {
+  if (!a) return no('Ese animal ya no está.');
+  if (a.away) return no(`${a.name} está en el nido del Criadero.`);
+  if (a.sick) return no(`${a.name} está enfermo: cúralo primero.`);
+  if (w.animals.length <= 1) return no('No puedes vender el último animal de la granja.');
+  return ok('');
+}
+export function sellAnimal(w, id) {
+  const a = find(w, id);
+  const c = canSellAnimal(w, a);
+  if (!c.ok) return c;
+  const gain = sellPrice(a);
+  w.animals.splice(w.animals.indexOf(a), 1);
+  w.coins += gain;
+  w.stats.soldAnimals++;
+  return ok(`Vendiste a ${a.name} por ${gain} monedas.`, { gain });
+}
+
 // ------------------------------------------------------------------ Laboratorio
 const labLevel = (w) => w.lab.level;
 export function labInfo(w) {

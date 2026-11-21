@@ -8,7 +8,8 @@ import { newWorld, getCorral, resolveScene } from './state.js';
 import { store, downloadWorld, readWorldFile } from './storage.js';
 import { MAX_OFFLINE_MS, SPECIES, DISEASES, SECRETS, BALANCE, CHARACTERS, rarityOf } from './data.js';
 import { createAudio } from './audio.js';
-import { nextScene, pickVisit } from './story.js';
+import { nextScene, pickVisit, chapterNow } from './story.js';
+import { LESSONS, lessonDue, pastLessons } from './tutorial.js';
 import { CHECK_MS, fetchVersion, isNewer } from './update.js';
 
 const app = { w: null, sprites: null, scene: 'pradera', selectedId: null, fx: [], lastSaved: 0, k: 1, audio: null, visit: null, nextVisitAt: 0, lastVisitor: null, labels: 'ninguna' };
@@ -29,6 +30,16 @@ app.setLabels = (mode) => {
 };
 // Tutorial: se muestra la primera vez en cada dispositivo (también a quien ya tenía partida); sin guardado, una vez por sesión.
 app.tutorialSeen = readUi().tutorial === true;
+/** Mini lecciones por mecánica nueva: lo ya visto se guarda en este dispositivo; una partida avanzada no repite las anteriores. */
+let lessonsSeen = null;
+const seenLessons = () => (lessonsSeen ||= readUi().lessons ?? pastLessons(chapterNow(app.w)));
+app.startLesson = (id) => {
+  const l = LESSONS.find((x) => x.id === id);
+  if (!l) return;
+  lessonsSeen = { ...seenLessons(), [id]: true }; // se marca al empezar: si se cierra la pestaña, no se repite
+  writeUi({ lessons: lessonsSeen });
+  ui.startTutorial(null, l);
+};
 app.startTutorial = () => ui.startTutorial(() => { app.tutorialSeen = true; writeUi({ tutorial: true }); });
 const ui = createUI(app);
 const $ = (id) => document.getElementById(id);
@@ -125,6 +136,12 @@ app.cure = (id) => {
 app.buyFood = (f, n) => report(sim.buyFood(app.w, f, n), undefined, 'buy');
 app.buildCorral = (tipo) => report(sim.buildCorral(app.w, tipo), undefined, 'build');
 app.upgradeCorral = (id) => report(sim.upgradeCorral(app.w, id), undefined, 'upgrade');
+app.sellAnimal = (id) => {
+  const r = sim.sellAnimal(app.w, id);
+  if (r.ok && app.selectedId === id) app.selectedId = null;
+  report(r, undefined, 'sell');
+  if (r.ok) ui.closeSheet();
+};
 app.sell = (p) => report(sim.sell(app.w, p), undefined, 'sell');
 app.sellAll = () => {
   let gain = 0;
@@ -322,6 +339,12 @@ function checkTutorial() {
   app.tutorialSeen = true; // dentro de esta sesión no vuelve a empezar; lo guardado se escribe al terminar
   ui.startTutorial(() => writeUi({ tutorial: true }));
 }
+/** Una lección sale sola cuando no hay nada abierto, tras el tutorial y las escenas pendientes. */
+function checkLesson() {
+  if (!TUTORIAL_ON || !app.tutorialSeen || document.hidden || ui.busy() || (STORY_ON && nextScene(app.w))) return;
+  const l = lessonDue(app.w, seenLessons(), chapterNow(app.w));
+  if (l) app.startLesson(l.id);
+}
 function checkStory() {
   if (!STORY_ON || document.hidden || ui.busy()) return;
   const s = nextScene(app.w);
@@ -402,7 +425,7 @@ async function boot() {
     last = t;
     sim.wander(app.w, dt);
     const now = Date.now();
-    if (now - app.w.lastTick >= 1000) { advance(now); checkSecrets(); checkStory(); checkTutorial(); checkVisit(); applyUpdate(); ui.tickLight(); }
+    if (now - app.w.lastTick >= 1000) { advance(now); checkSecrets(); checkStory(); checkTutorial(); checkLesson(); checkVisit(); applyUpdate(); ui.tickLight(); }
     ctx.setTransform(app.k, 0, 0, app.k, 0, 0);
     draw(ctx, app.sprites, app.w, app, t);
     requestAnimationFrame(frame);
