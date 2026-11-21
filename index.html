@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fff0d6">
+  <meta name="description" content="FarmWeb: una granja tierna con gallinas, gatos, ajolotes y hasta dinosaurios bebé. Se juega en el navegador, en móvil y PC.">
+  <title>FarmWeb · Granja tierna</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <header id="hud">
+      <div class="chip" role="group" aria-label="Monedas">
+        <span data-icon="coin"></span><strong id="coins">0</strong>
+      </div>
+      <button class="chip chip-btn" id="questChip" type="button" aria-label="Misión actual">
+        <span data-icon="brillito"></span>
+        <span class="quest-text"><span id="questTitle"></span><span id="questProg" class="muted"></span></span>
+      </button>
+      <div class="chip small-chip" role="group" aria-label="Espacio en el corral">
+        <span data-icon="heart"></span><span id="spaceInfo">0/8</span>
+      </div>
+    </header>
+
+    <main id="stage">
+      <canvas id="game" tabindex="-1" role="img" aria-label="Tu granja. Toca un animal para cuidarlo o usa el menú de abajo."></canvas>
+      <div id="side">
+        <button class="btn primary" id="collectAll" type="button" hidden>Recoger todo (<span id="readyCount">0</span>)</button>
+        <section id="selected" aria-label="Animal seleccionado" hidden></section>
+      </div>
+      <p id="loading" class="muted">Cargando tu granja…</p>
+    </main>
+
+    <nav id="dock" aria-label="Menú del juego">
+      <button type="button" data-panel="animals"><span data-icon="huevo"></span>Animales</button>
+      <button type="button" data-panel="shop"><span data-icon="coin"></span>Tienda</button>
+      <button type="button" data-panel="pack"><span data-icon="grano"></span>Mochila</button>
+      <button type="button" data-panel="quests"><span data-icon="brillito"></span>Misiones</button>
+      <button type="button" data-panel="world"><span data-icon="burbuja"></span>Mundo</button>
+    </nav>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <div id="backdrop" class="backdrop" hidden>
+      <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+        <header class="sheet-head">
+          <h2 id="sheetTitle"></h2>
+          <button class="btn small" id="sheetClose" type="button" aria-label="Cerrar">✕</button>
+        </header>
+        <div id="sheetBody" class="sheet-body"></div>
+      </div>
+    </div>
+  </div>
+  <noscript><p style="padding:1rem">Necesitas activar JavaScript para jugar.</p></noscript>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

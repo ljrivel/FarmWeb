@@ -1,0 +1,23 @@
+{
+ "cell": 16,
+ "index": {
+  "coin": 0,
+  "heart": 1,
+  "huevo": 2,
+  "huevo_dino": 3,
+  "leche": 4,
+  "pelusa": 5,
+  "brillito": 6,
+  "burbuja": 7,
+  "trufa": 8,
+  "escama_fuego": 9,
+  "escama_rio": 10,
+  "grano": 11,
+  "heno": 12,
+  "pescadito": 13,
+  "bayas": 14,
+  "carnita": 15,
+  "gusanito": 16,
+  "destello": 17
+ }
+}

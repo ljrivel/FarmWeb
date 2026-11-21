@@ -1,0 +1,12 @@
+{
+ "cell": 16,
+ "index": {
+  "grass0": 0,
+  "grass1": 1,
+  "grass2": 2,
+  "path": 3,
+  "water": 4,
+  "fence_h": 5,
+  "fence_v": 6
+ }
+}

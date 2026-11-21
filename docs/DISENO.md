@@ -1,0 +1,124 @@
+# FarmWeb — Documento de diseño (v0.1)
+
+Nombre de trabajo: **FarmWeb**. Juego de granja **familiar y tierno** (hasta 4 jugadores), en el navegador de móvil y PC, con pixel art propio.
+
+## 1. Pilares
+
+1. **Ternura primero.** Estética *kawaii*: formas redondas, ojos grandes con brillo, mejillas rosadas, paleta pastel, contornos suaves (nunca negro puro).
+2. **Familiar y cooperativo.** Un mundo compartido por hasta 4 personas. Sin competencia ni castigos duros: los animales nunca mueren, solo se ponen tristes.
+3. **Sesiones cortas.** El tiempo corre aunque no estés (con tope de 8 h), así que abrir el juego siempre trae algo que recoger.
+4. **Tu mundo es tuyo.** Se guarda en línea y también se puede **descargar a un archivo** y volver a cargar.
+
+## 2. Los 8 animales iniciales
+
+| Animal | Tipo | Comida favorita | Produce | Notas |
+|---|---|---|---|---|
+| Gallina | Granja | Grano | Huevo | Primera en cría; la protagonista del tutorial |
+| Gato | Granja | Pescadito | Pelusa | Sube la felicidad de los vecinos cercanos |
+| Vaca | Granja | Heno | Leche | Produce más pero come más |
+| Mapache | Bosque | Bayas | Brillito (objeto brillante) | Aparece tras el capítulo 1 |
+| Chanchito | Granja | Bayas | Trufa | Producción lenta, valor alto |
+| Ajolote | Agua | Gusanitos | Burbuja | Necesita estanque |
+| Carnotauro | Dinosaurio | Carnita | Escama de fuego | Llega por la historia (capítulo 3) |
+| Spinosaurus | Dinosaurio | Pescadito | Escama de río | Necesita estanque; llega por la historia (capítulo 4) |
+
+Cada especie tiene **2 colores** en la base (p. ej. gallina blanca/marrón, gato naranja/gris, ajolote rosa/dorado, carnotauro coral/menta).
+
+## 3. Sistema de juego
+
+### Necesidades y felicidad
+- **Hambre** (0–100): baja con el tiempo; al alimentar sube. Comida favorita rellena más y da bonus de felicidad.
+- **Felicidad** (0–100): sube con comida favorita, caricias (tocar al animal) y espacio suficiente; baja con hambre y hacinamiento.
+- Un animal triste produce más lento. Nunca enferma ni muere.
+
+### Crecimiento
+`Bebé → Adulto`. Los bebés no producen. El tiempo de crecimiento depende de la especie (los dinos tardan más).
+
+### Producción
+Cada adulto feliz genera su producto cada cierto tiempo. Aparece una burbuja sobre el animal; se toca para recolectar. Los productos se venden por monedas.
+
+### Reproducción
+Dos adultos **de la misma especie**, con hambre < 60 y felicidad ≥ 60, y con espacio en la granja, inician una cría. Tras un tiempo de incubación nace un bebé.
+- **Herencia de color simple:** la cría hereda el color de uno de los padres al azar.
+- **Mutación:** pequeña probabilidad de cambiar de color.
+- **Brillante (shiny):** probabilidad rara; se ve con destellos y vale más.
+- Los híbridos entre especies quedan fuera de la v1.
+
+### Economía
+Monedas, comida (se compra), productos (se venden), ampliaciones (más espacio, estanque). Los precios están en `src/data.js` para balancear fácil.
+
+### Tiempo
+Se calcula con marcas de tiempo (`Date.now()`) y un generador aleatorio con semilla guardado en el mundo. Al volver, se simula lo ocurrido hasta **8 horas**. Esto hace la simulación determinista, fácil de probar y trasladable al servidor.
+
+## 4. Historia y misiones
+
+La abuela Cosi dejó la granja a la familia con una carta y un cuaderno de animales por descubrir.
+
+- **Cap. 1 — La granja de la abuela:** tutorial. Alimentar, recolectar huevos, comprar un gato, criar la primera gallinita.
+- **Cap. 2 — Amigos del bosque:** llegan el mapache y el chanchito; se construye el estanque y llega el ajolote.
+- **Cap. 3 — El huevo misterioso:** tras una tormenta aparece un huevo enorme. Nace un carnotauro bebé.
+- **Cap. 4 — El río perdido:** una pista en el cuaderno lleva al spinosaurus.
+- **Cap. 5 — Festival de la granja** *(pendiente)*: final y cierre de la historia, con premios para toda la familia.
+
+Misiones diarias y de colección vendrán después. Las misiones de historia están en `src/data.js` como datos, así que añadir más no requiere programar lógica nueva.
+
+## 5. Multijugador familiar (hasta 4)
+
+- Un **mundo** pertenece a una familia. Cada persona tiene su cuenta (correo) y se une con un **código de invitación**.
+- Máximo 4 miembros por mundo (se hace cumplir en la base de datos).
+- Cooperativo: todos ven y cuidan los mismos animales; el progreso de historia es compartido.
+- Sincronización simple: el estado del mundo se guarda en la nube cada pocos segundos y al cerrar; se refresca al abrir. Si dos personas juegan a la vez, gana el último guardado de cada animal por marca de tiempo. Tiempo real fino queda para una versión posterior.
+
+## 6. Guardado y exportación
+
+Tres capas:
+1. **Local (ya implementado):** `localStorage`, guardado automático.
+2. **Archivo (ya implementado):** botón *Descargar mundo* genera `*.farmweb.json` con formato versionado y suma de verificación. *Cargar mundo* lo valida (formato, versión, checksum, límites) antes de reemplazar el actual. Se pide confirmación porque reemplaza el mundo.
+3. **Nube (fase siguiente):** Supabase. El cliente ya guarda a través de una interfaz (`src/storage.js`) para enchufar la nube sin tocar el juego.
+
+## 7. Arquitectura
+
+```
+index.html, styles.css          Interfaz (HTML + Canvas)
+src/data.js                     Especies, comidas, productos, misiones (solo datos)
+src/rng.js                      Aleatorio con semilla
+src/state.js                    Mundo nuevo, validación, exportar/importar, progreso offline
+src/sim.js                      Reglas: necesidades, crecimiento, producción, cría
+src/quests.js                   Progreso de misiones
+src/storage.js                  Guardado local y archivo (interfaz para la nube)
+src/render.js                   Dibujo en Canvas, animación de sprites
+src/ui.js                       Paneles: animales, tienda, mochila, misiones, mundo
+src/main.js                     Bucle principal
+assets/sprites/                 Atlas de animales, iconos y tiles (generados)
+tools/gen_sprites.py            Generador del pixel art (Python + PIL)
+tests/                          Pruebas de la lógica (node --test)
+```
+
+Sin dependencias ni paso de compilación: se publica tal cual en Cloudflare Pages. Si el proyecto crece, migrar a Vite/Phaser es posible porque la lógica (`state`, `sim`, `quests`) no depende del dibujo.
+
+## 8. Modelo de datos en la nube (propuesto, **no ejecutado**)
+
+```sql
+profiles(id uuid pk -> auth.users, display_name text)
+worlds(id uuid pk, name text, invite_code text unique, owner uuid, state jsonb, updated_at timestamptz)
+world_members(world_id -> worlds, user_id -> profiles, role text, primary key(world_id, user_id))
+-- disparador: máximo 4 filas por world_id
+-- RLS: solo miembros leen/escriben su mundo
+```
+
+Para empezar, el estado completo del mundo vive en `worlds.state` (jsonb). Normalizar animales a tablas propias solo hará falta si se necesitan consultas entre mundos. Antes de crear nada en Supabase se pedirá aprobación.
+
+## 9. Arte
+
+- Sprites de **32×32**, animales *chibi* de frente, 4 cuadros de animación en reposo (respirar y parpadear), versión bebé y adulta, 2 colores por especie.
+- Iconos de **16×16** para comida, productos y monedas; tiles de 16×16.
+- Todo se genera con `tools/gen_sprites.py`, así que ajustar colores o formas es rehacer el script. Vista previa: `docs/preview-sprites.png`.
+- Paleta pastel cálida con fondo crema; contorno de cada sprite = tono oscuro de su propio color.
+
+## 10. Hoja de ruta
+
+1. **Base (esta versión):** sprites, granja jugable local, guardado local y por archivo, misiones capítulos 1–4.
+2. Cuentas y nube con Supabase + mundo familiar (4 personas).
+3. Publicación en Cloudflare Pages conectada al repo.
+4. Sonido y música suaves, más animales, misiones diarias, capítulo 5.
+5. Instalación como PWA (ícono en el móvil y modo sin conexión).
