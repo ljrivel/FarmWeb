@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { newWorld, addAnimal, addCorral } from '../src/state.js';
 import { MAP_SPOTS } from '../src/data.js';
-import { hitMap, hitTest } from '../src/render.js';
+import { hitMap, hitTest, spriteRow } from '../src/render.js';
 
 const fresh = () => newWorld('T', 1_700_000_000_000, 5);
 
@@ -28,4 +28,13 @@ test('hitTest solo ve a los animales del corral de la escena', () => {
   const burbuja = hitTest(w, 100, 120 - 45, 'bosque');
   assert.deepEqual([burbuja.animal, burbuja.bubble], [mapache, true]);
   assert.equal(hitTest(w, 100, 120 - 45, 'pradera'), null, 'la burbuja del Bosque no se toca desde la Pradera');
+});
+
+test('spriteRow usa la fila del color y del brillante, y cae al color 0 si el atlas no la tiene', () => {
+  const rows = { 'gato:0:adult': 4, 'gato:1:adult': 6, 'gato:shiny:adult': 8 };
+  assert.equal(spriteRow(rows, 'gato', 1, false, 'adult'), 6);
+  assert.equal(spriteRow(rows, 'gato', 0, true, 'adult'), 8, 'el brillante usa su propia fila');
+  assert.equal(spriteRow(rows, 'gato', 3, false, 'adult'), 4, 'un color que el atlas no tiene cae al color 0');
+  assert.equal(spriteRow(rows, 'gato', 0, true, 'baby'), 0, 'sin fila ni respaldo no devuelve undefined');
+  assert.equal(Number.isInteger(spriteRow({}, 'dragon', 2, false, 'adult')), true);
 });
